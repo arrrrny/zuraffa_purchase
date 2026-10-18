@@ -19,6 +19,11 @@ sealed class PurchaseValue {
 
   /// Decodes a channel payload into a [PurchaseValue]: ints decode as
   /// i32, doubles as f64, and decimal strings as i64.
+  ///
+  /// Note: the wire form carries no precision marker, so a [PurchaseF32]
+  /// narrows to [PurchaseF64] on decode — [PurchaseF32] is a client-side
+  /// convenience that does not survive a round-trip. Callers that need to
+  /// preserve 32-bit precision must track it out-of-band.
   static PurchaseValue decode(Object? raw) {
     if (raw is int) return PurchaseI32(raw);
     if (raw is double) return PurchaseF64(raw);
@@ -49,6 +54,10 @@ class PurchaseI64 extends PurchaseValue {
 }
 
 /// A 32-bit float value.
+///
+/// Client-side convenience: [encode] emits a [double] with no precision
+/// marker, so [PurchaseValue.decode] returns a [PurchaseF64]. F32 does not
+/// survive a round-trip over the channel.
 class PurchaseF32 extends PurchaseValue {
   final double value;
 

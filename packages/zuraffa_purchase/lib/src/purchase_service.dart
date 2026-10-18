@@ -83,7 +83,7 @@ class _UnwiredPurchasePort implements PurchasePort {
   Future<PurchaseModule> compile({
     required String id,
     required Uint8List bytes,
-  }) =>
+  }) async =>
       _unwired();
 
   @override
@@ -91,11 +91,11 @@ class _UnwiredPurchasePort implements PurchasePort {
     required String id,
     required String export,
     List<PurchaseValue> args = const [],
-  }) =>
+  }) async =>
       _unwired();
 
   @override
-  Future<void> unload({required String id}) => _unwired();
+  Future<void> unload({required String id}) async => _unwired();
 }
 
 /// Registers the zuraffa_purchase stack onto [getIt]: the [PurchasePort] is
