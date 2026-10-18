@@ -1,0 +1,31 @@
+# Federated plugin monorepo created by `zfa package create-plugin` (issue #1604).
+name: zuraffa_purchase_platform
+description: >-
+  Shared channel-envelope core for the zuraffa_purchase platform adapters: decode, typed-error plumbing, and timeout policy over an injected platform channel.
+version: 0.1.0
+homepage: https://zuraffa.com
+
+environment:
+  sdk: ^3.11.0
+
+dependencies:
+  zuraffa: ^7.1.0
+  zuraffa_purchase: ^0.1.0
+
+dev_dependencies:
+  lints: ^4.0.0
+  test: ^1.25.0
+
+dependency_overrides:
+  # Local development only — resolve the app-facing package to this
+  # checkout; stripped on publish.
+  zuraffa_purchase:
+    path: ../zuraffa_purchase
+
+repository: https://github.com/arrrrny/zuraffa_purchase
+issue_tracker: https://github.com/arrrrny/zuraffa_purchase/issues
+
+topics:
+  - purchase
+  - clean-architecture
+  - zuraffa

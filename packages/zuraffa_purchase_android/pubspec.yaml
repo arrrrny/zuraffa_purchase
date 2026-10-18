@@ -1,0 +1,35 @@
+# Federated plugin monorepo created by `zfa package create-plugin` (issue #1604).
+name: zuraffa_purchase_android
+description: >-
+  Android adapter for zuraffa_purchase — the Purchase port over an injected platform channel with a typed failure taxonomy.
+version: 0.1.0
+homepage: https://zuraffa.com
+
+environment:
+  sdk: ^3.11.0
+
+dependencies:
+  zuraffa: ^7.1.0
+  zuraffa_purchase: ^0.1.0
+  zuraffa_purchase_platform: ^0.1.0
+
+dev_dependencies:
+  lints: ^4.0.0
+  test: ^1.25.0
+
+dependency_overrides:
+  # Local development only — resolve the in-family siblings to this
+  # checkout; stripped on publish.
+  zuraffa_purchase:
+    path: ../zuraffa_purchase
+  zuraffa_purchase_platform:
+    path: ../zuraffa_purchase_platform
+
+repository: https://github.com/arrrrny/zuraffa_purchase
+issue_tracker: https://github.com/arrrrny/zuraffa_purchase/issues
+
+topics:
+  - purchase
+  - android
+  - clean-architecture
+  - zuraffa
