@@ -1,8 +1,7 @@
-/// zuraffa_purchase_ios — the iOS adapter of the
-/// `zuraffa_purchase` federated plugin: register, channel, typed exception, port.
+/// zuraffa_purchase_ios — the iOS adapter of the `zuraffa_purchase`
+/// federated family: StoreKit, reached through `package:in_app_purchase`.
 library;
 
-export 'src/register.dart';
-export 'src/ios_purchase_channel.dart';
 export 'src/ios_purchase_exception.dart';
-export 'src/ios_purchase_port.dart';
+export 'src/ios_purchase_store.dart';
+export 'src/register.dart';

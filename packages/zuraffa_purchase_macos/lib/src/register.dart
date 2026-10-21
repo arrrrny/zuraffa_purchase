@@ -1,35 +1,32 @@
 import 'package:zuraffa/zuraffa.dart';
 import 'package:zuraffa_purchase/zuraffa_purchase.dart';
 
-import 'macos_purchase_channel.dart';
-import 'macos_purchase_exception.dart';
-import 'macos_purchase_port.dart';
+import 'macos_purchase_store.dart';
 
-/// Registers the macOS adapter on [GetIt.instance]: the
-/// [PurchasePort] over an injected channel. An injected [timeout] is
-/// applied to the wired channel. Without a channel every call surfaces
-/// the typed `channel_not_wired` failure.
+/// Registers the macOS store on [getIt].
+///
+/// The store is registered eagerly, so the store's transaction stream is
+/// live from the moment the app starts — a transaction the store replays on
+/// launch is only delivered to a listener that was already subscribed.
+///
+/// Call this before `registerPurchaseDependencies`; the purchase port
+/// resolves the store lazily, so either order works.
 void registerMacosPurchaseDependencies(
   GetIt getIt, {
-  MacosPurchaseChannel? channel,
-  Duration? timeout,
+  StoreApi? store,
+  Duration purchaseTimeout = const Duration(minutes: 2),
+  Duration restoreQuietPeriod = const Duration(seconds: 2),
+  Duration restoreTimeout = const Duration(minutes: 1),
+  String? restoreAccountId,
 }) {
-  final wired = (channel == null)
-      ? MacosPurchaseChannel(
-          invoke: (_, __) => throw const MacosPurchaseException(
-            'channel_not_wired',
-            'No macOS channel was injected — pass one to '
-            'registerMacosPurchaseDependencies.',
-            recoverable: false,
-          ),
-        )
-      : (timeout == null)
-          ? channel
-          : MacosPurchaseChannel(
-              invoke: channel.invoke,
-              timeout: timeout,
-            );
-  getIt.registerLazySingleton<PurchasePort>(
-    () => MacosPurchasePort(channel: wired),
+  if (getIt.isRegistered<StoreApi>()) return;
+  getIt.registerSingleton<StoreApi>(
+    store ??
+        createMacosPurchaseStore(
+          purchaseTimeout: purchaseTimeout,
+          restoreQuietPeriod: restoreQuietPeriod,
+          restoreTimeout: restoreTimeout,
+          restoreAccountId: restoreAccountId,
+        ),
   );
 }

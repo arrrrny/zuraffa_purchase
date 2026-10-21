@@ -1,0 +1,27 @@
+{
+  "schema": "proof.v1",
+  "command": "tdd make contract:A1 --born-green",
+  "target": "contract:A1",
+  "repro": "zfa tdd make contract:A1 --born-green",
+  "at": "2026-10-21T22:03:49.529730Z",
+  "generator_version": "7.2.0",
+  "input": {
+    "sanctioned": true,
+    "hand_delta": true,
+    "transition": "born-green",
+    "behavior": "contract:A1",
+    "feature": "001-purchase-store"
+  },
+  "files": [
+    {
+      "path": "lib/tdd/001-purchase-store/contract_a1_subject.dart",
+      "action": "update",
+      "sha256": "d2fa6cb6e35371d2e586fa280a0f97c49598d6c2e62739f8a61b5c6ee2da8523",
+      "bytes": 1350,
+      "snapshot": "// GENERATED STUB — `zfa tdd gen contract:A1` (issue #1007).\n//\n// behavior_id: contract:A1\n// source_criterion: PurchaseService.products\n// kind: contract\n// target: subject_contract_A1\n// description: PurchaseService.products(List<String>) -> List<CatalogProduct> (usecase contract)\n//\n// CONTRACT SEAM (issue #1007): this file is where the declared contract\n// `products(List<String>) -> List<CatalogProduct>`\n// (usecase contract) gets its implementation. Implement the seam\n// below — or wire it to the production method. The paired contract test\n// enumerates the contract's cases and stays BLOCKED (never RED) until\n// every case is satisfied.\n//\n// IMPLEMENTED (spec 001-purchase-store): the seam is wired to the real\n// implementation, so the declared contract is satisfied against the\n// shipped code and not against a stub.\n//\n// zfa:tdd: contract:A1:hand — hand step completed before first red certification (issue #1411)\nlibrary;\nimport 'package:zuraffa_purchase/zuraffa_purchase.dart' as api;\n\n/// The declared contract, wired to the real implementation.\nObject? products(List<String> arg0) => api.PurchaseService(port: api.StoreApiPurchasePort(store: api.RecordingStoreApi(catalog: [api.StoreProduct(id: 'pro.monthly', title: 'Pro monthly', description: 'monthly plan', priceMicros: 4990000, currency: 'USD')]))).products(arg0);\n"
+    }
+  ],
+  "receipt_version": 1,
+  "min_core_version": "6.0.0",
+  "generated_against_core": "7.2.0"
+}

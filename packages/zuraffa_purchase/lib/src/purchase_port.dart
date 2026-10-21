@@ -1,30 +1,36 @@
-import 'dart:typed_data';
+import 'catalog_product.dart';
+import 'purchase_intent.dart';
+import 'purchase_outcome.dart';
 
-import 'purchase_module.dart';
-import 'purchase_value.dart';
-
-/// The platform-neutral port every adapter implements. Pure Dart — the
-/// transport is injected behind the platform envelope, so tests run
-/// offline with fake channels.
+/// The store contract: products, purchasing, restoring, finishing.
+///
+/// Every adapter implements this. It is deliberately platform-neutral — the
+/// platform adapters speak their own store's dialect underneath and map it
+/// onto this shape, so the domain never sees a StoreKit or Play Billing type.
 abstract class PurchasePort {
   const PurchasePort();
 
-  /// Whether the host platform can run WebAssembly at all.
-  Future<bool> isSupported();
+  /// The products the store offers for [productIds].
+  ///
+  /// Ids the store does not offer are absent from the result — they are not
+  /// an error. A store that is unavailable raises a
+  /// [PurchaseException] with the `store_unavailable` code.
+  Future<List<CatalogProduct>> products(List<String> productIds);
 
-  /// Compiles [bytes] and binds the result to [id].
-  Future<PurchaseModule> compile({
-    required String id,
-    required Uint8List bytes,
-  });
+  /// Launches the purchase described by [intent] and resolves with its
+  /// outcome.
+  ///
+  /// A cancelled purchase raises a `PurchaseException` with the `cancelled`
+  /// code; a deferred purchase resolves with a `PurchaseOutcome` in the
+  /// `pending` status.
+  Future<PurchaseOutcome> purchase(PurchaseIntent intent);
 
-  /// Invokes [export] on the compiled module [id].
-  Future<List<PurchaseValue>> invoke({
-    required String id,
-    required String export,
-    List<PurchaseValue> args = const [],
-  });
+  /// The purchases the user already owns, as the store replays them.
+  Future<List<PurchaseOutcome>> restore();
 
-  /// Releases the compiled module [id].
-  Future<void> unload({required String id});
+  /// Acknowledges [transactionId] on the store so it stops replaying it.
+  ///
+  /// Idempotent: a transaction the store does not know is a no-op, not an
+  /// error.
+  Future<void> finish(String transactionId);
 }

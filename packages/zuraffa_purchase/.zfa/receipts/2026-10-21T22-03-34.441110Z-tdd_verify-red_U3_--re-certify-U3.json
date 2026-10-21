@@ -1,0 +1,34 @@
+{
+  "schema": "proof.v1",
+  "command": "tdd verify-red U3 --re-certify",
+  "target": "U3",
+  "repro": "zfa tdd verify-red U3 --re-certify",
+  "at": "2026-10-21T22:03:34.441110Z",
+  "generator_version": "7.2.0",
+  "input": {
+    "sanctioned": true,
+    "hand_delta": true,
+    "transition": "re-certify",
+    "behavior": "U3",
+    "feature": "001-purchase-store"
+  },
+  "files": [
+    {
+      "path": "test/tdd/001-purchase-store/u3_test.dart",
+      "action": "update",
+      "sha256": "a97e59f33c9d64a65a921aa74544499eda407cae7f88c6a981dee06840d194d5",
+      "bytes": 1472,
+      "snapshot": "// GENERATED TEST — `zfa tdd gen U3` (spec 044-test-tdd-generation).\n//\n// behavior_id: U3\n// source_criterion: FR-003, PurchaseService.purchase\n// kind: unit\n// description: `PurchaseService.purchase(PurchaseIntent request)` MUST map a\n//\n// This test asserts the observable behavior described above. It is\n// \"honest red\" on first execution: the paired subject at\n// `package:zuraffa_purchase/tdd/001-purchase-store/u3_subject.dart` is unimplemented, so the test fails through an\n// assertion (not an uncaught error, compile/load error, skip, or\n// placeholder). Replace the subject's\n// stub body with real implementation to make this test pass.\nlibrary;\n\nimport 'package:test/test.dart';\nimport 'package:zuraffa_purchase/zuraffa_purchase.dart';\nimport 'package:zuraffa_purchase/tdd/001-purchase-store/u3_subject.dart' as subject;\n\nvoid main() {\n  group('U3 (FR-003, PurchaseService.purchase)', () {\n    test('U3 — `PurchaseService.purchase(PurchaseIntent request)` MUST map a', () async {\n      final outcome = await subject.subject_u3();\n      expect(outcome.status, PurchaseStatus.purchased);\n      expect(outcome.transactionId, 'tx-1');\n      expect(outcome.productId, 'pro.monthly');\n      expect(outcome.purchasedAt, 1700000000000);\n      expect(outcome.expiresAt, 1702592000000);\n      expect(outcome.receipt, 'receipt-abc');\n      expect(outcome.pendingFinish, isTrue,\n          reason: 'a purchase is handed to the caller unacknowledged');\n    });\n  });\n}\n"
+    },
+    {
+      "path": "lib/tdd/001-purchase-store/u3_subject.dart",
+      "action": "update",
+      "sha256": "b586572608d160c97d0209b87dbbee028eb6a38cb62a3b3dca71d6a6608f6ea3",
+      "bytes": 1878,
+      "snapshot": "// GENERATED STUB — `zfa tdd gen U3` (spec 044-test-tdd-generation).\n//\n// behavior_id: U3\n// source_criterion: FR-003, PurchaseService.purchase\n// description: `PurchaseService.purchase(PurchaseIntent request)` MUST map a\n//\n// This is a MINIMAL COMPILABLE STUB. It compiles cleanly (FR-011) but\n// does NOT satisfy the behavior described above — the paired test will\n// fail on first execution with an assertion-level failure (honest red).\n// Replace this stub body with real implementation to make the test pass.\n//\n// The subject name is derived from the behavior id (`subject_u1`) and is\n// deliberately snake_cased — the generator KNOWS the name it emits, so\n// the lint its shape provably trips is suppressed here rather than\n// renaming the contract surface (issue #1035).\n// ignore_for_file: non_constant_identifier_names\nlibrary;\n\n// IMPLEMENTED (spec 001-purchase-store): the subject drives the real\n// implementation over the scriptable RecordingStoreApi and returns the\n// observable outcome the paired test asserts.\n\nimport 'package:zuraffa_purchase/zuraffa_purchase.dart';\n\nStoreProduct _product(String id) => StoreProduct(\n  id: id,\n  title: 'Pro $id',\n  description: 'desc',\n  priceMicros: 4990000,\n  currency: 'USD',\n);\n\n/// Subject for behavior U3 — a completed store purchase.\nFuture<PurchaseOutcome> subject_u3() async {\n  final store = RecordingStoreApi(\n    catalog: [_product('pro.monthly')],\n    onPurchase: (request) async => StoreTransaction(\n      transactionId: 'tx-1',\n      productId: request.productId,\n      status: StoreTransactionStatus.purchased,\n      purchasedAt: 1700000000000,\n      expiresAt: 1702592000000,\n      receipt: 'receipt-abc',\n      needsFinish: true,\n    ),\n  );\n  final service = PurchaseService(port: StoreApiPurchasePort(store: store));\n  return service.purchase(const PurchaseIntent(productId: 'pro.monthly'));\n}\n"
+    }
+  ],
+  "receipt_version": 1,
+  "min_core_version": "6.0.0",
+  "generated_against_core": "7.2.0"
+}

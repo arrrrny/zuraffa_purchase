@@ -1,0 +1,30 @@
+{
+  "schema": "proof.v1",
+  "command": "tdd gen",
+  "target": "U11",
+  "repro": "zfa tdd gen",
+  "at": "2026-10-21T21:31:27.078195Z",
+  "generator_version": "7.2.0",
+  "input": {
+    "feature": "001-purchase-store"
+  },
+  "files": [
+    {
+      "path": "test/tdd/001-purchase-store/u11_test.dart",
+      "action": "create",
+      "sha256": "aa981e84ab0917257e73c80a414aea1d62416cb9af5b794ea84e2446725f428b",
+      "bytes": 1647,
+      "snapshot": "// GENERATED TEST — `zfa tdd gen U11` (spec 044-test-tdd-generation).\n//\n// behavior_id: U11\n// source_criterion: FR-011, PurchaseSubscriptionStore.finishPurchase\n// kind: unit\n// description: `PurchaseSubscriptionStore.finishPurchase(String transactionId)`\n//\n// This test asserts the observable behavior described above. It is\n// \"honest red\" on first execution: the paired subject at\n// `package:zuraffa_purchase/tdd/001-purchase-store/u11_subject.dart` is unimplemented, so the test fails through an\n// assertion (not an uncaught error, compile/load error, skip, or\n// placeholder). Replace the subject's\n// stub body with real implementation to make this test pass.\nlibrary;\n\nimport 'package:test/test.dart';\nimport 'package:zuraffa_purchase/tdd/001-purchase-store/u11_subject.dart' as subject;\n\nvoid main() {\n  group('U11 (FR-011, PurchaseSubscriptionStore.finishPurchase)', () {\n    test('U11 — `PurchaseSubscriptionStore.finishPurchase(String transactionId)`', () {\n      Object? result;\n        try {\n          subject.subject_u11(r'sample');\n          result = null;\n        } on UnimplementedError catch (error) {\n          result = error;\n        }\n      // zfa:tdd: vacuous-guard (issue #1259): the assertion set below is the\n      // UnimplementedError guard ONLY — a green here proves nothing about\n      // the behavior (a dummy `return 0;` flips it green with zero\n      // declared-contract code). Replace this guard with an assertion on\n      // the observable outcome named by the behavior description, remove\n      // this marker, and re-run make.\n      expect(result, isNot(isA<UnimplementedError>()));\n    });\n  });\n}\n"
+    },
+    {
+      "path": "lib/tdd/001-purchase-store/u11_subject.dart",
+      "action": "create",
+      "sha256": "e8191c9c40d746f472e9541a17218d1ddfb42e635d96185ac7afdacc06b2f1b6",
+      "bytes": 1507,
+      "snapshot": "// GENERATED STUB — `zfa tdd gen U11` (spec 044-test-tdd-generation\n// + issue #1259 contract derivation).\n//\n// behavior_id: U11\n// source_criterion: FR-011, PurchaseSubscriptionStore.finishPurchase\n// description: `PurchaseSubscriptionStore.finishPurchase(String transactionId)`\n//\n// CONTRACT-DERIVED SUBJECT (issue #1259): the signature below is\n// derived from the spec's declared Layer Contract:\n//\n//     finishPurchase(String) -> void\n//\n// The declared request and result types are preserved above: every\n// declared type exists on disk and renders verbatim, import included —\n// implement the body, never the signature. This is a MINIMAL\n// COMPILABLE STUB: it does NOT satisfy the behavior — the paired test\n// fails on first execution (honest red). Replace this stub body with\n// the real implementation of the declared contract to make the test\n// pass.\n// Declared parameters: text: String\n//\n// The subject name is derived from the behavior id and is deliberately\n// snake_cased — the generator KNOWS the name it emits, so the lint its\n// shape provably trips is suppressed here rather than renaming the\n// contract surface (issue #1035).\n// ignore_for_file: non_constant_identifier_names\nlibrary;\n\n/// Subject for behavior U11 — declared contract:\n/// `finishPurchase(String) -> void`.\n///\n/// Throws [UnimplementedError] until the real implementation lands.\nvoid subject_u11(String text) => throw UnimplementedError('subject_u11 not implemented: finishPurchase(String) -> void');\n"
+    }
+  ],
+  "receipt_version": 1,
+  "min_core_version": "6.0.0",
+  "generated_against_core": "7.2.0"
+}

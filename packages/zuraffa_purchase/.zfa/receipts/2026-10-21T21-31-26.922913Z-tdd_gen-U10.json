@@ -1,0 +1,30 @@
+{
+  "schema": "proof.v1",
+  "command": "tdd gen",
+  "target": "U10",
+  "repro": "zfa tdd gen",
+  "at": "2026-10-21T21:31:26.922913Z",
+  "generator_version": "7.2.0",
+  "input": {
+    "feature": "001-purchase-store"
+  },
+  "files": [
+    {
+      "path": "test/tdd/001-purchase-store/u10_test.dart",
+      "action": "create",
+      "sha256": "e72d6aeb44f05c48a4576de18186e1809f8f0f0a8e13286fbedf50ca4cc3ecea",
+      "bytes": 1219,
+      "snapshot": "// GENERATED TEST — `zfa tdd gen U10` (spec 044-test-tdd-generation).\n//\n// behavior_id: U10\n// source_criterion: FR-010, PurchaseSubscriptionStore.restore\n// kind: unit\n// description: `PurchaseSubscriptionStore.restore()` MUST return one store purchase\n//\n// This test asserts the observable behavior described above. It is\n// \"honest red\" on first execution: the paired subject at\n// `package:zuraffa_purchase/tdd/001-purchase-store/u10_subject.dart` is unimplemented, so the test fails through an\n// assertion (not an uncaught error, compile/load error, skip, or\n// placeholder). Replace the subject's\n// stub body with real implementation to make this test pass.\nlibrary;\n\nimport 'package:test/test.dart';\nimport 'package:zuraffa_purchase/tdd/001-purchase-store/u10_subject.dart' as subject;\n\nvoid main() {\n  group('U10 (FR-010, PurchaseSubscriptionStore.restore)', () {\n    test('U10 — `PurchaseSubscriptionStore.restore()` MUST return one store purchase', () {\n      final result = (() {\n        try {\n          return subject.subject_u10();\n        } on UnimplementedError catch (error) {\n          return error;\n        }\n      })();\n      expect(result, isNot(isA<UnimplementedError>()));\n    });\n  });\n}\n"
+    },
+    {
+      "path": "lib/tdd/001-purchase-store/u10_subject.dart",
+      "action": "create",
+      "sha256": "ecbb3c595ce17bcd4dc03c8550db8aeee239b87f2a86e74d2db4f03f004ab4e6",
+      "bytes": 1046,
+      "snapshot": "// GENERATED STUB — `zfa tdd gen U10` (spec 044-test-tdd-generation).\n//\n// behavior_id: U10\n// source_criterion: FR-010, PurchaseSubscriptionStore.restore\n// description: `PurchaseSubscriptionStore.restore()` MUST return one store purchase\n//\n// This is a MINIMAL COMPILABLE STUB. It compiles cleanly (FR-011) but\n// does NOT satisfy the behavior described above — the paired test will\n// fail on first execution with an assertion-level failure (honest red).\n// Replace this stub body with real implementation to make the test pass.\n//\n// The subject name is derived from the behavior id (`subject_u1`) and is\n// deliberately snake_cased — the generator KNOWS the name it emits, so\n// the lint its shape provably trips is suppressed here rather than\n// renaming the contract surface (issue #1035).\n// ignore_for_file: non_constant_identifier_names\nlibrary;\n\n/// Subject for behavior U10.\n///\n/// Throws [UnimplementedError] until the real implementation lands.\nint subject_u10() => throw UnimplementedError('subject_u10 not implemented');\n"
+    }
+  ],
+  "receipt_version": 1,
+  "min_core_version": "6.0.0",
+  "generated_against_core": "7.2.0"
+}

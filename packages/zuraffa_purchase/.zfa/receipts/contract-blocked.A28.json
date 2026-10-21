@@ -1,0 +1,13 @@
+{
+  "schema": "contract-blocked.v1",
+  "behavior": "contract:A28",
+  "feature": "001-purchase-store",
+  "kind": "contract",
+  "contract": "RecordingStoreApi.complete",
+  "classification": "blocked",
+  "command": "dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart --plain-name \"RecordingStoreApi.complete(String) -> void (interface method contract)\"",
+  "exit_code": 1,
+  "output_excerpt": "00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart\n00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart\n00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart\n00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart\n00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart",
+  "blocked_at": "2026-10-21T22:38:49.706489Z",
+  "reason": "the declared contract is not satisfied by the implementation — the cycle is BLOCKED and cannot proceed to GREEN (issue #1007)"
+}

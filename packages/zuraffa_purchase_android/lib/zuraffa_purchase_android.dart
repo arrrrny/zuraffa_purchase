@@ -1,8 +1,7 @@
-/// zuraffa_purchase_android — the Android adapter of the
-/// `zuraffa_purchase` federated plugin: register, channel, typed exception, port.
+/// zuraffa_purchase_android — the Android adapter of the `zuraffa_purchase`
+/// federated family: Play Billing, reached through `package:in_app_purchase`.
 library;
 
-export 'src/register.dart';
-export 'src/android_purchase_channel.dart';
 export 'src/android_purchase_exception.dart';
-export 'src/android_purchase_port.dart';
+export 'src/android_purchase_store.dart';
+export 'src/register.dart';
