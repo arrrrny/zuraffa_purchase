@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.1
+
+- No code change: released in lockstep with the `zuraffa_purchase` family so
+  the in-family version constraints stay aligned across the five packages.
+
 ## 0.1.0
 
 - Initial release of the iOS adapter: StoreKit, reached through

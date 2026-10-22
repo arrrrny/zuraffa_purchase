@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "feature": "002-subscription-error-vocabulary",
+  "lane": "skin",
+  "verdict": "green",
+  "result": "complete",
+  "behaviors": [],
+  "counts": {
+    "total": 0,
+    "pending": 0,
+    "red": 0,
+    "green": 0,
+    "done": 0
+  },
+  "stopped_at": null,
+  "at": "2026-10-22T04:18:24.486390Z"
+}

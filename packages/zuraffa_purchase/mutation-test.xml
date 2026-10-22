@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   mutation-test.xml — scopes mutation_test to the production surface pinned
-  by specs/001-purchase-store (the whole of lib/src: the service, the port
-  adapter, the subscription-store adapter, the store API + its recording
-  double, the entities, the exception and the status enum).
+  by specs/001-purchase-store and specs/002-subscription-error-vocabulary
+  (the whole of lib/src: the service, the port adapter, the
+  subscription-store adapter, the store API + its recording double, the port
+  seam + its scripted double, the entities, the exception and the status
+  enum).
 
-  The lib/tdd subjects are the test harness of this feature (their expects
+  The lib/tdd subjects are the test harness of these features (their expects
   ARE the assertions), so mutating them is noise; the production files are
   the honest mutation target.
 
@@ -23,6 +25,7 @@
     <file>lib/src/purchase_status.dart</file>
     <file>lib/src/purchase_subscription_store.dart</file>
     <file>lib/src/recording_store_api.dart</file>
+    <file>lib/src/scripted_purchase_port.dart</file>
     <file>lib/src/store_api.dart</file>
     <file>lib/src/store_api_purchase_port.dart</file>
   </files>

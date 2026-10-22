@@ -4,3 +4,8 @@ coverage/
 pubspec.lock
 .DS_Store
 mutation-test-report/
+
+# The package-local receipt store. The durable proof record lives in
+# specs/<feature>/tdd/ (ledger, cycle-log, verification.md); the receipts
+# themselves are a local cache of that evidence.
+packages/*/.zfa/

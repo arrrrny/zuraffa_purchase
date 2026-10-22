@@ -1,0 +1,56 @@
+// GENERATED STUB — `zfa tdd gen U6` (spec 044-test-tdd-generation
+// + issue #1259 contract derivation).
+//
+// behavior_id: U6
+// source_criterion: FR-006, PurchaseSubscriptionStore.purchase
+// description: A purchase-domain failure in an unrecognised code MUST surface as
+//
+// CONTRACT-DERIVED SUBJECT (issue #1259): the signature below is
+// derived from the spec's declared Layer Contract:
+//
+//     purchase(PurchaseRequest) -> StorePurchase
+//
+// The declared request and result types are preserved above. A
+// declared type whose entity does not exist yet renders as `Object?`
+// so the stub compiles cleanly (FR-011) — the degradation is
+// unconditional ONLY for entities that do not exist on disk; replace
+// it with the declared type once the entity lands. This is a MINIMAL
+// COMPILABLE STUB: it does NOT satisfy the behavior — the paired test
+// fails on first execution (honest red). Replace this stub body with
+// the real implementation of the declared contract to make the test
+// pass.
+// Declared parameters: purchaserequest: PurchaseRequest (non-existent entity types render as Object? until implemented)
+//
+// The subject name is derived from the behavior id and is deliberately
+// snake_cased — the generator KNOWS the name it emits, so the lint its
+// shape provably trips is suppressed here rather than renaming the
+// contract surface (issue #1035).
+// ignore_for_file: non_constant_identifier_names
+library;
+
+// IMPLEMENTED (spec 002-subscription-error-vocabulary): the subject drives the
+// real implementation over the scriptable ScriptedPurchasePort and returns the
+// observable outcome the paired test asserts.
+
+import 'package:zuraffa_subscriptions/zuraffa_subscriptions.dart' as subs;
+import 'package:zuraffa_purchase/zuraffa_purchase.dart';
+
+/// Subject for behavior U6 — a purchase-domain failure in a code the port
+/// does not know.
+Future<Object?> subject_u6(subs.PurchaseRequest request) async {
+  final store = PurchaseSubscriptionStore(
+    port: ScriptedPurchasePort(
+      failure: const PurchaseException(
+        'teapot',
+        'the store answered 418',
+        recoverable: false,
+      ),
+    ),
+  );
+  try {
+    await store.purchase(request);
+  } on Object catch (error) {
+    return error;
+  }
+  return null;
+}
