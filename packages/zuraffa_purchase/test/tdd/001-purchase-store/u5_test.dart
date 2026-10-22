@@ -15,21 +15,25 @@ library;
 
 import 'package:test/test.dart';
 import 'package:zuraffa_purchase/zuraffa_purchase.dart';
-import 'package:zuraffa_purchase/tdd/001-purchase-store/u5_subject.dart' as subject;
+import 'package:zuraffa_purchase/tdd/001-purchase-store/u5_subject.dart'
+    as subject;
 
 void main() {
   group('U5 (FR-005, PurchaseService.restore)', () {
-    test('U5 — `PurchaseService.restore()` MUST return every transaction the store', () async {
-      final outcomes = await subject.subject_u5();
-      expect(outcomes, hasLength(2));
-      expect(
-        outcomes.map((outcome) => outcome.transactionId).toList(),
-        ['tx-1', 'tx-2'],
-      );
-      expect(
-        outcomes.map((outcome) => outcome.status).toList(),
-        everyElement(PurchaseStatus.restored),
-      );
-    });
+    test(
+      'U5 — `PurchaseService.restore()` MUST return every transaction the store',
+      () async {
+        final outcomes = await subject.subject_u5();
+        expect(outcomes, hasLength(2));
+        expect(outcomes.map((outcome) => outcome.transactionId).toList(), [
+          'tx-1',
+          'tx-2',
+        ]);
+        expect(
+          outcomes.map((outcome) => outcome.status).toList(),
+          everyElement(PurchaseStatus.restored),
+        );
+      },
+    );
   });
 }

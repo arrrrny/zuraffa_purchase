@@ -15,21 +15,25 @@ library;
 
 import 'package:test/test.dart';
 import 'package:zuraffa_subscriptions/zuraffa_subscriptions.dart' as subs;
-import 'package:zuraffa_purchase/tdd/001-purchase-store/u10_subject.dart' as subject;
+import 'package:zuraffa_purchase/tdd/001-purchase-store/u10_subject.dart'
+    as subject;
 
 void main() {
   group('U10 (FR-010, PurchaseSubscriptionStore.restore)', () {
-    test('U10 — `PurchaseSubscriptionStore.restore()` MUST return one store purchase', () async {
-      final purchases = await subject.subject_u10();
-      expect(purchases, hasLength(2));
-      expect(
-        purchases.map((purchase) => purchase.transactionId).toList(),
-        ['tx-1', 'tx-2'],
-      );
-      expect(
-        purchases.map((purchase) => purchase.state).toList(),
-        everyElement(subs.PurchaseState.restored),
-      );
-    });
+    test(
+      'U10 — `PurchaseSubscriptionStore.restore()` MUST return one store purchase',
+      () async {
+        final purchases = await subject.subject_u10();
+        expect(purchases, hasLength(2));
+        expect(purchases.map((purchase) => purchase.transactionId).toList(), [
+          'tx-1',
+          'tx-2',
+        ]);
+        expect(
+          purchases.map((purchase) => purchase.state).toList(),
+          everyElement(subs.PurchaseState.restored),
+        );
+      },
+    );
   });
 }

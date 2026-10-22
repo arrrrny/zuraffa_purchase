@@ -14,38 +14,48 @@
 library;
 
 import 'package:test/test.dart';
-import 'package:zuraffa_purchase/tdd/001-purchase-store/u12_subject.dart' as subject;
+import 'package:zuraffa_purchase/tdd/001-purchase-store/u12_subject.dart'
+    as subject;
 
 void main() {
   group('U12 (FR-012, PurchaseException.code)', () {
-    test('U12 — Store failures MUST surface as the typed `PurchaseException`', () async {
-      final exceptions = await subject.subject_u12();
-      expect(
-        exceptions.map((error) => error.code).toList(),
-        containsAll(
-          <String>['cancelled', 'product_unavailable', 'store_unavailable', 'pending'],
-        ),
-      );
-      expect(
-        exceptions.firstWhere((error) => error.code == 'cancelled').recoverable,
-        isTrue,
-      );
-      expect(
-        exceptions
-            .firstWhere((error) => error.code == 'product_unavailable')
-            .recoverable,
-        isFalse,
-      );
-      expect(
-        exceptions.firstWhere((error) => error.code == 'pending').recoverable,
-        isTrue,
-      );
-      expect(
-        exceptions.where((error) => error.code == 'product_unavailable'),
-        hasLength(2),
-        reason: 'a raised failure grants nothing and is never reported as a '
-            'purchase',
-      );
-    });
+    test(
+      'U12 — Store failures MUST surface as the typed `PurchaseException`',
+      () async {
+        final exceptions = await subject.subject_u12();
+        expect(
+          exceptions.map((error) => error.code).toList(),
+          containsAll(<String>[
+            'cancelled',
+            'product_unavailable',
+            'store_unavailable',
+            'pending',
+          ]),
+        );
+        expect(
+          exceptions
+              .firstWhere((error) => error.code == 'cancelled')
+              .recoverable,
+          isTrue,
+        );
+        expect(
+          exceptions
+              .firstWhere((error) => error.code == 'product_unavailable')
+              .recoverable,
+          isFalse,
+        );
+        expect(
+          exceptions.firstWhere((error) => error.code == 'pending').recoverable,
+          isTrue,
+        );
+        expect(
+          exceptions.where((error) => error.code == 'product_unavailable'),
+          hasLength(2),
+          reason:
+              'a raised failure grants nothing and is never reported as a '
+              'purchase',
+        );
+      },
+    );
   });
 }

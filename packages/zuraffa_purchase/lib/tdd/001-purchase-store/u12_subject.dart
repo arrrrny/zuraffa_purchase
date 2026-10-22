@@ -44,8 +44,9 @@ Future<List<PurchaseException>> subject_u12() async {
   final store = RecordingStoreApi();
   PurchaseException? raised;
   try {
-    await PurchaseService(port: StoreApiPurchasePort(store: store))
-        .purchase(const PurchaseIntent(productId: 'ghost.product'));
+    await PurchaseService(
+      port: StoreApiPurchasePort(store: store),
+    ).purchase(const PurchaseIntent(productId: 'ghost.product'));
   } on PurchaseException catch (error) {
     raised = error;
   }

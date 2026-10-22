@@ -55,24 +55,30 @@ void main() {
       expect(await pending.future, isEmpty);
     });
 
-    test('ignores a transaction that arrived before the wait started', () async {
-      final queue = StoreEventQueue(source: source.stream);
-      addTearDown(queue.dispose);
+    test(
+      'ignores a transaction that arrived before the wait started',
+      () async {
+        final queue = StoreEventQueue(source: source.stream);
+        addTearDown(queue.dispose);
 
-      source.add([_transaction('tx-stale')]);
-      await Future<void>.delayed(Duration.zero);
+        source.add([_transaction('tx-stale')]);
+        await Future<void>.delayed(Duration.zero);
 
-      final pending = queue.waitForTerminal(
-        productId: 'pro.monthly',
-        timeout: const Duration(milliseconds: 120),
-      );
-      source.add([_transaction('tx-fresh')]);
+        final pending = queue.waitForTerminal(
+          productId: 'pro.monthly',
+          timeout: const Duration(milliseconds: 120),
+        );
+        source.add([_transaction('tx-fresh')]);
 
-      final transactions = await pending.future;
-      expect(transactions, hasLength(1));
-      expect(transactions.single.transactionId, 'tx-fresh',
-          reason: 'a purchase must not resolve on a leftover transaction');
-    });
+        final transactions = await pending.future;
+        expect(transactions, hasLength(1));
+        expect(
+          transactions.single.transactionId,
+          'tx-fresh',
+          reason: 'a purchase must not resolve on a leftover transaction',
+        );
+      },
+    );
 
     test('times out with no transactions', () async {
       final queue = StoreEventQueue(source: source.stream);

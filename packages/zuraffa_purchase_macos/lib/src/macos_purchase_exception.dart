@@ -30,11 +30,7 @@ class MacosPurchaseException implements Exception {
 
   /// Builds the typed failure for a native [code].
   factory MacosPurchaseException.fromNative(String code, String message) =>
-      MacosPurchaseException(
-        code,
-        message,
-        recoverable: isRecoverable(code),
-      );
+      MacosPurchaseException(code, message, recoverable: isRecoverable(code));
 
   @override
   String toString() =>

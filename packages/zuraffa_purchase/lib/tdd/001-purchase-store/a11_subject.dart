@@ -26,8 +26,10 @@ library;
 import 'package:test/test.dart';
 import 'package:zuraffa_subscriptions/zuraffa_subscriptions.dart' as subs;
 import 'package:zuraffa_purchase/zuraffa_purchase.dart';
-import 'package:zuraffa_purchase/tdd/001-purchase-store/u1_subject.dart' as anchor0;
-import 'package:zuraffa_purchase/tdd/001-purchase-store/u2_subject.dart' as anchor1;
+import 'package:zuraffa_purchase/tdd/001-purchase-store/u1_subject.dart'
+    as anchor0;
+import 'package:zuraffa_purchase/tdd/001-purchase-store/u2_subject.dart'
+    as anchor1;
 
 /// Subject for behavior A11 — the acceptance scenario: the subscription
 /// store purchases through the purchase port, and the store purchase comes

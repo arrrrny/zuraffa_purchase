@@ -51,7 +51,8 @@ class RecordingStoreApi implements StoreApi {
 
   /// Emits [transactions] on the store's transaction stream — for tests that
   /// need a transaction to arrive outside a purchase call.
-  void emit(List<StoreTransaction> transactions) => _controller.add(transactions);
+  void emit(List<StoreTransaction> transactions) =>
+      _controller.add(transactions);
 
   /// Closes the transaction stream.
   Future<void> close() => _controller.close();

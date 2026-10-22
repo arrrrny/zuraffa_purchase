@@ -19,6 +19,7 @@
 //
 // zfa:tdd: contract:A17:hand — hand step completed before first red certification (issue #1411)
 library;
+
 import 'package:zuraffa_purchase/zuraffa_purchase.dart' as api;
 
 /// The declared contract, wired to the real implementation.

@@ -17,41 +17,53 @@
 library;
 
 import 'package:test/test.dart';
-import 'package:zuraffa_purchase/tdd/001-purchase-store/contract_a16_subject.dart' as subject;
+import 'package:zuraffa_purchase/tdd/001-purchase-store/contract_a16_subject.dart'
+    as subject;
 
 void main() {
   group('contract:A16 (PurchaseSubscriptionStore.finishPurchase)', () {
-    test('contract:A16 \u2014 PurchaseSubscriptionStore.finishPurchase(String) -> void (usecase contract)', () {
-      // Case 1 of 2 — exposure: the declared method
-      // `PurchaseSubscriptionStore.finishPurchase(dynamic String) -> void` must
-      // resolve on the implementation subject. This case proves EXPOSURE
-      // only — a tearoff of the declared function type is never null; the
-      // invocation and the declared outcome are Case 2 and Case 3 (issue
-      // #1751).
-      final impl = subject.finishPurchase;
-      expect(impl, isNotNull,
-          reason: 'PurchaseSubscriptionStore.finishPurchase must be exposed on the '
+    test(
+      'contract:A16 \u2014 PurchaseSubscriptionStore.finishPurchase(String) -> void (usecase contract)',
+      () {
+        // Case 1 of 2 — exposure: the declared method
+        // `PurchaseSubscriptionStore.finishPurchase(dynamic String) -> void` must
+        // resolve on the implementation subject. This case proves EXPOSURE
+        // only — a tearoff of the declared function type is never null; the
+        // invocation and the declared outcome are Case 2 and Case 3 (issue
+        // #1751).
+        final impl = subject.finishPurchase;
+        expect(
+          impl,
+          isNotNull,
+          reason:
+              'PurchaseSubscriptionStore.finishPurchase must be exposed on the '
               'implementation subject (exposure only — the declared '
-              'outcome is asserted by the return case)');
+              'outcome is asserted by the return case)',
+        );
 
-      // Case 2 of 2 — implementation: invoking the declared
-      // method does not throw UnimplementedError. A captured rejection
-      // (the implementation threw ArgumentError/TypeError/... for the
-      // representative argument) PASSES this case: the seam is
-      // implemented and validating (issue #1541) — the outcome split is
-      // recorded below, never an uncaught error.
-      final Object? outcome = _captured(() => impl('tx-1'));
-      expect(outcome, isNot(isA<UnimplementedError>()),
-          reason: 'PurchaseSubscriptionStore.finishPurchase is not implemented — the declared '
+        // Case 2 of 2 — implementation: invoking the declared
+        // method does not throw UnimplementedError. A captured rejection
+        // (the implementation threw ArgumentError/TypeError/... for the
+        // representative argument) PASSES this case: the seam is
+        // implemented and validating (issue #1541) — the outcome split is
+        // recorded below, never an uncaught error.
+        final Object? outcome = _captured(() => impl('tx-1'));
+        expect(
+          outcome,
+          isNot(isA<UnimplementedError>()),
+          reason:
+              'PurchaseSubscriptionStore.finishPurchase is not implemented — the declared '
               'contract is unsatisfied, so the cycle is BLOCKED and cannot '
-              'proceed to GREEN (issue #1007)');
-      // SCAFFOLD PLACEHOLDERS — the placeholder arguments below (complex-
-      // typed or dynamic-typed declared params, issue #1541) throw
-      // UnimplementedError with the exact instruction. Replace each
-      // placeholder with a representative value for its declared type so
-      // this contract test exercises the real invocation:
-      //   _arg0() -> a representative `dynamic` value
-    });
+              'proceed to GREEN (issue #1007)',
+        );
+        // SCAFFOLD PLACEHOLDERS — the placeholder arguments below (complex-
+        // typed or dynamic-typed declared params, issue #1541) throw
+        // UnimplementedError with the exact instruction. Replace each
+        // placeholder with a representative value for its declared type so
+        // this contract test exercises the real invocation:
+        //   _arg0() -> a representative `dynamic` value
+      },
+    );
   });
 }
 
@@ -72,4 +84,3 @@ Object? _captured(Object? Function() invoke) {
     return error;
   }
 }
-

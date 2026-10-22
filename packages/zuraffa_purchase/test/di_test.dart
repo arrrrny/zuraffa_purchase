@@ -27,8 +27,11 @@ void main() {
       registerPurchaseDependencies(getIt, store: first);
       registerPurchaseDependencies(getIt, store: second);
 
-      expect(identical(getIt<StoreApi>(), first), isTrue,
-          reason: 'a second registration does not replace the first store');
+      expect(
+        identical(getIt<StoreApi>(), first),
+        isTrue,
+        reason: 'a second registration does not replace the first store',
+      );
     });
 
     test('registers no store when none is handed in', () {
@@ -54,7 +57,11 @@ void main() {
       final getIt = GetIt.asNewInstance();
       final port = StoreApiPurchasePort(store: RecordingStoreApi());
 
-      registerPurchaseDependencies(getIt, store: RecordingStoreApi(), port: port);
+      registerPurchaseDependencies(
+        getIt,
+        store: RecordingStoreApi(),
+        port: port,
+      );
 
       expect(identical(getIt<PurchasePort>(), port), isTrue);
     });

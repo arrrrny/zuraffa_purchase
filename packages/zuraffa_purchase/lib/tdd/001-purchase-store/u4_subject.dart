@@ -31,7 +31,8 @@ StoreProduct _product(String id) => StoreProduct(
 );
 
 /// Subject for behavior U4 — a cancelled purchase and a deferred purchase.
-Future<({PurchaseException? failure, PurchaseOutcome? outcome})> subject_u4() async {
+Future<({PurchaseException? failure, PurchaseOutcome? outcome})>
+subject_u4() async {
   final cancelled = RecordingStoreApi(
     catalog: [_product('pro.monthly')],
     onPurchase: (request) async => StoreTransaction(
@@ -43,8 +44,9 @@ Future<({PurchaseException? failure, PurchaseOutcome? outcome})> subject_u4() as
   );
   PurchaseException? failure;
   try {
-    await PurchaseService(port: StoreApiPurchasePort(store: cancelled))
-        .purchase(const PurchaseIntent(productId: 'pro.monthly'));
+    await PurchaseService(
+      port: StoreApiPurchasePort(store: cancelled),
+    ).purchase(const PurchaseIntent(productId: 'pro.monthly'));
   } on PurchaseException catch (error) {
     failure = error;
   }
@@ -58,7 +60,8 @@ Future<({PurchaseException? failure, PurchaseOutcome? outcome})> subject_u4() as
       purchasedAt: 0,
     ),
   );
-  final outcome = await PurchaseService(port: StoreApiPurchasePort(store: deferred))
-      .purchase(const PurchaseIntent(productId: 'pro.monthly'));
+  final outcome = await PurchaseService(
+    port: StoreApiPurchasePort(store: deferred),
+  ).purchase(const PurchaseIntent(productId: 'pro.monthly'));
   return (failure: failure, outcome: outcome);
 }

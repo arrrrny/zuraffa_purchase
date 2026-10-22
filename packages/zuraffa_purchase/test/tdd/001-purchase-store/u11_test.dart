@@ -14,14 +14,21 @@
 library;
 
 import 'package:test/test.dart';
-import 'package:zuraffa_purchase/tdd/001-purchase-store/u11_subject.dart' as subject;
+import 'package:zuraffa_purchase/tdd/001-purchase-store/u11_subject.dart'
+    as subject;
 
 void main() {
   group('U11 (FR-011, PurchaseSubscriptionStore.finishPurchase)', () {
-    test('U11 — `PurchaseSubscriptionStore.finishPurchase(String transactionId)`', () async {
-      final completed = await subject.subject_u11('tx-1');
-      expect(completed, ['tx-1'],
-          reason: 'the store is asked to complete exactly that transaction id');
-    });
+    test(
+      'U11 — `PurchaseSubscriptionStore.finishPurchase(String transactionId)`',
+      () async {
+        final completed = await subject.subject_u11('tx-1');
+        expect(
+          completed,
+          ['tx-1'],
+          reason: 'the store is asked to complete exactly that transaction id',
+        );
+      },
+    );
   });
 }

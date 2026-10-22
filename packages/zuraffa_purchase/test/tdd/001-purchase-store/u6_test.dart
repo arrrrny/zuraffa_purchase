@@ -14,15 +14,23 @@
 library;
 
 import 'package:test/test.dart';
-import 'package:zuraffa_purchase/tdd/001-purchase-store/u6_subject.dart' as subject;
+import 'package:zuraffa_purchase/tdd/001-purchase-store/u6_subject.dart'
+    as subject;
 
 void main() {
   group('U6 (FR-006, PurchaseService.finish)', () {
-    test('U6 — `PurchaseService.finish(String transactionId)` MUST ask the store to', () async {
-      final completed = await subject.subject_u6('tx-1');
-      expect(completed, ['tx-1', 'tx-unknown'],
-          reason: 'the store is asked to complete exactly the id it is given, '
-              'and an unknown id completes without raising');
-    });
+    test(
+      'U6 — `PurchaseService.finish(String transactionId)` MUST ask the store to',
+      () async {
+        final completed = await subject.subject_u6('tx-1');
+        expect(
+          completed,
+          ['tx-1', 'tx-unknown'],
+          reason:
+              'the store is asked to complete exactly the id it is given, '
+              'and an unknown id completes without raising',
+        );
+      },
+    );
   });
 }

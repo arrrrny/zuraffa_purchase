@@ -6,7 +6,13 @@
 # The TDD subject harness. Its subjects import `package:test`, which is a
 # dev dependency — shipping them would make the package fail pub's
 # validation ("packages used in lib/ must be declared in dependencies").
+#
+# The lane tests go with them: every generated test imports its subject
+# under `package:zuraffa_purchase/tdd/`, so shipping the tests without
+# the subjects would leave the published package with a test suite that
+# cannot compile.
 lib/tdd/
+test/tdd/
 
 # The TDD specification, its generated lanes and the fleet tooling.
 .specify/

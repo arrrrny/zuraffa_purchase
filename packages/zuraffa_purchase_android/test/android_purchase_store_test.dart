@@ -57,8 +57,14 @@ void main() {
     });
 
     test('classifies the native failure codes', () {
-      expect(AndroidPurchaseException.isRecoverable('restore_transactions_failed'), isTrue);
-      expect(AndroidPurchaseException.isRecoverable('billing_unknown'), isFalse);
+      expect(
+        AndroidPurchaseException.isRecoverable('restore_transactions_failed'),
+        isTrue,
+      );
+      expect(
+        AndroidPurchaseException.isRecoverable('billing_unknown'),
+        isFalse,
+      );
 
       final error = AndroidPurchaseException.fromNative(
         'restore_transactions_failed',

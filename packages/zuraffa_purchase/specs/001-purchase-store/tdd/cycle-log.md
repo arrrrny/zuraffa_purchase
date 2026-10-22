@@ -3703,3 +3703,10 @@ issue #1411 born-green hand transition — the designed hand step was completed 
 - skin-receipt: 04-skin-receipt.json (verdict: green)
 - at: 2026-10-21T22:49:31.986572Z
 
+## Two-cycle run: 001-purchase-store
+
+- feature: 001-purchase-store
+- engine-receipt: 04-engine-receipt.json (verdict: green)
+- skin-receipt: 04-skin-receipt.json (verdict: green)
+- at: 2026-10-22T02:18:59.292941Z
+

@@ -18,70 +18,92 @@ library;
 
 import 'package:test/test.dart';
 import 'package:zuraffa_purchase/zuraffa_purchase.dart';
-import 'package:zuraffa_purchase/tdd/001-purchase-store/contract_a6_subject.dart' as subject;
+import 'package:zuraffa_purchase/tdd/001-purchase-store/contract_a6_subject.dart'
+    as subject;
 
 void main() {
   group('contract:A6 (PurchasePort.purchase)', () {
-    test('contract:A6 \u2014 PurchasePort.purchase(PurchaseIntent) -> PurchaseOutcome (usecase contract)', () {
-      // Case 1 of 3 — exposure: the declared method
-      // `PurchasePort.purchase(dynamic PurchaseIntent) -> PurchaseOutcome` must
-      // resolve on the implementation subject. This case proves EXPOSURE
-      // only — a tearoff of the declared function type is never null; the
-      // invocation and the declared outcome are Case 2 and Case 3 (issue
-      // #1751).
-      final impl = subject.purchase;
-      expect(impl, isNotNull,
-          reason: 'PurchasePort.purchase must be exposed on the '
+    test(
+      'contract:A6 \u2014 PurchasePort.purchase(PurchaseIntent) -> PurchaseOutcome (usecase contract)',
+      () {
+        // Case 1 of 3 — exposure: the declared method
+        // `PurchasePort.purchase(dynamic PurchaseIntent) -> PurchaseOutcome` must
+        // resolve on the implementation subject. This case proves EXPOSURE
+        // only — a tearoff of the declared function type is never null; the
+        // invocation and the declared outcome are Case 2 and Case 3 (issue
+        // #1751).
+        final impl = subject.purchase;
+        expect(
+          impl,
+          isNotNull,
+          reason:
+              'PurchasePort.purchase must be exposed on the '
               'implementation subject (exposure only — the declared '
-              'outcome is asserted by the return case)');
+              'outcome is asserted by the return case)',
+        );
 
-      // Case 2 of 3 — implementation: invoking the declared
-      // method does not throw UnimplementedError. A captured rejection
-      // (the implementation threw ArgumentError/TypeError/... for the
-      // representative argument) PASSES this case: the seam is
-      // implemented and validating (issue #1541) — the outcome split is
-      // recorded below, never an uncaught error.
-      final Object? outcome = _captured(() => impl(PurchaseIntent(productId: 'pro.monthly')));
-      expect(outcome, isNot(isA<UnimplementedError>()),
-          reason: 'PurchasePort.purchase is not implemented — the declared '
+        // Case 2 of 3 — implementation: invoking the declared
+        // method does not throw UnimplementedError. A captured rejection
+        // (the implementation threw ArgumentError/TypeError/... for the
+        // representative argument) PASSES this case: the seam is
+        // implemented and validating (issue #1541) — the outcome split is
+        // recorded below, never an uncaught error.
+        final Object? outcome = _captured(
+          () => impl(PurchaseIntent(productId: 'pro.monthly')),
+        );
+        expect(
+          outcome,
+          isNot(isA<UnimplementedError>()),
+          reason:
+              'PurchasePort.purchase is not implemented — the declared '
               'contract is unsatisfied, so the cycle is BLOCKED and cannot '
-              'proceed to GREEN (issue #1007)');
-      // Case 3 of 3 — return: when NO rejection was captured the
-      // invocation returned a value, which must satisfy the declared
-      // return type `PurchaseOutcome`. `_rejection` is the capture SIGNAL
-      // set by `_captured` — never a runtime-type guess over the outcome,
-      // which cannot tell a returned Error/Exception instance from a
-      // thrown raw value. A captured rejection (an ArgumentError, a
-      // TypeError, a domain Error/Exception, ... thrown by an
-      // argument-validating implementation) has no return value to
-      // type-check and the contract is SATISFIED-WITH-REJECTION (issue
-      // #1541).
-      //
-      // NOTE (issue #1751): the declared return `PurchaseOutcome` did not
-      // resolve to a renderable type — the lane's own vocabulary does not
-      // carry it and no entity file for it was resolved on disk — so this
-      // case carries the documented `Object?` degradation the seam
-      // applies (the FR-011 pattern). The case is enumerated on purpose:
-      // a return-type case that silently vanishes is the defect this note
-      // replaces.
-      if (_rejection == null) {
-        expect(outcome, isA<Object?>(),
-            reason: 'PurchasePort.purchase must return the declared type '
-                '`PurchaseOutcome`');
-      } else {
-        expect(_rejection, anyOf(isA<Error>(), isA<Exception>()),
-            reason: 'PurchasePort.purchase threw a raw value — neither an '
+              'proceed to GREEN (issue #1007)',
+        );
+        // Case 3 of 3 — return: when NO rejection was captured the
+        // invocation returned a value, which must satisfy the declared
+        // return type `PurchaseOutcome`. `_rejection` is the capture SIGNAL
+        // set by `_captured` — never a runtime-type guess over the outcome,
+        // which cannot tell a returned Error/Exception instance from a
+        // thrown raw value. A captured rejection (an ArgumentError, a
+        // TypeError, a domain Error/Exception, ... thrown by an
+        // argument-validating implementation) has no return value to
+        // type-check and the contract is SATISFIED-WITH-REJECTION (issue
+        // #1541).
+        //
+        // NOTE (issue #1751): the declared return `PurchaseOutcome` did not
+        // resolve to a renderable type — the lane's own vocabulary does not
+        // carry it and no entity file for it was resolved on disk — so this
+        // case carries the documented `Object?` degradation the seam
+        // applies (the FR-011 pattern). The case is enumerated on purpose:
+        // a return-type case that silently vanishes is the defect this note
+        // replaces.
+        if (_rejection == null) {
+          expect(
+            outcome,
+            isA<Object?>(),
+            reason:
+                'PurchasePort.purchase must return the declared type '
+                '`PurchaseOutcome`',
+          );
+        } else {
+          expect(
+            _rejection,
+            anyOf(isA<Error>(), isA<Exception>()),
+            reason:
+                'PurchasePort.purchase threw a raw value — neither an '
                 'Error nor an Exception. A raw throw is neither a return '
                 'nor a rejection: return the declared type or throw an '
-                'Error/Exception');
-      }
-      // SCAFFOLD PLACEHOLDERS — the placeholder arguments below (complex-
-      // typed or dynamic-typed declared params, issue #1541) throw
-      // UnimplementedError with the exact instruction. Replace each
-      // placeholder with a representative value for its declared type so
-      // this contract test exercises the real invocation:
-      //   _arg0() -> a representative `dynamic` value
-    });
+                'Error/Exception',
+          );
+        }
+        // SCAFFOLD PLACEHOLDERS — the placeholder arguments below (complex-
+        // typed or dynamic-typed declared params, issue #1541) throw
+        // UnimplementedError with the exact instruction. Replace each
+        // placeholder with a representative value for its declared type so
+        // this contract test exercises the real invocation:
+        //   _arg0() -> a representative `dynamic` value
+      },
+    );
   });
 }
 
@@ -115,4 +137,3 @@ Object? _captured(Object? Function() invoke) {
     return error;
   }
 }
-

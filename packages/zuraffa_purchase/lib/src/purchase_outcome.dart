@@ -39,13 +39,13 @@ class PurchaseOutcome {
   @override
   bool operator ==(Object other) =>
       other is PurchaseOutcome &&
-          other.transactionId == transactionId &&
-          other.productId == productId &&
-          other.status == status &&
-          other.purchasedAt == purchasedAt &&
-          other.expiresAt == expiresAt &&
-          other.pendingFinish == pendingFinish &&
-          other.receipt == receipt;
+      other.transactionId == transactionId &&
+      other.productId == productId &&
+      other.status == status &&
+      other.purchasedAt == purchasedAt &&
+      other.expiresAt == expiresAt &&
+      other.pendingFinish == pendingFinish &&
+      other.receipt == receipt;
 
   @override
   int get hashCode => Object.hash(

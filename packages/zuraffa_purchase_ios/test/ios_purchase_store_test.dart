@@ -57,7 +57,10 @@ void main() {
     });
 
     test('classifies the native failure codes', () {
-      expect(IosPurchaseException.isRecoverable('storekit_no_response'), isTrue);
+      expect(
+        IosPurchaseException.isRecoverable('storekit_no_response'),
+        isTrue,
+      );
       expect(IosPurchaseException.isRecoverable('storekit_unknown'), isFalse);
 
       final error = IosPurchaseException.fromNative(

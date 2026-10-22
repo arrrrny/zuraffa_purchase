@@ -57,7 +57,10 @@ void main() {
     });
 
     test('classifies the native failure codes', () {
-      expect(MacosPurchaseException.isRecoverable('storekit_no_response'), isTrue);
+      expect(
+        MacosPurchaseException.isRecoverable('storekit_no_response'),
+        isTrue,
+      );
       expect(MacosPurchaseException.isRecoverable('storekit_unknown'), isFalse);
 
       final error = MacosPurchaseException.fromNative(

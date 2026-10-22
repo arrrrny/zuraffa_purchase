@@ -40,12 +40,12 @@ class CatalogProduct {
   @override
   bool operator ==(Object other) =>
       other is CatalogProduct &&
-          other.id == id &&
-          other.title == title &&
-          other.description == description &&
-          other.priceMicros == priceMicros &&
-          other.currency == currency &&
-          other.period == period;
+      other.id == id &&
+      other.title == title &&
+      other.description == description &&
+      other.priceMicros == priceMicros &&
+      other.currency == currency &&
+      other.period == period;
 
   @override
   int get hashCode =>

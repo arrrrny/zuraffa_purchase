@@ -12,11 +12,7 @@ class PurchaseException implements Exception {
   /// Whether the caller can sensibly retry.
   final bool recoverable;
 
-  const PurchaseException(
-    this.code,
-    this.message, {
-    required this.recoverable,
-  });
+  const PurchaseException(this.code, this.message, {required this.recoverable});
 
   /// The user dismissed the purchase sheet.
   factory PurchaseException.cancelled() => const PurchaseException(

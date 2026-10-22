@@ -15,20 +15,30 @@ library;
 
 import 'package:test/test.dart';
 import 'package:zuraffa_purchase/zuraffa_purchase.dart';
-import 'package:zuraffa_purchase/tdd/001-purchase-store/u4_subject.dart' as subject;
+import 'package:zuraffa_purchase/tdd/001-purchase-store/u4_subject.dart'
+    as subject;
 
 void main() {
   group('U4 (FR-004, PurchaseService.purchase)', () {
-    test('U4 — A cancelled store transaction MUST surface as a typed recoverable', () async {
-      final result = await subject.subject_u4();
-      expect(result.failure, isNotNull,
-          reason: 'a cancelled purchase is a typed failure');
-      expect(result.failure!.code, 'cancelled');
-      expect(result.failure!.recoverable, isTrue);
-      expect(result.outcome, isNotNull,
-          reason: 'a deferred purchase is never a failure');
-      expect(result.outcome!.status, PurchaseStatus.pending);
-      expect(result.outcome!.status, isNot(PurchaseStatus.purchased));
-    });
+    test(
+      'U4 — A cancelled store transaction MUST surface as a typed recoverable',
+      () async {
+        final result = await subject.subject_u4();
+        expect(
+          result.failure,
+          isNotNull,
+          reason: 'a cancelled purchase is a typed failure',
+        );
+        expect(result.failure!.code, 'cancelled');
+        expect(result.failure!.recoverable, isTrue);
+        expect(
+          result.outcome,
+          isNotNull,
+          reason: 'a deferred purchase is never a failure',
+        );
+        expect(result.outcome!.status, PurchaseStatus.pending);
+        expect(result.outcome!.status, isNot(PurchaseStatus.purchased));
+      },
+    );
   });
 }

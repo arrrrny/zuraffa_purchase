@@ -24,7 +24,8 @@ import 'package:zuraffa_subscriptions/zuraffa_subscriptions.dart' as subs;
 import 'package:zuraffa_purchase/zuraffa_purchase.dart';
 
 /// Subject for behavior U9 — a completed and a deferred subscription purchase.
-Future<({subs.StorePurchase purchased, subs.StorePurchase pending})> subject_u9() async {
+Future<({subs.StorePurchase purchased, subs.StorePurchase pending})>
+subject_u9() async {
   final catalog = const [
     StoreProduct(
       id: 'pro.monthly',

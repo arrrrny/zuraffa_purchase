@@ -85,8 +85,7 @@ class InAppPurchaseStoreApi implements StoreApi {
   }
 
   @override
-  Future<void> complete(String transactionId) =>
-      client.complete(transactionId);
+  Future<void> complete(String transactionId) => client.complete(transactionId);
 
   @override
   Stream<List<StoreTransaction>> get transactions async* {

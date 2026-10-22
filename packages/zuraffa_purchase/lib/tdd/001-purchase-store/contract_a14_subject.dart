@@ -19,8 +19,23 @@
 //
 // zfa:tdd: contract:A14:hand — hand step completed before first red certification (issue #1411)
 library;
+
 import 'package:zuraffa_purchase/zuraffa_purchase.dart' as api;
 import 'package:zuraffa_subscriptions/zuraffa_subscriptions.dart' as subs;
 
 /// The declared contract, wired to the real implementation.
-Object? purchase(subs.PurchaseRequest arg0) => api.PurchaseSubscriptionStore(port: api.StoreApiPurchasePort(store: api.RecordingStoreApi(catalog: [api.StoreProduct(id: 'pro.monthly', title: 'Pro monthly', description: 'monthly plan', priceMicros: 4990000, currency: 'USD')]))).purchase(arg0);
+Object? purchase(subs.PurchaseRequest arg0) => api.PurchaseSubscriptionStore(
+  port: api.StoreApiPurchasePort(
+    store: api.RecordingStoreApi(
+      catalog: [
+        api.StoreProduct(
+          id: 'pro.monthly',
+          title: 'Pro monthly',
+          description: 'monthly plan',
+          priceMicros: 4990000,
+          currency: 'USD',
+        ),
+      ],
+    ),
+  ),
+).purchase(arg0);

@@ -58,9 +58,8 @@ class StoreEventQueue {
   Stream<StoreEvent> get events => _controller.stream;
 
   /// Every transaction the queue has seen, oldest first.
-  List<StoreTransaction> get recent => List<StoreTransaction>.unmodifiable(
-    _recent,
-  );
+  List<StoreTransaction> get recent =>
+      List<StoreTransaction>.unmodifiable(_recent);
 
   void _onBatch(List<StoreTransaction> batch) {
     for (final transaction in batch) {

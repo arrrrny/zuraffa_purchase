@@ -33,7 +33,8 @@ class InAppPurchaseStoreClient implements StoreClient {
 
   /// The transactions this client has seen, by transaction id, so a
   /// transaction can be acknowledged later.
-  final Map<String, PurchaseDetails> _byTransactionId = <String, PurchaseDetails>{};
+  final Map<String, PurchaseDetails> _byTransactionId =
+      <String, PurchaseDetails>{};
 
   InAppPurchaseStoreClient({
     InAppPurchase? purchases,
@@ -43,7 +44,8 @@ class InAppPurchaseStoreClient implements StoreClient {
        now = now ?? _epochMillis;
 
   @override
-  Stream<List<StoreTransaction>> get transactionStream => purchases.purchaseStream
+  Stream<List<StoreTransaction>> get transactionStream => purchases
+      .purchaseStream
       .map((batch) => [for (final details in batch) _map(details)]);
 
   @override
@@ -128,7 +130,8 @@ class InAppPurchaseStoreClient implements StoreClient {
     );
   }
 
-  StoreTransaction _map(PurchaseDetails details) {    final transactionId = details.purchaseID ?? _derivedId(details);
+  StoreTransaction _map(PurchaseDetails details) {
+    final transactionId = details.purchaseID ?? _derivedId(details);
     _byTransactionId[transactionId] = details;
     return StoreTransaction(
       transactionId: transactionId,
@@ -141,14 +144,14 @@ class InAppPurchaseStoreClient implements StoreClient {
     );
   }
 
-  StoreTransactionStatus _status(PurchaseDetails details) => switch (details
-      .status) {
-    PurchaseStatus.purchased => StoreTransactionStatus.purchased,
-    PurchaseStatus.restored => StoreTransactionStatus.restored,
-    PurchaseStatus.pending => StoreTransactionStatus.pending,
-    PurchaseStatus.canceled => StoreTransactionStatus.cancelled,
-    PurchaseStatus.error => StoreTransactionStatus.failed,
-  };
+  StoreTransactionStatus _status(PurchaseDetails details) =>
+      switch (details.status) {
+        PurchaseStatus.purchased => StoreTransactionStatus.purchased,
+        PurchaseStatus.restored => StoreTransactionStatus.restored,
+        PurchaseStatus.pending => StoreTransactionStatus.pending,
+        PurchaseStatus.canceled => StoreTransactionStatus.cancelled,
+        PurchaseStatus.error => StoreTransactionStatus.failed,
+      };
 
   int _timestamp(PurchaseDetails details) {
     final raw = details.transactionDate;

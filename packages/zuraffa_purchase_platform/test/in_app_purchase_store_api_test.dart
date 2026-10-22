@@ -118,22 +118,24 @@ void main() {
       expect(client.purchaseRequests.single.productId, 'pro.monthly');
     });
 
-    test('fails with a typed timeout when the purchase never settles',
-        () async {
-      final store = InAppPurchaseStoreApi(
-        client: client,
-        purchaseTimeout: const Duration(milliseconds: 80),
-      );
+    test(
+      'fails with a typed timeout when the purchase never settles',
+      () async {
+        final store = InAppPurchaseStoreApi(
+          client: client,
+          purchaseTimeout: const Duration(milliseconds: 80),
+        );
 
-      await expectLater(
-        store.purchase(const StorePurchaseRequest(productId: 'pro.monthly')),
-        throwsA(
-          isA<PurchaseException>()
-              .having((error) => error.code, 'code', 'store_unavailable')
-              .having((error) => error.recoverable, 'recoverable', isTrue),
-        ),
-      );
-    });
+        await expectLater(
+          store.purchase(const StorePurchaseRequest(productId: 'pro.monthly')),
+          throwsA(
+            isA<PurchaseException>()
+                .having((error) => error.code, 'code', 'store_unavailable')
+                .having((error) => error.recoverable, 'recoverable', isTrue),
+          ),
+        );
+      },
+    );
 
     test('propagates a store failure that happens while starting', () async {
       client.startPurchaseError = StateError('the store is unreachable');
@@ -157,7 +159,9 @@ void main() {
 
       final pending = store.restore();
       client.emit([_transaction('tx-1')]);
-      client.emit([_transaction('tx-2', status: StoreTransactionStatus.restored)]);
+      client.emit([
+        _transaction('tx-2', status: StoreTransactionStatus.restored),
+      ]);
 
       final transactions = await pending;
       expect(

@@ -15,24 +15,31 @@ library;
 
 import 'package:test/test.dart';
 import 'package:zuraffa_purchase/zuraffa_purchase.dart';
-import 'package:zuraffa_purchase/tdd/001-purchase-store/u1_subject.dart' as subject;
+import 'package:zuraffa_purchase/tdd/001-purchase-store/u1_subject.dart'
+    as subject;
 
 void main() {
   group('U1 (FR-001, PurchaseService.products)', () {
-    test('U1 — `PurchaseService.products(List<String> productIds)` MUST return the', () async {
-      final result = (() {
-        try {
-          return subject.subject_u1(const [
-            'boost.one',
-            'ghost.product',
-            'pro.monthly',
-          ]);
-        } on UnimplementedError catch (error) {
-          return error;
-        }
-      })();
-      expect(result, isNot(isA<UnimplementedError>()));
-      await expectLater(result, completion(everyElement(isA<CatalogProduct>())));
-    });
+    test(
+      'U1 — `PurchaseService.products(List<String> productIds)` MUST return the',
+      () async {
+        final result = (() {
+          try {
+            return subject.subject_u1(const [
+              'boost.one',
+              'ghost.product',
+              'pro.monthly',
+            ]);
+          } on UnimplementedError catch (error) {
+            return error;
+          }
+        })();
+        expect(result, isNot(isA<UnimplementedError>()));
+        await expectLater(
+          result,
+          completion(everyElement(isA<CatalogProduct>())),
+        );
+      },
+    );
   });
 }
