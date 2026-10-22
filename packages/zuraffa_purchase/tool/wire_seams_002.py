@@ -41,6 +41,12 @@ HAND_ATTESTATION = (
     "certification (issue #1411)\n"
 )
 
+# The attestation marker as a LINE pattern. The marker records THAT the hand
+# step completed, so exactly one copy belongs in the file: a writer that
+# appends without dropping the previous copy duplicates it on every run
+# (arrrrny/zuraffa#1984).
+ATTESTATION_LINE = re.compile(r"^// zfa:tdd: [^\n]*:hand[^\n]*\n", re.M)
+
 # --- unit lane ---------------------------------------------------------------
 
 UNIT_SUBJECTS = {
@@ -401,6 +407,12 @@ def write_contract_subject(bid):
     text = path.read_text()
     head, _, _tail = text.partition("library;\n")
     attestation = HAND_ATTESTATION.format(bid=bid)
+    # Idempotent (arrrrny/zuraffa#1984): the marker records THAT the hand
+    # step completed, so the subject carries exactly one copy. Drop what a
+    # previous run inserted before re-emitting it — otherwise every re-run
+    # of the hand step appends another copy and the emitted file looks
+    # corrupt.
+    head = ATTESTATION_LINE.sub("", head)
     path.write_text(
         head
         + attestation
