@@ -39,7 +39,6 @@ class CatalogProduct {
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
       other is CatalogProduct &&
           other.id == id &&
           other.title == title &&

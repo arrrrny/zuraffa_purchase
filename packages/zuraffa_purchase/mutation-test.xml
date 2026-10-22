@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  mutation-test.xml — scopes mutation_test to the production surface pinned
+  by specs/001-purchase-store (the whole of lib/src: the service, the port
+  adapter, the subscription-store adapter, the store API + its recording
+  double, the entities, the exception and the status enum).
+
+  The lib/tdd subjects are the test harness of this feature (their expects
+  ARE the assertions), so mutating them is noise; the production files are
+  the honest mutation target.
+
+  Run:    dart run mutation_test mutation-test.xml -f md -o mutation-test-report
+-->
+<mutations version="1.0">
+  <files>
+    <file>lib/src/catalog_product.dart</file>
+    <file>lib/src/di.dart</file>
+    <file>lib/src/purchase_exception.dart</file>
+    <file>lib/src/purchase_intent.dart</file>
+    <file>lib/src/purchase_outcome.dart</file>
+    <file>lib/src/purchase_port.dart</file>
+    <file>lib/src/purchase_service.dart</file>
+    <file>lib/src/purchase_status.dart</file>
+    <file>lib/src/purchase_subscription_store.dart</file>
+    <file>lib/src/recording_store_api.dart</file>
+    <file>lib/src/store_api.dart</file>
+    <file>lib/src/store_api_purchase_port.dart</file>
+  </files>
+  <commands>
+    <command group="test" expected-return="0">dart test --concurrency=2</command>
+  </commands>
+</mutations>

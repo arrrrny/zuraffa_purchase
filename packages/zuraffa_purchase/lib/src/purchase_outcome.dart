@@ -38,7 +38,6 @@ class PurchaseOutcome {
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
       other is PurchaseOutcome &&
           other.transactionId == transactionId &&
           other.productId == productId &&

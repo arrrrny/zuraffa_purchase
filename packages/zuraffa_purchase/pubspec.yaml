@@ -21,6 +21,11 @@ dependencies:
 dev_dependencies:
   lints: ^4.0.0
   test: ^1.25.0
+  # The locator the DI registration is written against.
+  get_it: ^9.3.0
+  # The mutation audit the `zfa tdd verify` gate runs over the production
+  # surface (scoped by mutation-test.xml).
+  mutation_test: ^1.8.1
 
   build_runner: ^2.4.0
   json_serializable: ^6.7.0

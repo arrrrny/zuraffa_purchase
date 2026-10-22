@@ -22,9 +22,9 @@ This profile is read by the `tdd` spec-kit extension.
 
 ```yaml
 runner: dart
-single: 'dart test --concurrency=2 {file} --plain-name "{name}"'
-file: 'dart test --concurrency=2 {file}'
-suite: 'dart test --concurrency=2'
-coverage: 'dart test --concurrency=2 --coverage'
+single: 'dart test --concurrency=12 {file} --plain-name "{name}"'
+file: 'dart test --concurrency=12 {file}'
+suite: 'dart test --concurrency=12'
+coverage: 'dart test --concurrency=12 --coverage'
 analyze-gate: errors-only  # set 'warnings-blocking' to keep the legacy warnings-blocking gate
 ```
