@@ -1,0 +1,319 @@
+# TDD Verification — feature `002-subscription-error-vocabulary`
+
+Generated fresh by `zfa tdd verify --feature 002-subscription-error-vocabulary`.
+
+## Gate
+
+- gate: `fail_survived`
+
+## Mutation buckets (FR-014)
+
+- killed: 77
+- survived: 79
+- timed_out: 0
+
+## Behavior scope (FR-018)
+
+- `U1` — traces: `FR-001, PurchaseSubscriptionStore.fetchProducts`
+- `U2` — traces: `FR-002, PurchaseSubscriptionStore.purchase`
+- `U3` — traces: `FR-003, PurchaseSubscriptionStore.restore`
+- `U4` — traces: `FR-004, PurchaseSubscriptionStore.finishPurchase`
+- `U5` — traces: `FR-005, PurchaseSubscriptionStore.purchase`
+- `U6` — traces: `FR-006, PurchaseSubscriptionStore.purchase`
+- `U7` — traces: `FR-007, PurchaseSubscriptionStore.purchase`
+- `contract:A1` — traces: `PurchaseSubscriptionStore.fetchProducts`
+- `contract:A2` — traces: `PurchaseSubscriptionStore.purchase`
+- `contract:A3` — traces: `PurchaseSubscriptionStore.restore`
+- `contract:A4` — traces: `PurchaseSubscriptionStore.finishPurchase`
+- `A1` — traces: `AC-1`
+- `A2` — traces: `AC-2`
+- `A3` — traces: `AC-3`
+- `A4` — traces: `AC-4`
+- `A5` — traces: `AC-5`
+- `A6` — traces: `AC-6`
+- `A7` — traces: `AC-7`
+- `A8` — traces: `AC-8`
+- `A9` — traces: `AC-9`
+- `A10` — traces: `AC-10`
+- `A11` — traces: `AC-11`
+
+## Behavior kinds (issue #1376)
+
+- presence: 0
+- absence: 0
+- route-outcome: 0
+- enabled-state: 0
+- sequence: 0
+
+- `U1` — not traced: no scenario-assertions header in test/tdd/002-subscription-error-vocabulary/u1_test.dart
+- `U2` — not traced: no scenario-assertions header in test/tdd/002-subscription-error-vocabulary/u2_test.dart
+- `U3` — not traced: no scenario-assertions header in test/tdd/002-subscription-error-vocabulary/u3_test.dart
+- `U4` — not traced: no scenario-assertions header in test/tdd/002-subscription-error-vocabulary/u4_test.dart
+- `U5` — not traced: no scenario-assertions header in test/tdd/002-subscription-error-vocabulary/u5_test.dart
+- `U6` — not traced: no scenario-assertions header in test/tdd/002-subscription-error-vocabulary/u6_test.dart
+- `U7` — not traced: no scenario-assertions header in test/tdd/002-subscription-error-vocabulary/u7_test.dart
+- `contract:A1` — not traced: no scenario-assertions header in test/tdd/002-subscription-error-vocabulary/contract_a1_test.dart
+- `contract:A2` — not traced: no scenario-assertions header in test/tdd/002-subscription-error-vocabulary/contract_a2_test.dart
+- `contract:A3` — not traced: no scenario-assertions header in test/tdd/002-subscription-error-vocabulary/contract_a3_test.dart
+- `contract:A4` — not traced: no scenario-assertions header in test/tdd/002-subscription-error-vocabulary/contract_a4_test.dart
+- `A1` — not traced: no scenario-assertions header in test/tdd/002-subscription-error-vocabulary/a1_test.dart
+- `A2` — not traced: no scenario-assertions header in test/tdd/002-subscription-error-vocabulary/a2_test.dart
+- `A3` — not traced: no scenario-assertions header in test/tdd/002-subscription-error-vocabulary/a3_test.dart
+- `A4` — not traced: no scenario-assertions header in test/tdd/002-subscription-error-vocabulary/a4_test.dart
+- `A5` — not traced: no scenario-assertions header in test/tdd/002-subscription-error-vocabulary/a5_test.dart
+- `A6` — not traced: no scenario-assertions header in test/tdd/002-subscription-error-vocabulary/a6_test.dart
+- `A7` — not traced: no scenario-assertions header in test/tdd/002-subscription-error-vocabulary/a7_test.dart
+- `A8` — not traced: no scenario-assertions header in test/tdd/002-subscription-error-vocabulary/a8_test.dart
+- `A9` — not traced: no scenario-assertions header in test/tdd/002-subscription-error-vocabulary/a9_test.dart
+- `A10` — not traced: no scenario-assertions header in test/tdd/002-subscription-error-vocabulary/a10_test.dart
+- `A11` — not traced: no scenario-assertions header in test/tdd/002-subscription-error-vocabulary/a11_test.dart
+
+## Restoration (FR-021)
+
+- restoration_verified: true
+- restoration_scope_count: 22
+- restoration_scope (subjects only, never tests):
+  - `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/a10_subject.dart`
+  - `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/a11_subject.dart`
+  - `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/a1_subject.dart`
+  - `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/a2_subject.dart`
+  - `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/a3_subject.dart`
+  - `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/a4_subject.dart`
+  - `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/a5_subject.dart`
+  - `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/a6_subject.dart`
+  - `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/a7_subject.dart`
+  - `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/a8_subject.dart`
+  - `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/a9_subject.dart`
+  - `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/contract_a1_subject.dart`
+  - `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/contract_a2_subject.dart`
+  - `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/contract_a3_subject.dart`
+  - `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/contract_a4_subject.dart`
+  - `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/u1_subject.dart`
+  - `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/u2_subject.dart`
+  - `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/u3_subject.dart`
+  - `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/u4_subject.dart`
+  - `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/u5_subject.dart`
+  - `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/u6_subject.dart`
+  - `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/u7_subject.dart`
+
+## Repro diagnostics (FR-020, non-sensitive)
+
+- runner_command: `dart run mutation_test`
+- exit_code: -15
+- elapsed_seconds: 1647
+- report_path: `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md`
+- preflight_scope_ran (bug #924, per-behavior):
+  - `test/tdd/002-subscription-error-vocabulary/a10_test.dart`
+  - `test/tdd/002-subscription-error-vocabulary/a11_test.dart`
+  - `test/tdd/002-subscription-error-vocabulary/a1_test.dart`
+  - `test/tdd/002-subscription-error-vocabulary/a2_test.dart`
+  - `test/tdd/002-subscription-error-vocabulary/a3_test.dart`
+  - `test/tdd/002-subscription-error-vocabulary/a4_test.dart`
+  - `test/tdd/002-subscription-error-vocabulary/a5_test.dart`
+  - `test/tdd/002-subscription-error-vocabulary/a6_test.dart`
+  - `test/tdd/002-subscription-error-vocabulary/a7_test.dart`
+  - `test/tdd/002-subscription-error-vocabulary/a8_test.dart`
+  - `test/tdd/002-subscription-error-vocabulary/a9_test.dart`
+  - `test/tdd/002-subscription-error-vocabulary/contract_a1_test.dart`
+  - `test/tdd/002-subscription-error-vocabulary/contract_a2_test.dart`
+  - `test/tdd/002-subscription-error-vocabulary/contract_a3_test.dart`
+  - `test/tdd/002-subscription-error-vocabulary/contract_a4_test.dart`
+  - `test/tdd/002-subscription-error-vocabulary/u1_test.dart`
+  - `test/tdd/002-subscription-error-vocabulary/u2_test.dart`
+  - `test/tdd/002-subscription-error-vocabulary/u3_test.dart`
+  - `test/tdd/002-subscription-error-vocabulary/u4_test.dart`
+  - `test/tdd/002-subscription-error-vocabulary/u5_test.dart`
+  - `test/tdd/002-subscription-error-vocabulary/u6_test.dart`
+  - `test/tdd/002-subscription-error-vocabulary/u7_test.dart`
+
+## Mutation run
+
+- mutation_was_run: true
+- mutation_score: 0.4936
+
+## Survived mutants (bug #837)
+
+- `lib/tdd/001-purchase-store/a11_subject.dart:39`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/a11_subject.dart:50`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/a11_subject.dart:70`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/a11_subject.dart:72`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/a11_subject.dart:73`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/a11_subject.dart:73`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/a11_subject.dart:74`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/a11_subject.dart:75`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/a11_subject.dart:75`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/a11_subject.dart:78`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/a11_subject.dart:80`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/a11_subject.dart:80`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a10_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a11_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a11_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a12_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a12_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a13_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a13_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a14_subject.dart:26`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a15_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a15_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a16_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a16_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a18_subject.dart:26`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a19_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a19_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a1_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a1_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a20_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a20_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a21_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a21_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a22_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a22_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a23_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a23_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a24_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a24_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a25_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a25_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a26_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a26_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a27_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a27_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a28_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a28_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a2_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a3_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a3_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a4_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a4_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a5_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a5_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a6_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a7_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a7_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a8_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a8_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a9_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/contract_a9_subject.dart:25`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/u1_subject.dart:40`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/u1_subject.dart:42`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/u1_subject.dart:42`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/u1_subject.dart:43`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/u3_subject.dart:29`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/u4_subject.dart:29`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/u4_subject.dart:38`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/u4_subject.dart:55`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/u7_subject.dart:31`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/u7_subject.dart:37`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/u7_subject.dart:43`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/u7_subject.dart:49`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/u7_subject.dart:55`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/u8_subject.dart:41`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/u9_subject.dart:33`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/u9_subject.dart:52`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/u9_subject.dart:55`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+- `lib/tdd/001-purchase-store/u9_subject.dart:65`
+  --> fix: add or strengthen a scope test that fails on this mutant (report: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/.dart_tool/zfa/tdd-verify-report/mutation-test-report.md)
+
+## Evidence binding (bug #837)
+
+- spec_hash: 33aba87b5b33f8e92092c05c34c27480dd6ca77907c82f4f29277111756fb8d4
+- subject_hash: `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/a10_subject.dart` e69d4cdd45271080d3a9303fb544d41317eacd481c5a937ad561aae4868f13fd
+- subject_hash: `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/a11_subject.dart` 38af3d69c08c1288c49ec62ee8692395e03d439f38923d094386fc5f01e321a1
+- subject_hash: `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/a1_subject.dart` 981cae57a9f79130eee31e16570eec5ac2143df0463e8b0493031996dcf46bba
+- subject_hash: `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/a2_subject.dart` f76bbee1cbfbf40cc81ac558eb43027e043c721b80484a6aece036b0561db92e
+- subject_hash: `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/a3_subject.dart` 2402d2793d81fdf16bc5aa596808d26e762634c9f06bcb269361a8afcdf8080b
+- subject_hash: `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/a4_subject.dart` 540252217664057c8e912b4876bed901a03f30062e1f85f59bd86c0d9077c4fb
+- subject_hash: `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/a5_subject.dart` 02c6d50af1d8101cceb938f910e45e3f540dd66b384dc02b984487cda2a98fcd
+- subject_hash: `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/a6_subject.dart` 8210d8e89503b052377c1051e0e591da611733b827b8284336cbb2934d2d8b2c
+- subject_hash: `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/a7_subject.dart` acd1b9f8a3a3bdabeb950f16f67848200e2237d6ffe99431b18a815a4030347f
+- subject_hash: `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/a8_subject.dart` 2aa358da88ef4eb86f44397389a5d21f89471650e75299b0288fed7c0ce45188
+- subject_hash: `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/a9_subject.dart` 725ab8052a35305fc571561e060a86711104d1c99c93176c07901f01995868fb
+- subject_hash: `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/contract_a1_subject.dart` e2cc8fc7af9677ccd20e5425d7c47b056aef7762ac4350fa1d7b17f404d56168
+- subject_hash: `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/contract_a2_subject.dart` accbf51aff908843932ff6320c5b869534cce4cd2dd2c7bb47f85b448bd23973
+- subject_hash: `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/contract_a3_subject.dart` 6244b2c017ceeaaddf3ea5f25efb1b93ddfc71f2aedf21b5486782894c573416
+- subject_hash: `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/contract_a4_subject.dart` a44edf16b732314788b399d440a016e765d13b4e365d8c0d36a91e2e7f975c7c
+- subject_hash: `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/u1_subject.dart` f5fa1bea2e3e3b5ebdde070934176a52cee401f1c7221e45f368975692884809
+- subject_hash: `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/u2_subject.dart` 346924dc23ec3d32a292fda2b323c304b93015fe65a1086b1b60a0600e9fb4c4
+- subject_hash: `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/u3_subject.dart` d3cd15447fb3464beee392368509ea26ef56c41d3d4c893c57e1c07060645ae2
+- subject_hash: `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/u4_subject.dart` 7d24dd4ddf9788786b6f6f5892c1ecffb8c3da9441f246183f98b713a79a531b
+- subject_hash: `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/u5_subject.dart` 0d7754b98d266c02002fafe8de293d63039788c7fc79c2d2d59117b827899c82
+- subject_hash: `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/u6_subject.dart` 01c78a3f040d4910a027cd854c8a852e97272ec858084eef1bc1e90360693462
+- subject_hash: `/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/u7_subject.dart` 1ea3aef0f3355b11ef944bff48b00de3be56dc900a10d043296bcc60e482d413
