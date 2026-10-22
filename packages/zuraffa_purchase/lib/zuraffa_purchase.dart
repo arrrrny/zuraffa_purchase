@@ -34,5 +34,6 @@ export 'src/purchase_service.dart';
 export 'src/purchase_status.dart';
 export 'src/purchase_subscription_store.dart';
 export 'src/recording_store_api.dart';
+export 'src/scripted_purchase_port.dart';
 export 'src/store_api.dart';
 export 'src/store_api_purchase_port.dart';

@@ -1,0 +1,248 @@
+{
+  "schema": 1,
+  "feature": "002-subscription-error-vocabulary",
+  "entries": [
+    {
+      "feature": "002-subscription-error-vocabulary",
+      "cycle": "engine",
+      "phase": "drive",
+      "started_at": "2026-10-22T04:04:58.524457Z",
+      "finished_at": "2026-10-22T04:04:58.595047Z",
+      "gate_state": "green",
+      "receipts": [
+        "tdd/04-engine-receipt.json"
+      ],
+      "violations": [],
+      "refs": {
+        "engine_receipt": "tdd/04-engine-receipt.json",
+        "skin_receipt": null,
+        "contract_schema": null
+      },
+      "result": "complete",
+      "behaviors": [
+        "A1",
+        "A2",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "A10",
+        "A11",
+        "U1",
+        "U2",
+        "U3",
+        "U4",
+        "U5",
+        "U6",
+        "U7",
+        "contract:A1",
+        "contract:A2",
+        "contract:A3",
+        "contract:A4"
+      ],
+      "counts": {
+        "total": 22,
+        "pending": 0,
+        "red": 0,
+        "green": 0,
+        "done": 22
+      },
+      "stopped_at": null
+    },
+    {
+      "feature": "002-subscription-error-vocabulary",
+      "cycle": "skin",
+      "phase": "drive",
+      "started_at": "2026-10-22T04:04:58.597954Z",
+      "finished_at": "2026-10-22T04:04:58.630572Z",
+      "gate_state": "green",
+      "receipts": [
+        "tdd/04-skin-receipt.json"
+      ],
+      "violations": [],
+      "refs": {
+        "engine_receipt": "tdd/04-engine-receipt.json",
+        "skin_receipt": "tdd/04-skin-receipt.json",
+        "contract_schema": null
+      },
+      "result": "complete",
+      "behaviors": [],
+      "counts": {
+        "total": 0,
+        "pending": 0,
+        "red": 0,
+        "green": 0,
+        "done": 0
+      },
+      "stopped_at": null
+    },
+    {
+      "feature": "002-subscription-error-vocabulary",
+      "cycle": "meta",
+      "phase": "aggregate",
+      "started_at": "2026-10-22T04:04:58.292952Z",
+      "finished_at": "2026-10-22T04:04:58.633320Z",
+      "gate_state": "green",
+      "receipts": [
+        "tdd/04-engine-receipt.json",
+        "tdd/04-skin-receipt.json"
+      ],
+      "violations": [],
+      "refs": {
+        "engine_receipt": "tdd/04-engine-receipt.json",
+        "skin_receipt": "tdd/04-skin-receipt.json",
+        "contract_schema": null
+      },
+      "result": "complete",
+      "behaviors": [
+        "A1",
+        "A2",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "A10",
+        "A11",
+        "U1",
+        "U2",
+        "U3",
+        "U4",
+        "U5",
+        "U6",
+        "U7",
+        "contract:A1",
+        "contract:A2",
+        "contract:A3",
+        "contract:A4"
+      ],
+      "stopped_at": null
+    },
+    {
+      "feature": "002-subscription-error-vocabulary",
+      "cycle": "engine",
+      "phase": "drive",
+      "started_at": "2026-10-22T04:18:24.244654Z",
+      "finished_at": "2026-10-22T04:18:24.401282Z",
+      "gate_state": "green",
+      "receipts": [
+        "tdd/04-engine-receipt.json"
+      ],
+      "violations": [],
+      "refs": {
+        "engine_receipt": "tdd/04-engine-receipt.json",
+        "skin_receipt": "tdd/04-skin-receipt.json",
+        "contract_schema": null
+      },
+      "result": "complete",
+      "behaviors": [
+        "A1",
+        "A2",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "A10",
+        "A11",
+        "U1",
+        "U2",
+        "U3",
+        "U4",
+        "U5",
+        "U6",
+        "U7",
+        "contract:A1",
+        "contract:A2",
+        "contract:A3",
+        "contract:A4"
+      ],
+      "counts": {
+        "total": 22,
+        "pending": 0,
+        "red": 0,
+        "green": 0,
+        "done": 22
+      },
+      "stopped_at": null
+    },
+    {
+      "feature": "002-subscription-error-vocabulary",
+      "cycle": "skin",
+      "phase": "drive",
+      "started_at": "2026-10-22T04:18:24.405530Z",
+      "finished_at": "2026-10-22T04:18:24.488292Z",
+      "gate_state": "green",
+      "receipts": [
+        "tdd/04-skin-receipt.json"
+      ],
+      "violations": [],
+      "refs": {
+        "engine_receipt": "tdd/04-engine-receipt.json",
+        "skin_receipt": "tdd/04-skin-receipt.json",
+        "contract_schema": null
+      },
+      "result": "complete",
+      "behaviors": [],
+      "counts": {
+        "total": 0,
+        "pending": 0,
+        "red": 0,
+        "green": 0,
+        "done": 0
+      },
+      "stopped_at": null
+    },
+    {
+      "feature": "002-subscription-error-vocabulary",
+      "cycle": "meta",
+      "phase": "aggregate",
+      "started_at": "2026-10-22T04:18:23.789188Z",
+      "finished_at": "2026-10-22T04:18:24.492785Z",
+      "gate_state": "green",
+      "receipts": [
+        "tdd/04-engine-receipt.json",
+        "tdd/04-skin-receipt.json"
+      ],
+      "violations": [],
+      "refs": {
+        "engine_receipt": "tdd/04-engine-receipt.json",
+        "skin_receipt": "tdd/04-skin-receipt.json",
+        "contract_schema": null
+      },
+      "result": "complete",
+      "behaviors": [
+        "A1",
+        "A2",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "A10",
+        "A11",
+        "U1",
+        "U2",
+        "U3",
+        "U4",
+        "U5",
+        "U6",
+        "U7",
+        "contract:A1",
+        "contract:A2",
+        "contract:A3",
+        "contract:A4"
+      ],
+      "stopped_at": null
+    }
+  ]
+}

@@ -1,13 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  mutation-test.xml — scopes mutation_test to the production surface pinned
-  by specs/001-purchase-store (the whole of lib/src: the service, the port
-  adapter, the subscription-store adapter, the store API + its recording
-  double, the entities, the exception and the status enum).
+  mutation-test.xml — the production-surface mutation audit of this package.
 
-  The lib/tdd subjects are the test harness of this feature (their expects
-  ARE the assertions), so mutating them is noise; the production files are
-  the honest mutation target.
+  SCOPE — the whole of lib/src: the service, the port adapter, the
+  subscription-store adapter, the store API + its recording double, the port
+  seam + its scripted double, the entities, the exception and the status
+  enum. These are the files pinned by specs/001-purchase-store and
+  specs/002-subscription-error-vocabulary.
+
+  THE OTHER SCOPE — `zfa tdd verify` does NOT read this file. It writes its
+  own feature-scoped config (.dart_tool/zfa/tdd-verify-mutation.xml) whose
+  <file> list is the feature's registered harness subjects, taken from
+  specs/<feature>/tdd/artifacts.json — so a mutation score read from a
+  verification record describes the harness scope (lib/tdd), while a score
+  read from this config describes the production scope (lib/src). Two
+  different surfaces, two different numbers; the harness subjects are not
+  "noise" to the gate, they are its entire scope.
+
+  The harness subjects carry the feature's expects, so their mutants are the
+  ones that survive — that is what makes the verify gate `fail_survived`
+  while no production mutant survives. This config is the production-surface
+  half of that story.
 
   Run:    dart run mutation_test mutation-test.xml -f md -o mutation-test-report
 -->
@@ -15,6 +28,7 @@
   <files>
     <file>lib/src/catalog_product.dart</file>
     <file>lib/src/di.dart</file>
+    <file>lib/src/port_code_vocabulary.dart</file>
     <file>lib/src/purchase_exception.dart</file>
     <file>lib/src/purchase_intent.dart</file>
     <file>lib/src/purchase_outcome.dart</file>
@@ -23,6 +37,7 @@
     <file>lib/src/purchase_status.dart</file>
     <file>lib/src/purchase_subscription_store.dart</file>
     <file>lib/src/recording_store_api.dart</file>
+    <file>lib/src/scripted_purchase_port.dart</file>
     <file>lib/src/store_api.dart</file>
     <file>lib/src/store_api_purchase_port.dart</file>
   </files>

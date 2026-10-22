@@ -1,9 +1,11 @@
 import 'package:zuraffa_subscriptions/zuraffa_subscriptions.dart';
 
+import 'purchase_exception.dart';
 import 'purchase_intent.dart';
 import 'purchase_outcome.dart';
 import 'purchase_port.dart';
 import 'purchase_status.dart';
+import 'port_code_vocabulary.dart';
 
 /// The subscription store adapter: a [SubscriptionStorePort] over the
 /// purchase port.
@@ -40,7 +42,7 @@ class PurchaseSubscriptionStore implements SubscriptionStorePort {
 
   @override
   Future<List<Product>> fetchProducts(List<String> productIds) async {
-    final products = await port.products(productIds);
+    final products = await _translate(() => port.products(productIds));
     return [
       for (final product in products)
         Product(
@@ -57,11 +59,13 @@ class PurchaseSubscriptionStore implements SubscriptionStorePort {
 
   @override
   Future<StorePurchase> purchase(PurchaseRequest request) async {
-    final outcome = await port.purchase(
-      PurchaseIntent(
-        productId: request.productId,
-        appAccountId: request.appAccountUserId,
-        oldPurchaseId: request.oldPurchaseId,
+    final outcome = await _translate(
+      () => port.purchase(
+        PurchaseIntent(
+          productId: request.productId,
+          appAccountId: request.appAccountUserId,
+          oldPurchaseId: request.oldPurchaseId,
+        ),
       ),
     );
     return _map(outcome);
@@ -69,13 +73,37 @@ class PurchaseSubscriptionStore implements SubscriptionStorePort {
 
   @override
   Future<List<StorePurchase>> restore() async {
-    final outcomes = await port.restore();
+    final outcomes = await _translate(port.restore);
     return [for (final outcome in outcomes) _map(outcome)];
   }
 
   @override
   Future<void> finishPurchase(String transactionId) =>
-      port.finish(transactionId);
+      _translate(() => port.finish(transactionId));
+
+  /// Runs [action] and restates a purchase-domain failure in the port's own
+  /// vocabulary.
+  ///
+  /// The port contract speaks [SubscriptionException]; the purchase domain
+  /// speaks [PurchaseException]. The two meet here, at the adapter boundary,
+  /// so a consumer that catches the port's exception type catches the
+  /// failure too. Any other error is a bug somewhere else and propagates
+  /// unchanged.
+  Future<T> _translate<T>(Future<T> Function() action) async {
+    try {
+      return await action();
+    } on PurchaseException catch (error) {
+      throw SubscriptionException(_code(error.code), error.message);
+    }
+  }
+
+  /// The port's code for a purchase-domain [code].
+  ///
+  /// The known codes travel verbatim — a consumer that branches on
+  /// `cancelled` keeps working. An unrecognised code is an unavailable
+  /// store: an unknown failure is never a success.
+  String _code(String code) =>
+      portCodeVocabulary.contains(code) ? code : 'store_unavailable';
 
   StorePurchase _map(PurchaseOutcome outcome) {
     final pending = outcome.status == PurchaseStatus.pending;

@@ -1,0 +1,40 @@
+{
+  "schema": 1,
+  "feature": "002-subscription-error-vocabulary",
+  "lane": "engine",
+  "verdict": "green",
+  "result": "complete",
+  "behaviors": [
+    "A1",
+    "A2",
+    "A3",
+    "A4",
+    "A5",
+    "A6",
+    "A7",
+    "A8",
+    "A9",
+    "A10",
+    "A11",
+    "U1",
+    "U2",
+    "U3",
+    "U4",
+    "U5",
+    "U6",
+    "U7",
+    "contract:A1",
+    "contract:A2",
+    "contract:A3",
+    "contract:A4"
+  ],
+  "counts": {
+    "total": 22,
+    "pending": 0,
+    "red": 0,
+    "green": 0,
+    "done": 22
+  },
+  "stopped_at": null,
+  "at": "2026-10-22T04:18:24.397449Z"
+}

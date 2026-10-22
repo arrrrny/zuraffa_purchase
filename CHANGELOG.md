@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.1.1
+
+### Added
+
+- `ScriptedPurchasePort` — the scriptable double for the purchase port seam,
+  the twin of `RecordingStoreApi` on the store seam. A consumer can now drive
+  the purchase domain, including its failure paths, without a device and
+  without a platform adapter.
+
+### Notes
+
+- `PurchaseSubscriptionStore` now speaks the port's own error vocabulary: a
+  `PurchaseException` raised by the purchase port leaves the adapter as a
+  `SubscriptionException` carrying the same machine code and message. A
+  consumer that catches `on SubscriptionException` — as
+  `zuraffa_subscriptions` documents the port — now catches the failure too.
+  Any other error propagates unchanged, and an unrecognised purchase-domain
+  code surfaces as `store_unavailable`.
+
 ## 0.1.0
 
 ### Added

@@ -1,0 +1,28 @@
+{
+  "feature": "002-subscription-error-vocabulary",
+  "behavior_states": {
+    "A1": "done",
+    "A2": "done",
+    "A3": "done",
+    "A4": "done",
+    "A5": "done",
+    "A6": "done",
+    "A7": "done",
+    "A8": "done",
+    "A9": "done",
+    "A10": "done",
+    "A11": "done",
+    "U1": "done",
+    "U2": "done",
+    "U3": "done",
+    "U4": "done",
+    "U5": "done",
+    "U6": "done",
+    "U7": "done",
+    "contract:A1": "done",
+    "contract:A2": "done",
+    "contract:A3": "done",
+    "contract:A4": "done"
+  },
+  "dropped": []
+}

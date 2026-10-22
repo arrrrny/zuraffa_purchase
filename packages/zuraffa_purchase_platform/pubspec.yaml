@@ -3,7 +3,7 @@ name: zuraffa_purchase_platform
 description: >-
   Shared store core for the zuraffa_purchase platform adapters: the StoreApi contract,
   the in_app_purchase-backed implementation, and the shared purchase/restore flow.
-version: 0.1.0
+version: 0.1.1
 homepage: https://zuraffa.com
 
 environment:
@@ -13,7 +13,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  zuraffa_purchase: ^0.1.0
+  zuraffa_purchase: ^0.1.1
   # The store plugin this family wraps: StoreKit on macOS/iOS (via
   # in_app_purchase_storekit), Play Billing on Android.
   in_app_purchase: ^3.3.1
