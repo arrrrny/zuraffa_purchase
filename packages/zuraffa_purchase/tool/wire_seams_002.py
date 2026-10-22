@@ -45,7 +45,17 @@ HAND_ATTESTATION = (
 # step completed, so exactly one copy belongs in the file: a writer that
 # appends without dropping the previous copy duplicates it on every run
 # (arrrrny/zuraffa#1984).
-ATTESTATION_LINE = re.compile(r"^// zfa:tdd: [^\n]*:hand[^\n]*\n", re.M)
+#
+# The pattern is scoped to the behavior id being written: the package also
+# ships the unit/acceptance lane's `// zfa:tdd: <id>:hand` marker shape
+# (wire_acceptance_002.py), and a broader pattern would silently delete that
+# one as well.
+def _attestation_line(bid):
+    """The hand-step marker LINE pattern for the contract behavior [bid]."""
+    return re.compile(
+        r"^// zfa:tdd: contract:" + re.escape(bid) + r":hand[^\n]*\n",
+        re.M,
+    )
 
 # --- unit lane ---------------------------------------------------------------
 
@@ -412,7 +422,7 @@ def write_contract_subject(bid):
     # previous run inserted before re-emitting it — otherwise every re-run
     # of the hand step appends another copy and the emitted file looks
     # corrupt.
-    head = ATTESTATION_LINE.sub("", head)
+    head = _attestation_line(bid).sub("", head)
     path.write_text(
         head
         + attestation
