@@ -1,120 +1,35 @@
-import 'dart:typed_data';
-
-import 'package:zuraffa/zuraffa.dart';
-
-import 'purchase_exception.dart';
-import 'purchase_module.dart';
+import 'catalog_product.dart';
+import 'purchase_intent.dart';
+import 'purchase_outcome.dart';
 import 'purchase_port.dart';
-import 'purchase_value.dart';
 
-/// Facade over the [PurchasePort]: owns the compiled-module registry
-/// and turns lifecycle mistakes (double compile, call-before-compile)
-/// into typed failures before they reach the platform.
+/// The app-facing purchase service: a thin facade over the [PurchasePort].
+///
+/// ```dart
+/// final service = PurchaseService(port: getIt<PurchasePort>());
+/// final products = await service.products(['pro.monthly']);
+/// final outcome = await service.purchase(
+///   PurchaseIntent(productId: 'pro.monthly', appAccountId: userId),
+/// );
+/// await service.finish(outcome.transactionId);
+/// ```
 class PurchaseService {
+  /// The store the service speaks to.
   final PurchasePort port;
-  final Map<String, PurchaseModule> _modules = {};
 
-  PurchaseService({required this.port});
+  const PurchaseService({required this.port});
 
-  /// The compiled modules currently held by this service.
-  Set<String> get compiledModules => Set.unmodifiable(_modules.keys);
+  /// The products the store offers for [productIds].
+  Future<List<CatalogProduct>> products(List<String> productIds) =>
+      port.products(productIds);
 
-  Future<bool> supported() => port.isSupported();
+  /// Launches the purchase described by [intent].
+  Future<PurchaseOutcome> purchase(PurchaseIntent intent) =>
+      port.purchase(intent);
 
-  Future<PurchaseModule> compile({
-    required String id,
-    required Uint8List bytes,
-  }) async {
-    if (_modules.containsKey(id)) {
-      throw PurchaseException(
-        'already_compiled',
-        'Module "$id" is already compiled — unload it first.',
-        recoverable: false,
-      );
-    }
-    final module = await port.compile(id: id, bytes: bytes);
-    _modules[id] = module;
-    return module;
-  }
+  /// The purchases the user already owns.
+  Future<List<PurchaseOutcome>> restore() => port.restore();
 
-  Future<List<PurchaseValue>> call({
-    required String id,
-    required String export,
-    List<PurchaseValue> args = const [],
-  }) async {
-    _requireCompiled(id);
-    return port.invoke(id: id, export: export, args: args);
-  }
-
-  Future<void> unload({required String id}) async {
-    _requireCompiled(id);
-    await port.unload(id: id);
-    _modules.remove(id);
-  }
-
-  void _requireCompiled(String id) {
-    if (!_modules.containsKey(id)) {
-      throw PurchaseException(
-        'not_compiled',
-        'Module "$id" is not compiled — call compile() first.',
-        recoverable: false,
-      );
-    }
-  }
-}
-
-/// A port placeholder registered when no platform adapter was wired:
-/// every operation surfaces the typed `port_not_wired` failure instead of
-/// a null dereference at resolve time.
-class _UnwiredPurchasePort implements PurchasePort {
-  const _UnwiredPurchasePort();
-
-  Never _unwired() => throw const PurchaseException(
-        'port_not_wired',
-        'No PurchasePort was registered — wire the platform adapter '
-        'for the running platform before resolving PurchaseService.',
-        recoverable: false,
-      );
-
-  @override
-  Future<bool> isSupported() async => _unwired();
-
-  @override
-  Future<PurchaseModule> compile({
-    required String id,
-    required Uint8List bytes,
-  }) async =>
-      _unwired();
-
-  @override
-  Future<List<PurchaseValue>> invoke({
-    required String id,
-    required String export,
-    List<PurchaseValue> args = const [],
-  }) async =>
-      _unwired();
-
-  @override
-  Future<void> unload({required String id}) async => _unwired();
-}
-
-/// Registers the zuraffa_purchase stack onto [getIt]: the [PurchasePort] is
-/// normally supplied by the platform adapter package for the running
-/// platform (e.g. `registerAndroidPurchaseDependencies`), so the
-/// service falls back to the GetIt-registered port when no explicit one
-/// is passed. Without any registered port the service resolves over the
-/// unwired placeholder and surfaces typed `port_not_wired` failures.
-void registerPurchaseDependencies(
-  GetIt getIt, {
-  PurchasePort? port,
-}) {
-  getIt.registerLazySingleton<PurchaseService>(
-    () => PurchaseService(
-      port:
-          port ??
-          (getIt.isRegistered<PurchasePort>()
-              ? getIt<PurchasePort>()
-              : const _UnwiredPurchasePort()),
-    ),
-  );
+  /// Acknowledges [transactionId] on the store.
+  Future<void> finish(String transactionId) => port.finish(transactionId);
 }

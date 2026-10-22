@@ -1,0 +1,34 @@
+{
+  "schema": "proof.v1",
+  "command": "tdd verify-red U2 --re-certify",
+  "target": "U2",
+  "repro": "zfa tdd verify-red U2 --re-certify",
+  "at": "2026-10-21T22:03:12.589067Z",
+  "generator_version": "7.2.0",
+  "input": {
+    "sanctioned": true,
+    "hand_delta": true,
+    "transition": "re-certify",
+    "behavior": "U2",
+    "feature": "001-purchase-store"
+  },
+  "files": [
+    {
+      "path": "test/tdd/001-purchase-store/u2_test.dart",
+      "action": "update",
+      "sha256": "f155441fcf56f78591007553307f8abe920420aed9307439fa90dc3d38a9831b",
+      "bytes": 1359,
+      "snapshot": "// GENERATED TEST — `zfa tdd gen U2` (spec 044-test-tdd-generation).\n//\n// behavior_id: U2\n// source_criterion: FR-002, PurchaseService.products\n// kind: unit\n// description: A store that reports itself unavailable MUST surface as a typed\n//\n// This test asserts the observable behavior described above. It is\n// \"honest red\" on first execution: the paired subject at\n// `package:zuraffa_purchase/tdd/001-purchase-store/u2_subject.dart` is unimplemented, so the test fails through an\n// assertion (not an uncaught error, compile/load error, skip, or\n// placeholder). Replace the subject's\n// stub body with real implementation to make this test pass.\nlibrary;\n\nimport 'package:test/test.dart';\nimport 'package:zuraffa_purchase/tdd/001-purchase-store/u2_subject.dart' as subject;\n\nvoid main() {\n  group('U2 (FR-002, PurchaseService.products)', () {\n    test('U2 — A store that reports itself unavailable MUST surface as a typed', () async {\n      final error = await subject.subject_u2(const ['pro.monthly']);\n      expect(error, isNotNull,\n          reason: 'a store that reports itself unavailable surfaces as a '\n              'typed failure, not an empty catalog');\n      expect(error!.code, 'store_unavailable');\n      expect(error.recoverable, isFalse,\n          reason: 'a store that reports itself unavailable is not recoverable');\n    });\n  });\n}\n"
+    },
+    {
+      "path": "lib/tdd/001-purchase-store/u2_subject.dart",
+      "action": "update",
+      "sha256": "f66fe6f6f4294037a68a0dfb751d96e716ffe6006db8cfb2ae07f8c9856c4efb",
+      "bytes": 2012,
+      "snapshot": "// GENERATED STUB — `zfa tdd gen U2` (spec 044-test-tdd-generation\n// + issue #1259 contract derivation).\n//\n// behavior_id: U2\n// source_criterion: FR-002, PurchaseService.products\n// description: A store that reports itself unavailable MUST surface as a typed\n//\n// CONTRACT-DERIVED SUBJECT (issue #1259): the signature below is\n// derived from the spec's declared Layer Contract:\n//\n//     products(List<String>) -> List<CatalogProduct>\n//\n// The declared request and result types are preserved above. A\n// declared type whose entity does not exist yet renders as `Object?`\n// so the stub compiles cleanly (FR-011) — the degradation is\n// unconditional ONLY for entities that do not exist on disk; replace\n// it with the declared type once the entity lands. This is a MINIMAL\n// COMPILABLE STUB: it does NOT satisfy the behavior — the paired test\n// fails on first execution (honest red). Replace this stub body with\n// the real implementation of the declared contract to make the test\n// pass.\n// Declared parameters: listString: List<String>\n//\n// The subject name is derived from the behavior id and is deliberately\n// snake_cased — the generator KNOWS the name it emits, so the lint its\n// shape provably trips is suppressed here rather than renaming the\n// contract surface (issue #1035).\n// ignore_for_file: non_constant_identifier_names\nlibrary;\n\n// IMPLEMENTED (spec 001-purchase-store): the subject drives the real\n// implementation over the scriptable RecordingStoreApi and returns the\n// observable outcome the paired test asserts.\n\nimport 'package:zuraffa_purchase/zuraffa_purchase.dart';\n\n/// Subject for behavior U2 — the store reports itself unavailable.\nFuture<PurchaseException?> subject_u2(List<String> productIds) async {\n  final store = RecordingStoreApi(available: false);\n  final service = PurchaseService(port: StoreApiPurchasePort(store: store));\n  try {\n    await service.products(productIds);\n  } on PurchaseException catch (error) {\n    return error;\n  }\n  return null;\n}\n"
+    }
+  ],
+  "receipt_version": 1,
+  "min_core_version": "6.0.0",
+  "generated_against_core": "7.2.0"
+}

@@ -1,0 +1,30 @@
+{
+  "schema": "proof.v1",
+  "command": "tdd gen",
+  "target": "U3",
+  "repro": "zfa tdd gen",
+  "at": "2026-10-21T21:31:26.163690Z",
+  "generator_version": "7.2.0",
+  "input": {
+    "feature": "001-purchase-store"
+  },
+  "files": [
+    {
+      "path": "test/tdd/001-purchase-store/u3_test.dart",
+      "action": "create",
+      "sha256": "cd18eb02d1ad842ddd5bbe1067be153d86e2c96c6ccc39cdee63188709a4bc98",
+      "bytes": 1180,
+      "snapshot": "// GENERATED TEST — `zfa tdd gen U3` (spec 044-test-tdd-generation).\n//\n// behavior_id: U3\n// source_criterion: FR-003, PurchaseService.purchase\n// kind: unit\n// description: `PurchaseService.purchase(PurchaseIntent request)` MUST map a\n//\n// This test asserts the observable behavior described above. It is\n// \"honest red\" on first execution: the paired subject at\n// `package:zuraffa_purchase/tdd/001-purchase-store/u3_subject.dart` is unimplemented, so the test fails through an\n// assertion (not an uncaught error, compile/load error, skip, or\n// placeholder). Replace the subject's\n// stub body with real implementation to make this test pass.\nlibrary;\n\nimport 'package:test/test.dart';\nimport 'package:zuraffa_purchase/tdd/001-purchase-store/u3_subject.dart' as subject;\n\nvoid main() {\n  group('U3 (FR-003, PurchaseService.purchase)', () {\n    test('U3 — `PurchaseService.purchase(PurchaseIntent request)` MUST map a', () {\n      final result = (() {\n        try {\n          return subject.subject_u3();\n        } on UnimplementedError catch (error) {\n          return error;\n        }\n      })();\n      expect(result, isNot(isA<UnimplementedError>()));\n    });\n  });\n}\n"
+    },
+    {
+      "path": "lib/tdd/001-purchase-store/u3_subject.dart",
+      "action": "create",
+      "sha256": "0cb0115049b8d8f2ad54e94eed27bb05bc8ccb546bd7af5bf8ef340646051f45",
+      "bytes": 1025,
+      "snapshot": "// GENERATED STUB — `zfa tdd gen U3` (spec 044-test-tdd-generation).\n//\n// behavior_id: U3\n// source_criterion: FR-003, PurchaseService.purchase\n// description: `PurchaseService.purchase(PurchaseIntent request)` MUST map a\n//\n// This is a MINIMAL COMPILABLE STUB. It compiles cleanly (FR-011) but\n// does NOT satisfy the behavior described above — the paired test will\n// fail on first execution with an assertion-level failure (honest red).\n// Replace this stub body with real implementation to make the test pass.\n//\n// The subject name is derived from the behavior id (`subject_u1`) and is\n// deliberately snake_cased — the generator KNOWS the name it emits, so\n// the lint its shape provably trips is suppressed here rather than\n// renaming the contract surface (issue #1035).\n// ignore_for_file: non_constant_identifier_names\nlibrary;\n\n/// Subject for behavior U3.\n///\n/// Throws [UnimplementedError] until the real implementation lands.\nint subject_u3() => throw UnimplementedError('subject_u3 not implemented');\n"
+    }
+  ],
+  "receipt_version": 1,
+  "min_core_version": "6.0.0",
+  "generated_against_core": "7.2.0"
+}

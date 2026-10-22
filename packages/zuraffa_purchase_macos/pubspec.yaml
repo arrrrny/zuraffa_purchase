@@ -1,21 +1,30 @@
 # Federated plugin monorepo created by `zfa package create-plugin` (issue #1604).
 name: zuraffa_purchase_macos
 description: >-
-  macOS adapter for zuraffa_purchase — the Purchase port over an injected platform channel with a typed failure taxonomy.
+  macOS adapter for zuraffa_purchase — the StoreKit store behind a typed port, reached
+  through package:in_app_purchase.
 version: 0.1.0
 homepage: https://zuraffa.com
 
 environment:
   sdk: ^3.11.0
+  flutter: ">=3.41.0"
 
 dependencies:
+  flutter:
+    sdk: flutter
   zuraffa: ^7.1.0
   zuraffa_purchase: ^0.1.0
   zuraffa_purchase_platform: ^0.1.0
+  # The native StoreKit implementation. Pinned past 0.4.13 so the app's
+  # build is free of the StoreKit 1 deprecation warnings — `in_app_purchase`
+  # allows any 0.4.x, so the constraint is what actually holds the version.
+  in_app_purchase_storekit: ^0.4.15
 
 dev_dependencies:
+  flutter_test:
+    sdk: flutter
   lints: ^4.0.0
-  test: ^1.25.0
 
 dependency_overrides:
   # Local development only — resolve the in-family siblings to this
@@ -30,6 +39,6 @@ issue_tracker: https://github.com/arrrrny/zuraffa_purchase/issues
 
 topics:
   - purchase
-  - macos
-  - clean-architecture
+  - in-app-purchase
+  - storekit
   - zuraffa

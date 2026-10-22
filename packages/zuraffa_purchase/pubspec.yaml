@@ -1,7 +1,8 @@
 # Federated plugin monorepo created by `zfa package create-plugin` (issue #1604).
 name: zuraffa_purchase
 description: >-
-  Purchase support for the Zuraffa ecosystem: a pure-Dart port behind an injected platform channel with federated adapters.
+  Purchase support for the Zuraffa ecosystem: a typed in-app purchase port behind a
+  service, with the StoreKit / Play Billing adapters shipped as federated siblings.
 version: 0.1.0
 homepage: https://zuraffa.com
 
@@ -10,11 +11,25 @@ environment:
 
 dependencies:
   zuraffa: ^7.1.0
+  # The subscription seam this package adapts: `SubscriptionStorePort` is the
+  # contract `PurchaseSubscriptionStore` implements, so a consuming app can hand
+  # a real store straight to `SubscriptionService`. The dependency is one-way —
+  # `zuraffa_subscriptions` pulls in no purchase package, so the family stays
+  # acyclic.
+  zuraffa_subscriptions: ^2.0.0
 
 dev_dependencies:
   lints: ^4.0.0
   test: ^1.25.0
+  # The locator the DI registration is written against.
+  get_it: ^9.3.0
+  # The mutation audit the `zfa tdd verify` gate runs over the production
+  # surface (scoped by mutation-test.xml).
+  mutation_test: ^1.8.1
 
+  build_runner: ^2.4.0
+  json_serializable: ^6.7.0
+  coverage: ^1.15.1
 repository: https://github.com/arrrrny/zuraffa_purchase
 issue_tracker: https://github.com/arrrrny/zuraffa_purchase/issues
 
@@ -22,3 +37,4 @@ topics:
   - purchase
   - clean-architecture
   - zuraffa
+

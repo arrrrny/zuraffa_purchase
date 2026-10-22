@@ -1,0 +1,34 @@
+{
+  "schema": "proof.v1",
+  "command": "tdd make contract:A18 --born-green",
+  "target": "contract:A18",
+  "repro": "zfa tdd make contract:A18 --born-green",
+  "at": "2026-10-21T21:49:58.667252Z",
+  "generator_version": "7.2.0",
+  "input": {
+    "sanctioned": true,
+    "hand_delta": true,
+    "transition": "born-green",
+    "behavior": "contract:A18",
+    "feature": "001-purchase-store"
+  },
+  "files": [
+    {
+      "path": "test/tdd/001-purchase-store/contract_a18_test.dart",
+      "action": "update",
+      "sha256": "94f47b62b0557ffb519f17a877af6b2fcdeacd0f36216618eac3e2ce934d14c2",
+      "bytes": 4054,
+      "snapshot": "// GENERATED TEST — `zfa tdd gen contract:A18` (issue #1007, contract lane).\n//\n// behavior_id: contract:A18\n// source_criterion: CompositionRoot.registerPurchaseDependencies\n// kind: contract\n// description: CompositionRoot.registerPurchaseDependencies(GetIt) -> void (usecase contract)\n//\n// CONTRACT TEST (issue #1007): this is NOT an implementation test — it\n// proves the implementation at `package:zuraffa_purchase/tdd/001-purchase-store/contract_a18_subject.dart`\n// satisfies the DECLARED contract above. The body enumerates the\n// contract's cases; every case must hold for the contract to be\n// satisfied. While the method is deliberately unimplemented the test\n// fails through an assertion and `zfa tdd verify-red` reports BLOCKED\n// (never RED): a failing contract test blocks the cycle from proceeding\n// to GREEN until the implementation satisfies the contract.\n// zfa:tdd: contract:A18:hand — hand step completed before first red certification (issue #1411)\nlibrary;\n\nimport 'package:test/test.dart';\nimport 'package:zuraffa/zuraffa.dart';\nimport 'package:zuraffa_purchase/tdd/001-purchase-store/contract_a18_subject.dart' as subject;\n\nvoid main() {\n  group('contract:A18 (CompositionRoot.registerPurchaseDependencies)', () {\n    test('contract:A18 \\u2014 CompositionRoot.registerPurchaseDependencies(GetIt) -> void (usecase contract)', () {\n      // Case 1 of 2 — exposure: the declared method\n      // `CompositionRoot.registerPurchaseDependencies(dynamic GetIt) -> void` must\n      // resolve on the implementation subject. This case proves EXPOSURE\n      // only — a tearoff of the declared function type is never null; the\n      // invocation and the declared outcome are Case 2 and Case 3 (issue\n      // #1751).\n      final impl = subject.registerPurchaseDependencies;\n      expect(impl, isNotNull,\n          reason: 'CompositionRoot.registerPurchaseDependencies must be exposed on the '\n              'implementation subject (exposure only — the declared '\n              'outcome is asserted by the return case)');\n\n      // Case 2 of 2 — implementation: invoking the declared\n      // method does not throw UnimplementedError. A captured rejection\n      // (the implementation threw ArgumentError/TypeError/... for the\n      // representative argument) PASSES this case: the seam is\n      // implemented and validating (issue #1541) — the outcome split is\n      // recorded below, never an uncaught error.\n      final Object? outcome = _captured(() => impl(GetIt.asNewInstance()));\n      expect(outcome, isNot(isA<UnimplementedError>()),\n          reason: 'CompositionRoot.registerPurchaseDependencies is not implemented — the declared '\n              'contract is unsatisfied, so the cycle is BLOCKED and cannot '\n              'proceed to GREEN (issue #1007)');\n      // SCAFFOLD PLACEHOLDERS — the placeholder arguments below (complex-\n      // typed or dynamic-typed declared params, issue #1541) throw\n      // UnimplementedError with the exact instruction. Replace each\n      // placeholder with a representative value for its declared type so\n      // this contract test exercises the real invocation:\n      //   _arg0() -> a representative `dynamic` value\n    });\n  });\n}\n\n/// Captures ANY error the contract seam invocation can throw (issue\n/// #1541) as the assertion's actual value — never an uncaught escape into\n/// the runner transcript (an uncaught error graded `runner-error`, never\n/// a named verdict). The outcome classes stay split at the assertions:\n/// an [UnimplementedError] (the unimplemented seam, or a scaffold\n/// placeholder argument) drives the BLOCKED verdict through the Case 2\n/// assertion; any OTHER captured Error/Exception (`ArgumentError` from an\n/// argument-validating implementation, a `TypeError` from a cast, ...) is\n/// a satisfied-with-rejection — the seam is implemented and rejected the\n/// scaffold's representative argument.\nObject? _captured(Object? Function() invoke) {\n  try {\n    return invoke();\n  } on Object catch (error) {\n    return error;\n  }\n}\n\n"
+    },
+    {
+      "path": "lib/tdd/001-purchase-store/contract_a18_subject.dart",
+      "action": "update",
+      "sha256": "fd3ddd65425d78bbf532630cd4d226f439cc7300a43fab44d38eff5025a2546a",
+      "bytes": 1251,
+      "snapshot": "// GENERATED STUB — `zfa tdd gen contract:A18` (issue #1007).\n//\n// behavior_id: contract:A18\n// source_criterion: CompositionRoot.registerPurchaseDependencies\n// kind: contract\n// target: subject_contract_A18\n// description: CompositionRoot.registerPurchaseDependencies(GetIt) -> void (usecase contract)\n//\n// CONTRACT SEAM (issue #1007): this file is where the declared contract\n// `registerPurchaseDependencies(GetIt) -> void`\n// (usecase contract) gets its implementation. Implement the seam\n// below — or wire it to the production method. The paired contract test\n// enumerates the contract's cases and stays BLOCKED (never RED) until\n// every case is satisfied.\n//\n// IMPLEMENTED (spec 001-purchase-store): the seam is wired to the real\n// implementation, so the declared contract is satisfied against the\n// shipped code and not against a stub.\n//\n// zfa:tdd: contract:A18:hand — hand step completed before first red certification (issue #1411)\nlibrary;\nimport 'package:zuraffa_purchase/zuraffa_purchase.dart' as api;\nimport 'package:zuraffa/zuraffa.dart' as zf;\n\n/// The declared contract, wired to the real implementation.\nObject? registerPurchaseDependencies(zf.GetIt arg0) {\n  api.registerPurchaseDependencies(arg0);\n  return null;\n}\n"
+    }
+  ],
+  "receipt_version": 1,
+  "min_core_version": "6.0.0",
+  "generated_against_core": "7.2.0"
+}

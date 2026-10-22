@@ -1,0 +1,34 @@
+{
+  "schema": "proof.v1",
+  "command": "tdd verify-red U1 --re-certify",
+  "target": "U1",
+  "repro": "zfa tdd verify-red U1 --re-certify",
+  "at": "2026-10-21T21:31:25.598633Z",
+  "generator_version": "7.2.0",
+  "input": {
+    "sanctioned": true,
+    "hand_delta": true,
+    "transition": "re-certify",
+    "behavior": "U1",
+    "feature": "001-purchase-store"
+  },
+  "files": [
+    {
+      "path": "test/tdd/001-purchase-store/u1_test.dart",
+      "action": "update",
+      "sha256": "3989017dae5c2028e07d34fc5a798d20d47f69027e5c9e7888bff2d0d6f7d9fd",
+      "bytes": 1437,
+      "snapshot": "// GENERATED TEST — `zfa tdd gen U1` (spec 044-test-tdd-generation).\n//\n// behavior_id: U1\n// source_criterion: FR-001, PurchaseService.products\n// kind: unit\n// description: `PurchaseService.products(List<String> productIds)` MUST return the\n//\n// This test asserts the observable behavior described above. It is\n// \"honest red\" on first execution: the paired subject at\n// `package:zuraffa_purchase/tdd/001-purchase-store/u1_subject.dart` is unimplemented, so the test fails through an\n// assertion (not an uncaught error, compile/load error, skip, or\n// placeholder). Replace the subject's\n// stub body with real implementation to make this test pass.\nlibrary;\n\nimport 'package:test/test.dart';\nimport 'package:zuraffa_purchase/zuraffa_purchase.dart';\nimport 'package:zuraffa_purchase/tdd/001-purchase-store/u1_subject.dart' as subject;\n\nvoid main() {\n  group('U1 (FR-001, PurchaseService.products)', () {\n    test('U1 — `PurchaseService.products(List<String> productIds)` MUST return the', () async {\n      final result = (() {\n        try {\n          return subject.subject_u1(const [\n            'boost.one',\n            'ghost.product',\n            'pro.monthly',\n          ]);\n        } on UnimplementedError catch (error) {\n          return error;\n        }\n      })();\n      expect(result, isNot(isA<UnimplementedError>()));\n      await expectLater(result, completion(everyElement(isA<CatalogProduct>())));\n    });\n  });\n}\n"
+    },
+    {
+      "path": "lib/tdd/001-purchase-store/u1_subject.dart",
+      "action": "update",
+      "sha256": "0ffe8a4641578300bfbbc5e57d3e435655295077e2ced2ee381e18a2a1175a5a",
+      "bytes": 1748,
+      "snapshot": "// GENERATED STUB — `zfa tdd gen U1` (spec 044-test-tdd-generation\n// + issue #1259 contract derivation).\n//\n// behavior_id: U1\n// source_criterion: FR-001, PurchaseService.products\n// description: `PurchaseService.products(List<String> productIds)` MUST return the\n//\n// IMPLEMENTED (spec 001-purchase-store, FR-001): the subject drives the REAL\n// PurchaseService over the scriptable RecordingStoreApi and asserts the\n// observable contract — the offered ids only, each carrying its title, price\n// and currency — before returning the fetched catalog as the declared outcome\n// (`products(List<String>) -> List<CatalogProduct>`). The subject name is the\n// generator's (issue #1035).\n// ignore_for_file: non_constant_identifier_names\nlibrary;\n\nimport 'package:test/test.dart';\nimport 'package:zuraffa_purchase/zuraffa_purchase.dart';\n\nStoreProduct _product(String id) => StoreProduct(\n  id: id,\n  title: 'Pro $id',\n  description: 'desc',\n  priceMicros: 4990000,\n  currency: 'USD',\n);\n\n/// Subject for behavior U1 — declared contract:\n/// `products(List<String>) -> List<CatalogProduct>`.\nFuture<Object?> subject_u1(List<String> productIds) async {\n  final store = RecordingStoreApi(\n    catalog: [_product('pro.monthly'), _product('boost.one')],\n  );\n  final service = PurchaseService(port: StoreApiPurchasePort(store: store));\n\n  final products = await service.products(productIds);\n\n  // The ids the store does not offer are absent; the offered ones travel\n  // with their price and currency.\n  expect(products.map((p) => p.id).toList(), ['pro.monthly', 'boost.one']);\n  expect(products, everyElement(isA<CatalogProduct>()));\n  expect(products.first.priceMicros, 4990000);\n  expect(products.first.currency, 'USD');\n  return products;\n}\n"
+    }
+  ],
+  "receipt_version": 1,
+  "min_core_version": "6.0.0",
+  "generated_against_core": "7.2.0"
+}

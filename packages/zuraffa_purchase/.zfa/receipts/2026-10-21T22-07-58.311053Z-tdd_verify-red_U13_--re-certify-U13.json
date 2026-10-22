@@ -1,0 +1,34 @@
+{
+  "schema": "proof.v1",
+  "command": "tdd verify-red U13 --re-certify",
+  "target": "U13",
+  "repro": "zfa tdd verify-red U13 --re-certify",
+  "at": "2026-10-21T22:07:58.311053Z",
+  "generator_version": "7.2.0",
+  "input": {
+    "sanctioned": true,
+    "hand_delta": true,
+    "transition": "re-certify",
+    "behavior": "U13",
+    "feature": "001-purchase-store"
+  },
+  "files": [
+    {
+      "path": "test/tdd/001-purchase-store/u13_test.dart",
+      "action": "update",
+      "sha256": "843b4d8d990e29fb762adcdf64337034eeb6329d0f22c6d343b54e32583af234",
+      "bytes": 2060,
+      "snapshot": "// GENERATED TEST — `zfa tdd gen U13` (spec 044-test-tdd-generation).\n//\n// behavior_id: U13\n// source_criterion: FR-013, CompositionRoot.registerPurchaseDependencies\n// kind: unit\n// description: The composition root `registerPurchaseDependencies` MUST register the\n//\n// This test asserts the observable behavior described above. It is\n// \"honest red\" on first execution: the paired subject at\n// `package:zuraffa_purchase/tdd/001-purchase-store/u13_subject.dart` is unimplemented, so the test fails through an\n// assertion (not an uncaught error, compile/load error, skip, or\n// placeholder). Replace the subject's\n// stub body with real implementation to make this test pass.\nlibrary;\n\nimport 'package:test/test.dart';\nimport 'package:zuraffa/zuraffa.dart';\nimport 'package:zuraffa_purchase/zuraffa_purchase.dart';\nimport 'package:zuraffa_purchase/tdd/001-purchase-store/u13_subject.dart' as subject;\n\nvoid main() {\n  group('U13 (FR-013, CompositionRoot.registerPurchaseDependencies)', () {\n    test('U13 — The composition root `registerPurchaseDependencies` MUST register the', () async {\n      final getIt = GetIt.asNewInstance();\n      subject.subject_u13(getIt);\n      expect(getIt.isRegistered<PurchasePort>(), isTrue);\n      expect(getIt.isRegistered<PurchaseService>(), isTrue);\n      expect(getIt.isRegistered<PurchaseSubscriptionStore>(), isTrue);\n      expect(identical(getIt<PurchasePort>(), getIt<PurchasePort>()), isTrue,\n          reason: 'the port is a lazy singleton');\n      expect(\n        identical(getIt<PurchaseService>(), getIt<PurchaseService>()),\n        isTrue,\n      );\n      expect(\n        identical(\n          getIt<PurchaseSubscriptionStore>(),\n          getIt<PurchaseSubscriptionStore>(),\n        ),\n        isTrue,\n      );\n\n      final injected = GetIt.asNewInstance();\n      final port = StoreApiPurchasePort(store: RecordingStoreApi());\n      subject.subject_u13(injected, port: port);\n      expect(identical(injected<PurchasePort>(), port), isTrue,\n          reason: 'an injected port is honored');\n    });\n  });\n}\n"
+    },
+    {
+      "path": "lib/tdd/001-purchase-store/u13_subject.dart",
+      "action": "update",
+      "sha256": "2596791d1b3efed5478989487edc47201af5ae4a3385e2bbb7f16186622094f8",
+      "bytes": 1913,
+      "snapshot": "// GENERATED STUB — `zfa tdd gen U13` (spec 044-test-tdd-generation\n// + issue #1259 contract derivation).\n//\n// behavior_id: U13\n// source_criterion: FR-013, CompositionRoot.registerPurchaseDependencies\n// description: The composition root `registerPurchaseDependencies` MUST register the\n//\n// CONTRACT-DERIVED SUBJECT (issue #1259): the signature below is\n// derived from the spec's declared Layer Contract:\n//\n//     registerPurchaseDependencies(GetIt) -> void\n//\n// The declared request and result types are preserved above. A\n// declared type whose entity does not exist yet renders as `Object?`\n// so the stub compiles cleanly (FR-011) — the degradation is\n// unconditional ONLY for entities that do not exist on disk; replace\n// it with the declared type once the entity lands. This is a MINIMAL\n// COMPILABLE STUB: it does NOT satisfy the behavior — the paired test\n// fails on first execution (honest red). Replace this stub body with\n// the real implementation of the declared contract to make the test\n// pass.\n// Declared parameters: getit: GetIt (non-existent entity types render as Object? until implemented)\n//\n// The subject name is derived from the behavior id and is deliberately\n// snake_cased — the generator KNOWS the name it emits, so the lint its\n// shape provably trips is suppressed here rather than renaming the\n// contract surface (issue #1035).\n// ignore_for_file: non_constant_identifier_names\nlibrary;\n\n// IMPLEMENTED (spec 001-purchase-store): the subject drives the real\n// implementation over the scriptable RecordingStoreApi and returns the\n// observable outcome the paired test asserts.\n\nimport 'package:zuraffa/zuraffa.dart';\nimport 'package:zuraffa_purchase/zuraffa_purchase.dart';\n\n/// Subject for behavior U13 — the composition root registers the family.\nvoid subject_u13(GetIt getIt, {PurchasePort? port}) =>\n    registerPurchaseDependencies(getIt, port: port);\n"
+    }
+  ],
+  "receipt_version": 1,
+  "min_core_version": "6.0.0",
+  "generated_against_core": "7.2.0"
+}

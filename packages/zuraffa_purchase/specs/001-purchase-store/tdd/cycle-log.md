@@ -1,0 +1,3712 @@
+# Cycle Log
+
+Append only. Newest last. Every entry's `red` block is the evidence that the test existed and failed before the implementation.
+
+## Cycle: U1 (red)
+
+- behavior: U1
+- kind: red
+- classification: assertionFailure
+- subject-hash: eaef97e694784de7be7c0229e1beb90588bed6657d0691a2ed5cf4c192bc7a71
+- criterion: FR-001, PurchaseService.products
+- test: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart --plain-name "`PurchaseService.products(List<String> productIds)` MUST return the"`
+- exit: 1
+- at: 2026-10-21T21:21:05.464175Z
+- output:
+```
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:09 +0: U1 (FR-001, PurchaseService.products) U1 — `PurchaseService.products(List<String> productIds)` MUST return the                                                                               
+00:10 +0 -1: U1 (FR-001, PurchaseService.products) U1 — `PurchaseService.products(List<String> productIds)` MUST return the                                                                            
+00:10 +0 -1: U1 (FR-001, PurchaseService.products) U1 — `PurchaseService.products(List<String> productIds)` MUST return the [E]                                                                        
+  Expected: not <Instance of 'UnimplementedError'>
+    Actual: UnimplementedError:<UnimplementedError: provide a representative argument for subject_u1 (declared param 0: List<String>)>
+  
+  package:matcher                                expect
+  test/tdd/001-purchase-store/u1_test.dart 36:7  main.<fn>.<fn>
+  
+
+To run this test again: /usr/local/share/flutter/bin/cache/dart-sdk/bin/dart test /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart -p vm --plain-name 'U1 (FR-001, PurchaseService.products) U1 — `PurchaseService.products(List<String> productIds)` MUST return the'
+
+00:10 +0 -1: Some tests failed.                                                                                                                                                                        
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.
+```
+
+- schema: 1
+- prev-hash: genesis
+- hash: 5968129e132b775aba2781dd0a231e202f83086667438909b91116280da30c47
+
+## Cycle: U1 (red)
+
+- behavior: U1
+- kind: red
+- classification: assertionFailure
+- subject-hash: 2905082e29ba6fa74ef745a6229832aade9cae9c3227f9c644000df944009663
+- criterion: FR-001, PurchaseService.products
+- test: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart --plain-name "`PurchaseService.products(List<String> productIds)` MUST return the"`
+- exit: 1
+- at: 2026-10-21T21:30:17.487158Z
+- output:
+```
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:18 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:19 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:20 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:21 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:22 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:23 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:24 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:25 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:26 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:27 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:28 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:29 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:30 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:31 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:32 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:33 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:34 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:35 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:36 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:37 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:38 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:39 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:39 +0: U1 (FR-001, PurchaseService.products) U1 — `PurchaseService.products(List<String> productIds)` MUST return the                                                                               
+00:40 +0: U1 (FR-001, PurchaseService.products) U1 — `PurchaseService.products(List<String> productIds)` MUST return the                                                                               
+00:40 +0 -1: U1 (FR-001, PurchaseService.products) U1 — `PurchaseService.products(List<String> productIds)` MUST return the [E]                                                                        
+  Expected: ['boost.one', 'pro.monthly']
+    Actual: ['pro.monthly', 'boost.one']
+     Which: at location [0] is 'pro.monthly' instead of 'boost.one'
+  
+  package:matcher                                                       expect
+  package:zuraffa_purchase/tdd/001-purchase-store/u1_subject.dart 40:3  subject_u1
+  ===== asynchronous gap ===========================
+  test/tdd/001-purchase-store/u1_test.dart 35:7                         main.<fn>.<fn>
+  
+
+To run this test again: /usr/local/share/flutter/bin/cache/dart-sdk/bin/dart test /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart -p vm --plain-name 'U1 (FR-001, PurchaseService.products) U1 — `PurchaseService.products(List<String> productIds)` MUST return the'
+
+00:41 +0 -1: Some tests failed.                                                                                                                                                                        
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.
+```
+
+- schema: 1
+- prev-hash: 5968129e132b775aba2781dd0a231e202f83086667438909b91116280da30c47
+- hash: ee57171768f89907923742a9ba2923d99b3f7ed4caec8562ef1371321cd5dfbd
+
+## Cycle: U1 (green)
+
+- behavior: U1
+- kind: green
+- evidence: issue #1162 re-certification — the subject was hand-implemented after the certified red; this green evidence binds the NEW subject shape with the passing transcript
+- subject-hash: 0ffe8a4641578300bfbbc5e57d3e435655295077e2ced2ee381e18a2a1175a5a
+- criterion: FR-001, PurchaseService.products
+- test: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart --plain-name "`PurchaseService.products(List<String> productIds)` MUST return the"`
+- exit: 0
+- at: 2026-10-21T21:31:25.514108Z
+- output:
+```
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:18 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:19 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:20 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:21 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:22 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:23 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:24 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:25 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:26 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:27 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:28 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:29 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:30 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:31 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:32 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u1_test.dart                                                                         
+00:32 +0: U1 (FR-001, PurchaseService.products) U1 — `PurchaseService.products(List<String> productIds)` MUST return the                                                                               
+00:33 +0: U1 (FR-001, PurchaseService.products) U1 — `PurchaseService.products(List<String> productIds)` MUST return the                                                                               
+00:33 +1: U1 (FR-001, PurchaseService.products) U1 — `PurchaseService.products(List<String> productIds)` MUST return the                                                                               
+00:33 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: ee57171768f89907923742a9ba2923d99b3f7ed4caec8562ef1371321cd5dfbd
+- hash: 66b71dbc6c66728d1dafd4cfa9de4b2a55f3c6faa961e17da0b661318ec3c9fe
+
+## Cycle: contract:A18 (green)
+
+- behavior: contract:A18
+- kind: green
+- evidence: issue #1411 born-green hand transition — no prior red evidence exists (the hand step preceded the first certification); green certified from the passing target test with the vacuous-guard marker absent and the contract:A18:hand attestation header present
+- subject-hash: fd3ddd65425d78bbf532630cd4d226f439cc7300a43fab44d38eff5025a2546a
+- criterion: CompositionRoot.registerPurchaseDependencies
+- test: test/tdd/001-purchase-store/contract_a18_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a18_test.dart --plain-name "CompositionRoot.registerPurchaseDependencies(GetIt) -> void (usecase contract)"`
+- exit: 0
+- at: 2026-10-21T21:49:58.459404Z
+- output:
+```
+issue #1411 born-green hand transition — the designed hand step was completed before the first red certification (hand-first ordering); the passing transcript below is the green evidence bound to the current subject shape.
+
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a18_test.dart                                                               
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a18_test.dart                                                               
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a18_test.dart                                                               
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a18_test.dart                                                               
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a18_test.dart                                                               
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a18_test.dart                                                               
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a18_test.dart                                                               
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a18_test.dart                                                               
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a18_test.dart                                                               
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a18_test.dart                                                               
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a18_test.dart                                                               
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a18_test.dart                                                               
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a18_test.dart                                                               
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a18_test.dart                                                               
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a18_test.dart                                                               
+00:14 +0: contract:A18 (CompositionRoot.registerPurchaseDependencies) contract:A18 — CompositionRoot.registerPurchaseDependencies(GetIt) -> void (usecase contract)                                    
+00:14 +1: contract:A18 (CompositionRoot.registerPurchaseDependencies) contract:A18 — CompositionRoot.registerPurchaseDependencies(GetIt) -> void (usecase contract)                                    
+00:14 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: genesis
+- hash: 387d1f7455e85a502a16da9d3b15c43ebb18d047616d6ce06531cd051c00a938
+
+## Cycle: contract:A1 (green)
+
+- behavior: contract:A1
+- kind: green
+- evidence: issue #1411 born-green hand transition — no prior red evidence exists (the hand step preceded the first certification); green certified from the passing target test with the vacuous-guard marker absent and the contract:A1:hand attestation header present
+- subject-hash: 8c385ccbad89347344eecc12de4098d2adae45fdf42405f7bb9350db167c949e
+- criterion: PurchaseService.products
+- test: test/tdd/001-purchase-store/contract_a1_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart --plain-name "PurchaseService.products(List<String>) -> List<CatalogProduct> (usecase contract)"`
+- exit: 0
+- at: 2026-10-21T21:52:42.096376Z
+- output:
+```
+issue #1411 born-green hand transition — the designed hand step was completed before the first red certification (hand-first ordering); the passing transcript below is the green evidence bound to the current subject shape.
+
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:17 +0: contract:A1 (PurchaseService.products) contract:A1 — PurchaseService.products(List<String>) -> List<CatalogProduct> (usecase contract)                                                       
+00:17 +1: contract:A1 (PurchaseService.products) contract:A1 — PurchaseService.products(List<String>) -> List<CatalogProduct> (usecase contract)                                                       
+00:17 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: genesis
+- hash: 694bbfb70d9dea1198dc2803467a9012d1b97339fec9e70809dafacc00d2f308
+
+## Cycle: A11 (red)
+
+- behavior: A11
+- kind: red
+- classification: assertionFailure
+- evidence: A11 (AC-11) A11 — a store purchase is returned in state `purchased`, carrying the transaction id, the product id, the purchase timestamp, the derived expiry and the receipt, and flagged `pendingFinish`.
+- subject-hash: f333af43c29c4f303486b5c724200eaa0977efcd99ee5e2181722c3edba3fa99
+- criterion: AC-11
+- test: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/a11_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/a11_test.dart --plain-name "a store purchase is returned in state `purchased`, carrying the transaction id, the product id, the purchase timestamp, the derived expiry and the receipt, and flagged `pendingFinish`."`
+- exit: 1
+- at: 2026-10-21T21:52:42.606760Z
+- output:
+```
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/a11_test.dart                                                                        
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/a11_test.dart                                                                        
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/a11_test.dart                                                                        
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/a11_test.dart                                                                        
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/a11_test.dart                                                                        
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/a11_test.dart                                                                        
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/a11_test.dart                                                                        
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/a11_test.dart                                                                        
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/a11_test.dart                                                                        
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/a11_test.dart                                                                        
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/a11_test.dart                                                                        
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/a11_test.dart                                                                        
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/a11_test.dart                                                                        
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/a11_test.dart                                                                        
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/a11_test.dart                                                                        
+00:14 +0: A11 ... purchase is returned in state `purchased`, carrying the transaction id, the product id, the purchase timestamp, the derived expiry and the receipt, and flagged `pendingFinish`.     
+00:15 +0: A11 ... purchase is returned in state `purchased`, carrying the transaction id, the product id, the purchase timestamp, the derived expiry and the receipt, and flagged `pendingFinish`.     
+00:15 +0 -1: A11 (AC-11) A11 — a store purchase is returned in state `purchased`, carrying the transaction id, the product id, the purchase timestamp, the derived expiry and the receipt, and flagged `pendingFinish`. [E]
+  Expected: not <Instance of 'UnimplementedError'>
+    Actual: UnimplementedError:<UnimplementedError: subject_a11 not implemented>
+  
+  package:matcher                                 expect
+  test/tdd/001-purchase-store/a11_test.dart 37:7  main.<fn>.<fn>
+  
+
+To run this test again: /usr/local/share/flutter/bin/cache/dart-sdk/bin/dart test /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/a11_test.dart -p vm --plain-name 'A11 (AC-11) A11 — a store purchase is returned in state `purchased`, carrying the transaction id, the product id, the purchase timestamp, the derived expiry and the receipt, and flagged `pendingFinish`.'
+
+00:15 +0 -1: Some tests failed.                                                                                                                                                                        
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.
+```
+
+- schema: 1
+- prev-hash: genesis
+- hash: f82cb56e2c9222132785623798ca4a6879d3754a4d943b88d99896f5906f5142
+
+## Cycle: U2 (red)
+
+- behavior: U2
+- kind: red
+- classification: assertionFailure
+- subject-hash: 08303325643045c6732c556d5ad10c45d1d5816d65a8eaec3815aa61655c6264
+- criterion: FR-002, PurchaseService.products
+- test: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u2_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u2_test.dart --plain-name "A store that reports itself unavailable MUST surface as a typed"`
+- exit: 1
+- at: 2026-10-21T21:52:54.803881Z
+- output:
+```
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u2_test.dart                                                                         
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u2_test.dart                                                                         
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u2_test.dart                                                                         
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u2_test.dart                                                                         
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u2_test.dart                                                                         
+00:04 +0: U2 (FR-002, PurchaseService.products) U2 — A store that reports itself unavailable MUST surface as a typed                                                                                   
+00:04 +0 -1: U2 (FR-002, PurchaseService.products) U2 — A store that reports itself unavailable MUST surface as a typed [E]                                                                            
+  Expected: not <Instance of 'UnimplementedError'>
+    Actual: UnimplementedError:<UnimplementedError: provide a representative argument for subject_u2 (declared param 0: List<String>)>
+  
+  package:matcher                                expect
+  test/tdd/001-purchase-store/u2_test.dart 36:7  main.<fn>.<fn>
+  
+
+To run this test again: /usr/local/share/flutter/bin/cache/dart-sdk/bin/dart test /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u2_test.dart -p vm --plain-name 'U2 (FR-002, PurchaseService.products) U2 — A store that reports itself unavailable MUST surface as a typed'
+
+00:04 +0 -1: Some tests failed.                                                                                                                                                                        
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.
+```
+
+- schema: 1
+- prev-hash: genesis
+- hash: c4a5fc615dea4441e500e4b82cd42fbe0d7aa9f857853f9df6198d173e29ee1a
+
+## Cycle: U3 (red)
+
+- behavior: U3
+- kind: red
+- classification: assertionFailure
+- subject-hash: 0cb0115049b8d8f2ad54e94eed27bb05bc8ccb546bd7af5bf8ef340646051f45
+- criterion: FR-003, PurchaseService.purchase
+- test: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u3_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u3_test.dart --plain-name "`PurchaseService.purchase(PurchaseIntent request)` MUST map a"`
+- exit: 1
+- at: 2026-10-21T21:53:07.561526Z
+- output:
+```
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u3_test.dart                                                                         
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u3_test.dart                                                                         
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u3_test.dart                                                                         
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u3_test.dart                                                                         
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u3_test.dart                                                                         
+00:05 +0: U3 (FR-003, PurchaseService.purchase) U3 — `PurchaseService.purchase(PurchaseIntent request)` MUST map a                                                                                     
+00:05 +0 -1: U3 (FR-003, PurchaseService.purchase) U3 — `PurchaseService.purchase(PurchaseIntent request)` MUST map a [E]                                                                              
+  Expected: not <Instance of 'UnimplementedError'>
+    Actual: UnimplementedError:<UnimplementedError: subject_u3 not implemented>
+  
+  package:matcher                                expect
+  test/tdd/001-purchase-store/u3_test.dart 29:7  main.<fn>.<fn>
+  
+
+To run this test again: /usr/local/share/flutter/bin/cache/dart-sdk/bin/dart test /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u3_test.dart -p vm --plain-name 'U3 (FR-003, PurchaseService.purchase) U3 — `PurchaseService.purchase(PurchaseIntent request)` MUST map a'
+
+00:05 +0 -1: Some tests failed.                                                                                                                                                                        
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.
+```
+
+- schema: 1
+- prev-hash: genesis
+- hash: 8d81d8d2527f6dd86a7f497623b6acf446c937d82c80ab4cd0eeaeb2ce3f0f2f
+
+## Cycle: U4 (red)
+
+- behavior: U4
+- kind: red
+- classification: assertionFailure
+- subject-hash: 921e7b71ef240c17d71e664aa32bf8ea515b25641aade324cb138726aadb49ab
+- criterion: FR-004, PurchaseService.purchase
+- test: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u4_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u4_test.dart --plain-name "A cancelled store transaction MUST surface as a typed recoverable"`
+- exit: 1
+- at: 2026-10-21T21:53:17.678888Z
+- output:
+```
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u4_test.dart                                                                         
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u4_test.dart                                                                         
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u4_test.dart                                                                         
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u4_test.dart                                                                         
+00:03 +0: U4 (FR-004, PurchaseService.purchase) U4 — A cancelled store transaction MUST surface as a typed recoverable                                                                                 
+00:04 +0 -1: U4 (FR-004, PurchaseService.purchase) U4 — A cancelled store transaction MUST surface as a typed recoverable                                                                              
+00:04 +0 -1: U4 (FR-004, PurchaseService.purchase) U4 — A cancelled store transaction MUST surface as a typed recoverable [E]                                                                          
+  Expected: not <Instance of 'UnimplementedError'>
+    Actual: UnimplementedError:<UnimplementedError: subject_u4 not implemented>
+  
+  package:matcher                                expect
+  test/tdd/001-purchase-store/u4_test.dart 29:7  main.<fn>.<fn>
+  
+
+To run this test again: /usr/local/share/flutter/bin/cache/dart-sdk/bin/dart test /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u4_test.dart -p vm --plain-name 'U4 (FR-004, PurchaseService.purchase) U4 — A cancelled store transaction MUST surface as a typed recoverable'
+
+00:04 +0 -1: Some tests failed.                                                                                                                                                                        
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.
+```
+
+- schema: 1
+- prev-hash: genesis
+- hash: 5362435cbff89a1407659af8441482e357264549269364125e07a0993b167989
+
+## Cycle: U5 (red)
+
+- behavior: U5
+- kind: red
+- classification: assertionFailure
+- subject-hash: 72b6fee84936bc96b6d0917957b73c6772ccf69d0825434f3ad7686e860da8cf
+- criterion: FR-005, PurchaseService.restore
+- test: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u5_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u5_test.dart --plain-name "`PurchaseService.restore()` MUST return every transaction the store"`
+- exit: 1
+- at: 2026-10-21T21:53:28.005422Z
+- output:
+```
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u5_test.dart                                                                         
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u5_test.dart                                                                         
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u5_test.dart                                                                         
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u5_test.dart                                                                         
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u5_test.dart                                                                         
+00:04 +0: U5 (FR-005, PurchaseService.restore) U5 — `PurchaseService.restore()` MUST return every transaction the store                                                                                
+00:04 +0 -1: U5 (FR-005, PurchaseService.restore) U5 — `PurchaseService.restore()` MUST return every transaction the store [E]                                                                         
+  Expected: not <Instance of 'UnimplementedError'>
+    Actual: UnimplementedError:<UnimplementedError: subject_u5 not implemented>
+  
+  package:matcher                                expect
+  test/tdd/001-purchase-store/u5_test.dart 29:7  main.<fn>.<fn>
+  
+
+To run this test again: /usr/local/share/flutter/bin/cache/dart-sdk/bin/dart test /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u5_test.dart -p vm --plain-name 'U5 (FR-005, PurchaseService.restore) U5 — `PurchaseService.restore()` MUST return every transaction the store'
+
+00:04 +0 -1: Some tests failed.                                                                                                                                                                        
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.
+```
+
+- schema: 1
+- prev-hash: genesis
+- hash: 7e5390e1462b279289bedf762d25531097b8efafc81ad068edc0b10a3371e264
+
+## Cycle: U6 (red)
+
+- behavior: U6
+- kind: red
+- classification: assertionFailure
+- subject-hash: 3309ceaba678e2651f712d977d34495b18ae75090845b1783a4f4b8c5bb0ed1e
+- criterion: FR-006, PurchaseService.finish
+- test: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u6_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u6_test.dart --plain-name "`PurchaseService.finish(String transactionId)` MUST ask the store to"`
+- exit: 1
+- at: 2026-10-21T21:53:39.414886Z
+- output:
+```
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u6_test.dart                                                                         
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u6_test.dart                                                                         
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u6_test.dart                                                                         
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u6_test.dart                                                                         
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u6_test.dart                                                                         
+00:04 +0: U6 (FR-006, PurchaseService.finish) U6 — `PurchaseService.finish(String transactionId)` MUST ask the store to                                                                                
+00:05 +0 -1: U6 (FR-006, PurchaseService.finish) U6 — `PurchaseService.finish(String transactionId)` MUST ask the store to                                                                             
+00:05 +0 -1: U6 (FR-006, PurchaseService.finish) U6 — `PurchaseService.finish(String transactionId)` MUST ask the store to [E]                                                                         
+  Expected: not <Instance of 'UnimplementedError'>
+    Actual: UnimplementedError:<UnimplementedError: subject_u6 not implemented: finish(String) -> void>
+  
+  package:matcher                                expect
+  test/tdd/001-purchase-store/u6_test.dart 35:7  main.<fn>.<fn>
+  
+
+To run this test again: /usr/local/share/flutter/bin/cache/dart-sdk/bin/dart test /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u6_test.dart -p vm --plain-name 'U6 (FR-006, PurchaseService.finish) U6 — `PurchaseService.finish(String transactionId)` MUST ask the store to'
+
+00:05 +0 -1: Some tests failed.                                                                                                                                                                        
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.
+```
+
+- schema: 1
+- prev-hash: genesis
+- hash: bb403a120a30f891fdce88aae1ada893161b67ee0a777002b6cf9d51a4c8095f
+
+## Cycle: U7 (red)
+
+- behavior: U7
+- kind: red
+- classification: assertionFailure
+- subject-hash: 567e8c6dcd0f9c05b3272fb5cf03557ecd764c3be3279a72d16135061c61c7ad
+- criterion: FR-007, StoreApiPurchasePort.purchase
+- test: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u7_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u7_test.dart --plain-name "The store status taxonomy MUST map onto `PurchaseStatus` as"`
+- exit: 1
+- at: 2026-10-21T21:53:51.385870Z
+- output:
+```
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u7_test.dart                                                                         
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u7_test.dart                                                                         
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u7_test.dart                                                                         
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u7_test.dart                                                                         
+00:03 +0: U7 (FR-007, StoreApiPurchasePort.purchase) U7 — The store status taxonomy MUST map onto `PurchaseStatus` as                                                                                  
+00:03 +0 -1: U7 (FR-007, StoreApiPurchasePort.purchase) U7 — The store status taxonomy MUST map onto `PurchaseStatus` as [E]                                                                           
+  Expected: not <Instance of 'UnimplementedError'>
+    Actual: UnimplementedError:<UnimplementedError: subject_u7 not implemented>
+  
+  package:matcher                                expect
+  test/tdd/001-purchase-store/u7_test.dart 29:7  main.<fn>.<fn>
+  
+
+To run this test again: /usr/local/share/flutter/bin/cache/dart-sdk/bin/dart test /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u7_test.dart -p vm --plain-name 'U7 (FR-007, StoreApiPurchasePort.purchase) U7 — The store status taxonomy MUST map onto `PurchaseStatus` as'
+
+00:04 +0 -1: Some tests failed.                                                                                                                                                                        
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.
+```
+
+- schema: 1
+- prev-hash: genesis
+- hash: 0d15b30e1525143803976819209d9651ac211bd785729b67c8dd29c9b0d4f16e
+
+## Cycle: U8 (red)
+
+- behavior: U8
+- kind: red
+- classification: assertionFailure
+- subject-hash: d22903dc73592530701cedb727084b3d1bffb1f5431f9feab9066e7356de1588
+- criterion: FR-008, PurchaseSubscriptionStore.fetchProducts
+- test: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u8_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u8_test.dart --plain-name "`PurchaseSubscriptionStore.fetchProducts(List<String> ids)` MUST"`
+- exit: 1
+- at: 2026-10-21T21:54:00.817668Z
+- output:
+```
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u8_test.dart                                                                         
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u8_test.dart                                                                         
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u8_test.dart                                                                         
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u8_test.dart                                                                         
+00:03 +0: U8 (FR-008, PurchaseSubscriptionStore.fetchProducts) U8 — `PurchaseSubscriptionStore.fetchProducts(List<String> ids)` MUST                                                                   
+00:04 +0: U8 (FR-008, PurchaseSubscriptionStore.fetchProducts) U8 — `PurchaseSubscriptionStore.fetchProducts(List<String> ids)` MUST                                                                   
+00:04 +0 -1: U8 (FR-008, PurchaseSubscriptionStore.fetchProducts) U8 — `PurchaseSubscriptionStore.fetchProducts(List<String> ids)` MUST [E]                                                            
+  Expected: not <Instance of 'UnimplementedError'>
+    Actual: UnimplementedError:<UnimplementedError: subject_u8 not implemented>
+  
+  package:matcher                                expect
+  test/tdd/001-purchase-store/u8_test.dart 29:7  main.<fn>.<fn>
+  
+
+To run this test again: /usr/local/share/flutter/bin/cache/dart-sdk/bin/dart test /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u8_test.dart -p vm --plain-name 'U8 (FR-008, PurchaseSubscriptionStore.fetchProducts) U8 — `PurchaseSubscriptionStore.fetchProducts(List<String> ids)` MUST'
+
+00:04 +0 -1: Some tests failed.                                                                                                                                                                        
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.
+```
+
+- schema: 1
+- prev-hash: genesis
+- hash: 912ec89f4d632af7a8bcacf2e65be1c00241b992a8ed27cb74c23879a5a7f0a0
+
+## Cycle: U9 (red)
+
+- behavior: U9
+- kind: red
+- classification: assertionFailure
+- subject-hash: 900980c44a9bc6ddd44bafa36e7dff2056fde4ea01ca9bf40b7ef2440ea3e813
+- criterion: FR-009, PurchaseSubscriptionStore.purchase
+- test: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart --plain-name "`PurchaseSubscriptionStore.purchase(PurchaseRequest request)` MUST"`
+- exit: 1
+- at: 2026-10-21T21:54:22.842362Z
+- output:
+```
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart                                                                         
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart                                                                         
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart                                                                         
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart                                                                         
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart                                                                         
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart                                                                         
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart                                                                         
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart                                                                         
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart                                                                         
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart                                                                         
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart                                                                         
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart                                                                         
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart                                                                         
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart                                                                         
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart                                                                         
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart                                                                         
+00:15 +0: U9 (FR-009, PurchaseSubscriptionStore.purchase) U9 — `PurchaseSubscriptionStore.purchase(PurchaseRequest request)` MUST                                                                      
+00:16 +0: U9 (FR-009, PurchaseSubscriptionStore.purchase) U9 — `PurchaseSubscriptionStore.purchase(PurchaseRequest request)` MUST                                                                      
+00:16 +0 -1: U9 (FR-009, PurchaseSubscriptionStore.purchase) U9 — `PurchaseSubscriptionStore.purchase(PurchaseRequest request)` MUST [E]                                                               
+  Expected: not <Instance of 'UnimplementedError'>
+    Actual: UnimplementedError:<UnimplementedError: subject_u9 not implemented>
+  
+  package:matcher                                expect
+  test/tdd/001-purchase-store/u9_test.dart 29:7  main.<fn>.<fn>
+  
+
+To run this test again: /usr/local/share/flutter/bin/cache/dart-sdk/bin/dart test /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart -p vm --plain-name 'U9 (FR-009, PurchaseSubscriptionStore.purchase) U9 — `PurchaseSubscriptionStore.purchase(PurchaseRequest request)` MUST'
+
+00:16 +0 -1: Some tests failed.                                                                                                                                                                        
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.
+```
+
+- schema: 1
+- prev-hash: genesis
+- hash: 5c0da232504259bbb13667c82d9dc90f36b8c99b5f217fecc1ba59fb99067b78
+
+## Cycle: U10 (red)
+
+- behavior: U10
+- kind: red
+- classification: assertionFailure
+- subject-hash: ecbb3c595ce17bcd4dc03c8550db8aeee239b87f2a86e74d2db4f03f004ab4e6
+- criterion: FR-010, PurchaseSubscriptionStore.restore
+- test: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u10_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u10_test.dart --plain-name "`PurchaseSubscriptionStore.restore()` MUST return one store purchase"`
+- exit: 1
+- at: 2026-10-21T21:54:35.018908Z
+- output:
+```
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u10_test.dart                                                                        
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u10_test.dart                                                                        
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u10_test.dart                                                                        
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u10_test.dart                                                                        
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u10_test.dart                                                                        
+00:04 +0: U10 (FR-010, PurchaseSubscriptionStore.restore) U10 — `PurchaseSubscriptionStore.restore()` MUST return one store purchase                                                                   
+00:05 +0 -1: U10 (FR-010, PurchaseSubscriptionStore.restore) U10 — `PurchaseSubscriptionStore.restore()` MUST return one store purchase                                                                
+00:05 +0 -1: U10 (FR-010, PurchaseSubscriptionStore.restore) U10 — `PurchaseSubscriptionStore.restore()` MUST return one store purchase [E]                                                            
+  Expected: not <Instance of 'UnimplementedError'>
+    Actual: UnimplementedError:<UnimplementedError: subject_u10 not implemented>
+  
+  package:matcher                                 expect
+  test/tdd/001-purchase-store/u10_test.dart 29:7  main.<fn>.<fn>
+  
+
+To run this test again: /usr/local/share/flutter/bin/cache/dart-sdk/bin/dart test /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u10_test.dart -p vm --plain-name 'U10 (FR-010, PurchaseSubscriptionStore.restore) U10 — `PurchaseSubscriptionStore.restore()` MUST return one store purchase'
+
+00:05 +0 -1: Some tests failed.                                                                                                                                                                        
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.
+```
+
+- schema: 1
+- prev-hash: genesis
+- hash: 956af9f5fdd260da669f44f8d12968cd6fd719daa3607584bd18523763bdab87
+
+## Cycle: U11 (red)
+
+- behavior: U11
+- kind: red
+- classification: assertionFailure
+- subject-hash: e8191c9c40d746f472e9541a17218d1ddfb42e635d96185ac7afdacc06b2f1b6
+- criterion: FR-011, PurchaseSubscriptionStore.finishPurchase
+- test: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u11_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u11_test.dart --plain-name "`PurchaseSubscriptionStore.finishPurchase(String transactionId)`"`
+- exit: 1
+- at: 2026-10-21T21:54:46.760838Z
+- output:
+```
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u11_test.dart                                                                        
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u11_test.dart                                                                        
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u11_test.dart                                                                        
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u11_test.dart                                                                        
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u11_test.dart                                                                        
+00:04 +0: U11 (FR-011, PurchaseSubscriptionStore.finishPurchase) U11 — `PurchaseSubscriptionStore.finishPurchase(String transactionId)`                                                                
+00:04 +0 -1: U11 (FR-011, PurchaseSubscriptionStore.finishPurchase) U11 — `PurchaseSubscriptionStore.finishPurchase(String transactionId)` [E]                                                         
+  Expected: not <Instance of 'UnimplementedError'>
+    Actual: UnimplementedError:<UnimplementedError: subject_u11 not implemented: finishPurchase(String) -> void>
+  
+  package:matcher                                 expect
+  test/tdd/001-purchase-store/u11_test.dart 35:7  main.<fn>.<fn>
+  
+
+To run this test again: /usr/local/share/flutter/bin/cache/dart-sdk/bin/dart test /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u11_test.dart -p vm --plain-name 'U11 (FR-011, PurchaseSubscriptionStore.finishPurchase) U11 — `PurchaseSubscriptionStore.finishPurchase(String transactionId)`'
+
+00:05 +0 -1: Some tests failed.                                                                                                                                                                        
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.
+```
+
+- schema: 1
+- prev-hash: genesis
+- hash: a8c355e3b2fab9914869e22399e86185a60e6007ca8c6de60e687b6034b0216c
+
+## Cycle: U12 (red)
+
+- behavior: U12
+- kind: red
+- classification: assertionFailure
+- subject-hash: 277d59937b127fe4f7c56401c1ac7f8682e811cc3111bfd4a394080f473e9261
+- criterion: FR-012, PurchaseException.code
+- test: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u12_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u12_test.dart --plain-name "Store failures MUST surface as the typed `PurchaseException`"`
+- exit: 1
+- at: 2026-10-21T21:54:58.659142Z
+- output:
+```
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u12_test.dart                                                                        
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u12_test.dart                                                                        
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u12_test.dart                                                                        
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u12_test.dart                                                                        
+00:03 +0: U12 (FR-012, PurchaseException.code) U12 — Store failures MUST surface as the typed `PurchaseException`                                                                                      
+00:03 +0 -1: U12 (FR-012, PurchaseException.code) U12 — Store failures MUST surface as the typed `PurchaseException` [E]                                                                               
+  Expected: <Instance of 'String'>
+    Actual: UnimplementedError:<UnimplementedError: subject_u12 not implemented: code() -> String>
+     Which: is not an instance of 'String'
+  
+  package:matcher                                 expect
+  test/tdd/001-purchase-store/u12_test.dart 35:7  main.<fn>.<fn>
+  
+
+To run this test again: /usr/local/share/flutter/bin/cache/dart-sdk/bin/dart test /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u12_test.dart -p vm --plain-name 'U12 (FR-012, PurchaseException.code) U12 — Store failures MUST surface as the typed `PurchaseException`'
+
+00:04 +0 -1: Some tests failed.                                                                                                                                                                        
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.
+```
+
+- schema: 1
+- prev-hash: genesis
+- hash: 37a78cd11086f6e09c7a5dd421f9ac87ae268c3be9f3c8a0d5d85317dffda521
+
+## Cycle: U13 (red)
+
+- behavior: U13
+- kind: red
+- classification: assertionFailure
+- subject-hash: e750d6aaf78c20e1ac56b1958c224b455fc5e1a8460902852951b88937bb61c6
+- criterion: FR-013, CompositionRoot.registerPurchaseDependencies
+- test: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u13_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u13_test.dart --plain-name "The composition root `registerPurchaseDependencies` MUST register the"`
+- exit: 1
+- at: 2026-10-21T21:55:09.988526Z
+- output:
+```
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u13_test.dart                                                                        
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u13_test.dart                                                                        
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u13_test.dart                                                                        
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u13_test.dart                                                                        
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u13_test.dart                                                                        
+00:04 +0: U13 (FR-013, CompositionRoot.registerPurchaseDependencies) U13 — The composition root `registerPurchaseDependencies` MUST register the                                                       
+00:04 +0 -1: U13 (FR-013, CompositionRoot.registerPurchaseDependencies) U13 — The composition root `registerPurchaseDependencies` MUST register the [E]                                                
+  Expected: not <Instance of 'UnimplementedError'>
+    Actual: UnimplementedError:<UnimplementedError: provide a representative argument for subject_u13 (declared param 0: GetIt)>
+  
+  package:matcher                                 expect
+  test/tdd/001-purchase-store/u13_test.dart 36:7  main.<fn>.<fn>
+  
+
+To run this test again: /usr/local/share/flutter/bin/cache/dart-sdk/bin/dart test /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u13_test.dart -p vm --plain-name 'U13 (FR-013, CompositionRoot.registerPurchaseDependencies) U13 — The composition root `registerPurchaseDependencies` MUST register the'
+
+00:04 +0 -1: Some tests failed.                                                                                                                                                                        
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.
+```
+
+- schema: 1
+- prev-hash: genesis
+- hash: 6bec1a1f870e8bdbe283c7af3df94faca0f6bc386033c09a76614cae1fac9271
+
+## Cycle: contract:A3 (green)
+
+- behavior: contract:A3
+- kind: green
+- evidence: issue #1411 born-green hand transition — no prior red evidence exists (the hand step preceded the first certification); green certified from the passing target test with the vacuous-guard marker absent and the contract:A3:hand attestation header present
+- subject-hash: 626f73a47d3e02892bc2b90da39edab24fc79114065f806adacad5e2624f78d7
+- criterion: PurchaseService.restore
+- test: test/tdd/001-purchase-store/contract_a3_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a3_test.dart --plain-name "PurchaseService.restore() -> List<PurchaseOutcome> (usecase contract)"`
+- exit: 0
+- at: 2026-10-21T21:56:18.825821Z
+- output:
+```
+issue #1411 born-green hand transition — the designed hand step was completed before the first red certification (hand-first ordering); the passing transcript below is the green evidence bound to the current subject shape.
+
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a3_test.dart                                                                
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a3_test.dart                                                                
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a3_test.dart                                                                
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a3_test.dart                                                                
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a3_test.dart                                                                
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a3_test.dart                                                                
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a3_test.dart                                                                
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a3_test.dart                                                                
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a3_test.dart                                                                
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a3_test.dart                                                                
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a3_test.dart                                                                
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a3_test.dart                                                                
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a3_test.dart                                                                
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a3_test.dart                                                                
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a3_test.dart                                                                
+00:14 +0: contract:A3 (PurchaseService.restore) contract:A3 — PurchaseService.restore() -> List<PurchaseOutcome> (usecase contract)                                                                    
+00:14 +1: contract:A3 (PurchaseService.restore) contract:A3 — PurchaseService.restore() -> List<PurchaseOutcome> (usecase contract)                                                                    
+00:14 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: genesis
+- hash: 44cb141cd1b6fb0c9c9ea280a66aeea76546df456eb8cbb14091081593383b92
+
+## Cycle: contract:A4 (green)
+
+- behavior: contract:A4
+- kind: green
+- evidence: issue #1411 born-green hand transition — no prior red evidence exists (the hand step preceded the first certification); green certified from the passing target test with the vacuous-guard marker absent and the contract:A4:hand attestation header present
+- subject-hash: 3e126d4eb4e03a17266b9b489e648f466704c05cecccc550f3762095b9daaeef
+- criterion: PurchaseService.finish
+- test: test/tdd/001-purchase-store/contract_a4_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a4_test.dart --plain-name "PurchaseService.finish(String) -> void (usecase contract)"`
+- exit: 0
+- at: 2026-10-21T21:57:18.391648Z
+- output:
+```
+issue #1411 born-green hand transition — the designed hand step was completed before the first red certification (hand-first ordering); the passing transcript below is the green evidence bound to the current subject shape.
+
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a4_test.dart                                                                
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a4_test.dart                                                                
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a4_test.dart                                                                
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a4_test.dart                                                                
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a4_test.dart                                                                
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a4_test.dart                                                                
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a4_test.dart                                                                
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a4_test.dart                                                                
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a4_test.dart                                                                
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a4_test.dart                                                                
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a4_test.dart                                                                
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a4_test.dart                                                                
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a4_test.dart                                                                
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a4_test.dart                                                                
+00:13 +0: contract:A4 (PurchaseService.finish) contract:A4 — PurchaseService.finish(String) -> void (usecase contract)                                                                                 
+00:14 +0: contract:A4 (PurchaseService.finish) contract:A4 — PurchaseService.finish(String) -> void (usecase contract)                                                                                 
+00:14 +1: contract:A4 (PurchaseService.finish) contract:A4 — PurchaseService.finish(String) -> void (usecase contract)                                                                                 
+00:14 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: genesis
+- hash: 730b618d5a23683f47575eb938baf88be53279ba975a632a5c39d27673f036e6
+
+## Cycle: contract:A5 (green)
+
+- behavior: contract:A5
+- kind: green
+- evidence: issue #1411 born-green hand transition — no prior red evidence exists (the hand step preceded the first certification); green certified from the passing target test with the vacuous-guard marker absent and the contract:A5:hand attestation header present
+- subject-hash: 4f5b8df4e587c92b3de43c62dafe8b00d979a275a33554f98d0172f8e434d101
+- criterion: PurchasePort.products
+- test: test/tdd/001-purchase-store/contract_a5_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart --plain-name "PurchasePort.products(List<String>) -> List<CatalogProduct> (usecase contract)"`
+- exit: 0
+- at: 2026-10-21T21:59:48.126454Z
+- output:
+```
+issue #1411 born-green hand transition — the designed hand step was completed before the first red certification (hand-first ordering); the passing transcript below is the green evidence bound to the current subject shape.
+
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:18 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:19 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:20 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:21 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:22 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:23 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:24 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:25 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:26 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:27 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:28 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:29 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:30 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:31 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:32 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:33 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:34 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:35 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:36 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:37 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:38 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:39 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:40 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:41 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:42 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:43 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:44 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:45 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:46 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:47 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:48 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:49 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:50 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:51 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:52 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:53 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:54 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:55 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:56 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:57 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:58 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:59 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+01:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+01:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+01:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+01:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+01:03 +0: contract:A5 (PurchasePort.products) contract:A5 — PurchasePort.products(List<String>) -> List<CatalogProduct> (usecase contract)                                                             
+01:03 +1: contract:A5 (PurchasePort.products) contract:A5 — PurchasePort.products(List<String>) -> List<CatalogProduct> (usecase contract)                                                             
+01:03 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: genesis
+- hash: 172dca1dab52d0ee31cf72a508a733b3a404506abe07d675f4c33404507773b8
+
+## Cycle: U2 (green)
+
+- behavior: U2
+- kind: green
+- evidence: issue #1162 re-certification — the subject was hand-implemented after the certified red; this green evidence binds the NEW subject shape with the passing transcript
+- subject-hash: f66fe6f6f4294037a68a0dfb751d96e716ffe6006db8cfb2ae07f8c9856c4efb
+- criterion: FR-002, PurchaseService.products
+- test: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u2_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u2_test.dart --plain-name "A store that reports itself unavailable MUST surface as a typed"`
+- exit: 0
+- at: 2026-10-21T22:03:12.192436Z
+- output:
+```
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u2_test.dart                                                                         
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u2_test.dart                                                                         
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u2_test.dart                                                                         
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u2_test.dart                                                                         
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u2_test.dart                                                                         
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u2_test.dart                                                                         
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u2_test.dart                                                                         
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u2_test.dart                                                                         
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u2_test.dart                                                                         
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u2_test.dart                                                                         
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u2_test.dart                                                                         
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u2_test.dart                                                                         
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u2_test.dart                                                                         
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u2_test.dart                                                                         
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u2_test.dart                                                                         
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u2_test.dart                                                                         
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u2_test.dart                                                                         
+00:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u2_test.dart                                                                         
+00:18 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u2_test.dart                                                                         
+00:18 +0: U2 (FR-002, PurchaseService.products) U2 — A store that reports itself unavailable MUST surface as a typed                                                                                   
+00:18 +1: U2 (FR-002, PurchaseService.products) U2 — A store that reports itself unavailable MUST surface as a typed                                                                                   
+00:18 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: c4a5fc615dea4441e500e4b82cd42fbe0d7aa9f857853f9df6198d173e29ee1a
+- hash: 7be263756c4afbeb2ae63f23e4467ffb9a8d26af6ad9fde29b6ed5a33366b4df
+
+## Cycle: U3 (green)
+
+- behavior: U3
+- kind: green
+- evidence: issue #1162 re-certification — the subject was hand-implemented after the certified red; this green evidence binds the NEW subject shape with the passing transcript
+- subject-hash: b586572608d160c97d0209b87dbbee028eb6a38cb62a3b3dca71d6a6608f6ea3
+- criterion: FR-003, PurchaseService.purchase
+- test: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u3_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u3_test.dart --plain-name "`PurchaseService.purchase(PurchaseIntent request)` MUST map a"`
+- exit: 0
+- at: 2026-10-21T22:03:34.069128Z
+- output:
+```
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u3_test.dart                                                                         
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u3_test.dart                                                                         
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u3_test.dart                                                                         
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u3_test.dart                                                                         
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u3_test.dart                                                                         
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u3_test.dart                                                                         
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u3_test.dart                                                                         
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u3_test.dart                                                                         
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u3_test.dart                                                                         
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u3_test.dart                                                                         
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u3_test.dart                                                                         
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u3_test.dart                                                                         
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u3_test.dart                                                                         
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u3_test.dart                                                                         
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u3_test.dart                                                                         
+00:14 +0: U3 (FR-003, PurchaseService.purchase) U3 — `PurchaseService.purchase(PurchaseIntent request)` MUST map a                                                                                     
+00:15 +0: U3 (FR-003, PurchaseService.purchase) U3 — `PurchaseService.purchase(PurchaseIntent request)` MUST map a                                                                                     
+00:15 +1: U3 (FR-003, PurchaseService.purchase) U3 — `PurchaseService.purchase(PurchaseIntent request)` MUST map a                                                                                     
+00:15 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: 8d81d8d2527f6dd86a7f497623b6acf446c937d82c80ab4cd0eeaeb2ce3f0f2f
+- hash: b935e4c0ffabfc6a3332e84b57b24b489cdf28f5e6dc3956bf251de60f70488b
+
+## Cycle: contract:A1 (green)
+
+- behavior: contract:A1
+- kind: green
+- evidence: issue #1411 born-green hand transition — no prior red evidence exists (the hand step preceded the first certification); green certified from the passing target test with the vacuous-guard marker absent and the contract:A1:hand attestation header present
+- subject-hash: d2fa6cb6e35371d2e586fa280a0f97c49598d6c2e62739f8a61b5c6ee2da8523
+- criterion: PurchaseService.products
+- test: test/tdd/001-purchase-store/contract_a1_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart --plain-name "PurchaseService.products(List<String>) -> List<CatalogProduct> (usecase contract)"`
+- exit: 0
+- at: 2026-10-21T22:03:49.031216Z
+- output:
+```
+issue #1411 born-green hand transition — the designed hand step was completed before the first red certification (hand-first ordering); the passing transcript below is the green evidence bound to the current subject shape.
+
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:18 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:19 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:20 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:21 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:22 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:23 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:24 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:25 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:26 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:27 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:28 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:29 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:30 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:31 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:32 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:33 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:34 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:35 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:36 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:37 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:38 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:39 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:40 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:41 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:42 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:43 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:44 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:45 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:46 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:47 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:48 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:49 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:50 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:51 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:52 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:53 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:54 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:55 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:56 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:57 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:58 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+00:59 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+01:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+01:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+01:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+01:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+01:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+01:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+01:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+01:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+01:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+01:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+01:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+01:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+01:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+01:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+01:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+01:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+01:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+01:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+01:18 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+01:19 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+01:20 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+01:21 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+01:22 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+01:23 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+01:24 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+01:25 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a1_test.dart                                                                
+01:25 +0: contract:A1 (PurchaseService.products) contract:A1 — PurchaseService.products(List<String>) -> List<CatalogProduct> (usecase contract)                                                       
+01:25 +1: contract:A1 (PurchaseService.products) contract:A1 — PurchaseService.products(List<String>) -> List<CatalogProduct> (usecase contract)                                                       
+01:25 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: 694bbfb70d9dea1198dc2803467a9012d1b97339fec9e70809dafacc00d2f308
+- hash: edfb1e11f2e4695c9c3aad28320f8bde170ef74db8f2da7b4ce687806ea6f7d9
+
+## Cycle: U4 (green)
+
+- behavior: U4
+- kind: green
+- evidence: issue #1162 re-certification — the subject was hand-implemented after the certified red; this green evidence binds the NEW subject shape with the passing transcript
+- subject-hash: bee2ba36fbc914bd6e04c720bbadf975748e31304ce8655edf55b414c6862e15
+- criterion: FR-004, PurchaseService.purchase
+- test: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u4_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u4_test.dart --plain-name "A cancelled store transaction MUST surface as a typed recoverable"`
+- exit: 0
+- at: 2026-10-21T22:03:58.255041Z
+- output:
+```
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u4_test.dart                                                                         
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u4_test.dart                                                                         
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u4_test.dart                                                                         
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u4_test.dart                                                                         
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u4_test.dart                                                                         
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u4_test.dart                                                                         
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u4_test.dart                                                                         
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u4_test.dart                                                                         
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u4_test.dart                                                                         
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u4_test.dart                                                                         
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u4_test.dart                                                                         
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u4_test.dart                                                                         
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u4_test.dart                                                                         
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u4_test.dart                                                                         
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u4_test.dart                                                                         
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u4_test.dart                                                                         
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u4_test.dart                                                                         
+00:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u4_test.dart                                                                         
+00:17 +0: U4 (FR-004, PurchaseService.purchase) U4 — A cancelled store transaction MUST surface as a typed recoverable                                                                                 
+00:17 +1: U4 (FR-004, PurchaseService.purchase) U4 — A cancelled store transaction MUST surface as a typed recoverable                                                                                 
+00:17 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: 5362435cbff89a1407659af8441482e357264549269364125e07a0993b167989
+- hash: 313e2c418fde4c499585959352beb05b74bb153af90d526653027e5d4722e478
+
+## Cycle: U5 (green)
+
+- behavior: U5
+- kind: green
+- evidence: issue #1162 re-certification — the subject was hand-implemented after the certified red; this green evidence binds the NEW subject shape with the passing transcript
+- subject-hash: aecc409b08d23143064bc4bbdb41aacf6dd0795e3df008df9c787ff38e1d76fd
+- criterion: FR-005, PurchaseService.restore
+- test: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u5_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u5_test.dart --plain-name "`PurchaseService.restore()` MUST return every transaction the store"`
+- exit: 0
+- at: 2026-10-21T22:04:25.310887Z
+- output:
+```
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u5_test.dart                                                                         
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u5_test.dart                                                                         
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u5_test.dart                                                                         
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u5_test.dart                                                                         
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u5_test.dart                                                                         
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u5_test.dart                                                                         
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u5_test.dart                                                                         
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u5_test.dart                                                                         
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u5_test.dart                                                                         
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u5_test.dart                                                                         
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u5_test.dart                                                                         
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u5_test.dart                                                                         
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u5_test.dart                                                                         
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u5_test.dart                                                                         
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u5_test.dart                                                                         
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u5_test.dart                                                                         
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u5_test.dart                                                                         
+00:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u5_test.dart                                                                         
+00:17 +0: U5 (FR-005, PurchaseService.restore) U5 — `PurchaseService.restore()` MUST return every transaction the store                                                                                
+00:17 +1: U5 (FR-005, PurchaseService.restore) U5 — `PurchaseService.restore()` MUST return every transaction the store                                                                                
+00:17 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: 7e5390e1462b279289bedf762d25531097b8efafc81ad068edc0b10a3371e264
+- hash: e85ff8c6764626c8bf1b1c8aec2d289ec5f3432c968c8dd65432ebbd444c4405
+
+## Cycle: contract:A2 (green)
+
+- behavior: contract:A2
+- kind: green
+- evidence: issue #1411 born-green hand transition — no prior red evidence exists (the hand step preceded the first certification); green certified from the passing target test with the vacuous-guard marker absent and the contract:A2:hand attestation header present
+- subject-hash: 539f2c52eee52d98eeee4139725c99909cf17b042b71d6d994fb338b943d2b7f
+- criterion: PurchaseService.purchase
+- test: test/tdd/001-purchase-store/contract_a2_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a2_test.dart --plain-name "PurchaseService.purchase(PurchaseIntent) -> PurchaseOutcome (usecase contract)"`
+- exit: 0
+- at: 2026-10-21T22:04:47.112527Z
+- output:
+```
+issue #1411 born-green hand transition — the designed hand step was completed before the first red certification (hand-first ordering); the passing transcript below is the green evidence bound to the current subject shape.
+
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a2_test.dart                                                                
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a2_test.dart                                                                
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a2_test.dart                                                                
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a2_test.dart                                                                
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a2_test.dart                                                                
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a2_test.dart                                                                
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a2_test.dart                                                                
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a2_test.dart                                                                
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a2_test.dart                                                                
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a2_test.dart                                                                
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a2_test.dart                                                                
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a2_test.dart                                                                
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a2_test.dart                                                                
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a2_test.dart                                                                
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a2_test.dart                                                                
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a2_test.dart                                                                
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a2_test.dart                                                                
+00:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a2_test.dart                                                                
+00:18 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a2_test.dart                                                                
+00:19 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a2_test.dart                                                                
+00:20 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a2_test.dart                                                                
+00:20 +0: contract:A2 (PurchaseService.purchase) contract:A2 — PurchaseService.purchase(PurchaseIntent) -> PurchaseOutcome (usecase contract)                                                          
+00:20 +1: contract:A2 (PurchaseService.purchase) contract:A2 — PurchaseService.purchase(PurchaseIntent) -> PurchaseOutcome (usecase contract)                                                          
+00:20 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: genesis
+- hash: 09414682384ccde41369f3eb23436098e92f9428faf7401a1b8573d532e803e1
+
+## Cycle: U6 (green)
+
+- behavior: U6
+- kind: green
+- evidence: issue #1162 re-certification — the subject was hand-implemented after the certified red; this green evidence binds the NEW subject shape with the passing transcript
+- subject-hash: b7331c031785c139a4d8acd680c0fa2c3d018ad399b860180b4b7a71e96621d3
+- criterion: FR-006, PurchaseService.finish
+- test: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u6_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u6_test.dart --plain-name "`PurchaseService.finish(String transactionId)` MUST ask the store to"`
+- exit: 0
+- at: 2026-10-21T22:04:53.130883Z
+- output:
+```
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u6_test.dart                                                                         
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u6_test.dart                                                                         
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u6_test.dart                                                                         
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u6_test.dart                                                                         
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u6_test.dart                                                                         
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u6_test.dart                                                                         
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u6_test.dart                                                                         
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u6_test.dart                                                                         
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u6_test.dart                                                                         
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u6_test.dart                                                                         
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u6_test.dart                                                                         
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u6_test.dart                                                                         
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u6_test.dart                                                                         
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u6_test.dart                                                                         
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u6_test.dart                                                                         
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u6_test.dart                                                                         
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u6_test.dart                                                                         
+00:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u6_test.dart                                                                         
+00:18 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u6_test.dart                                                                         
+00:18 +0: U6 (FR-006, PurchaseService.finish) U6 — `PurchaseService.finish(String transactionId)` MUST ask the store to                                                                                
+00:18 +1: U6 (FR-006, PurchaseService.finish) U6 — `PurchaseService.finish(String transactionId)` MUST ask the store to                                                                                
+00:18 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: bb403a120a30f891fdce88aae1ada893161b67ee0a777002b6cf9d51a4c8095f
+- hash: af1f7767562ed3c5be42cf841d4347eb9182726622d228bfae17a7f90b2f7c08
+
+## Cycle: U7 (green)
+
+- behavior: U7
+- kind: green
+- evidence: issue #1162 re-certification — the subject was hand-implemented after the certified red; this green evidence binds the NEW subject shape with the passing transcript
+- subject-hash: 1da38aa6bc84518ce9d200b336a162e301e262993e94d2a5d9544cd20a643a5f
+- criterion: FR-007, StoreApiPurchasePort.purchase
+- test: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u7_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u7_test.dart --plain-name "The store status taxonomy MUST map onto `PurchaseStatus` as"`
+- exit: 0
+- at: 2026-10-21T22:05:18.533491Z
+- output:
+```
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u7_test.dart                                                                         
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u7_test.dart                                                                         
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u7_test.dart                                                                         
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u7_test.dart                                                                         
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u7_test.dart                                                                         
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u7_test.dart                                                                         
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u7_test.dart                                                                         
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u7_test.dart                                                                         
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u7_test.dart                                                                         
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u7_test.dart                                                                         
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u7_test.dart                                                                         
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u7_test.dart                                                                         
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u7_test.dart                                                                         
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u7_test.dart                                                                         
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u7_test.dart                                                                         
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u7_test.dart                                                                         
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u7_test.dart                                                                         
+00:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u7_test.dart                                                                         
+00:17 +0: U7 (FR-007, StoreApiPurchasePort.purchase) U7 — The store status taxonomy MUST map onto `PurchaseStatus` as                                                                                  
+00:17 +1: U7 (FR-007, StoreApiPurchasePort.purchase) U7 — The store status taxonomy MUST map onto `PurchaseStatus` as                                                                                  
+00:17 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: 0d15b30e1525143803976819209d9651ac211bd785729b67c8dd29c9b0d4f16e
+- hash: 1cfb023e7570cca91b12aaee09a706eec3273a7668a01b60e2c8ef6cdbf66f55
+
+## Cycle: contract:A3 (green)
+
+- behavior: contract:A3
+- kind: green
+- evidence: issue #1411 born-green hand transition — no prior red evidence exists (the hand step preceded the first certification); green certified from the passing target test with the vacuous-guard marker absent and the contract:A3:hand attestation header present
+- subject-hash: 02f5e343ded5edfafc34d23f2bdad7a8788e1605cce9c6c3569095db1c4ca595
+- criterion: PurchaseService.restore
+- test: test/tdd/001-purchase-store/contract_a3_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a3_test.dart --plain-name "PurchaseService.restore() -> List<PurchaseOutcome> (usecase contract)"`
+- exit: 0
+- at: 2026-10-21T22:05:37.836184Z
+- output:
+```
+issue #1411 born-green hand transition — the designed hand step was completed before the first red certification (hand-first ordering); the passing transcript below is the green evidence bound to the current subject shape.
+
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a3_test.dart                                                                
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a3_test.dart                                                                
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a3_test.dart                                                                
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a3_test.dart                                                                
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a3_test.dart                                                                
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a3_test.dart                                                                
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a3_test.dart                                                                
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a3_test.dart                                                                
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a3_test.dart                                                                
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a3_test.dart                                                                
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a3_test.dart                                                                
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a3_test.dart                                                                
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a3_test.dart                                                                
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a3_test.dart                                                                
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a3_test.dart                                                                
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a3_test.dart                                                                
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a3_test.dart                                                                
+00:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a3_test.dart                                                                
+00:18 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a3_test.dart                                                                
+00:18 +0: contract:A3 (PurchaseService.restore) contract:A3 — PurchaseService.restore() -> List<PurchaseOutcome> (usecase contract)                                                                    
+00:19 +0: contract:A3 (PurchaseService.restore) contract:A3 — PurchaseService.restore() -> List<PurchaseOutcome> (usecase contract)                                                                    
+00:19 +1: contract:A3 (PurchaseService.restore) contract:A3 — PurchaseService.restore() -> List<PurchaseOutcome> (usecase contract)                                                                    
+00:19 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: 44cb141cd1b6fb0c9c9ea280a66aeea76546df456eb8cbb14091081593383b92
+- hash: 69d141d3ecf59eafb511f64324648d54f7920aed6806fa82a30aa87caacde131
+
+## Cycle: U8 (green)
+
+- behavior: U8
+- kind: green
+- evidence: issue #1162 re-certification — the subject was hand-implemented after the certified red; this green evidence binds the NEW subject shape with the passing transcript
+- subject-hash: 6a58bf2d94ab5b2bf95ea107ba491f3ba117eab8f66fa75ea93cbdee4d80b69d
+- criterion: FR-008, PurchaseSubscriptionStore.fetchProducts
+- test: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u8_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u8_test.dart --plain-name "`PurchaseSubscriptionStore.fetchProducts(List<String> ids)` MUST"`
+- exit: 0
+- at: 2026-10-21T22:05:45.627381Z
+- output:
+```
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u8_test.dart                                                                         
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u8_test.dart                                                                         
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u8_test.dart                                                                         
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u8_test.dart                                                                         
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u8_test.dart                                                                         
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u8_test.dart                                                                         
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u8_test.dart                                                                         
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u8_test.dart                                                                         
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u8_test.dart                                                                         
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u8_test.dart                                                                         
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u8_test.dart                                                                         
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u8_test.dart                                                                         
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u8_test.dart                                                                         
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u8_test.dart                                                                         
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u8_test.dart                                                                         
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u8_test.dart                                                                         
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u8_test.dart                                                                         
+00:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u8_test.dart                                                                         
+00:18 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u8_test.dart                                                                         
+00:18 +0: U8 (FR-008, PurchaseSubscriptionStore.fetchProducts) U8 — `PurchaseSubscriptionStore.fetchProducts(List<String> ids)` MUST                                                                   
+00:18 +1: U8 (FR-008, PurchaseSubscriptionStore.fetchProducts) U8 — `PurchaseSubscriptionStore.fetchProducts(List<String> ids)` MUST                                                                   
+00:18 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: 912ec89f4d632af7a8bcacf2e65be1c00241b992a8ed27cb74c23879a5a7f0a0
+- hash: f9623b8725364e7d8decb7ee7a337bab358038f1450b3c201cbfd860781c2a2b
+
+## Cycle: U9 (green)
+
+- behavior: U9
+- kind: green
+- evidence: issue #1162 re-certification — the subject was hand-implemented after the certified red; this green evidence binds the NEW subject shape with the passing transcript
+- subject-hash: 6eedfa6ace4e9eb9b50b7c6a032038ba31157c2a86d1a80ebfaf71ead9b4f03d
+- criterion: FR-009, PurchaseSubscriptionStore.purchase
+- test: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart --plain-name "`PurchaseSubscriptionStore.purchase(PurchaseRequest request)` MUST"`
+- exit: 0
+- at: 2026-10-21T22:06:13.977012Z
+- output:
+```
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart                                                                         
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart                                                                         
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart                                                                         
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart                                                                         
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart                                                                         
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart                                                                         
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart                                                                         
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart                                                                         
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart                                                                         
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart                                                                         
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart                                                                         
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart                                                                         
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart                                                                         
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart                                                                         
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart                                                                         
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart                                                                         
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart                                                                         
+00:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart                                                                         
+00:18 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart                                                                         
+00:19 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u9_test.dart                                                                         
+00:19 +0: U9 (FR-009, PurchaseSubscriptionStore.purchase) U9 — `PurchaseSubscriptionStore.purchase(PurchaseRequest request)` MUST                                                                      
+00:19 +1: U9 (FR-009, PurchaseSubscriptionStore.purchase) U9 — `PurchaseSubscriptionStore.purchase(PurchaseRequest request)` MUST                                                                      
+00:19 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: 5c0da232504259bbb13667c82d9dc90f36b8c99b5f217fecc1ba59fb99067b78
+- hash: 94ef306f8977a6dfcf77b69a09b604569f016e5577f4328cc2c5740455e9cadd
+
+## Cycle: contract:A4 (green)
+
+- behavior: contract:A4
+- kind: green
+- evidence: issue #1411 born-green hand transition — no prior red evidence exists (the hand step preceded the first certification); green certified from the passing target test with the vacuous-guard marker absent and the contract:A4:hand attestation header present
+- subject-hash: 399b0db1d6a2281fc354662554e24bef589e53be5e66135d3014c3d38361ec45
+- criterion: PurchaseService.finish
+- test: test/tdd/001-purchase-store/contract_a4_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a4_test.dart --plain-name "PurchaseService.finish(String) -> void (usecase contract)"`
+- exit: 0
+- at: 2026-10-21T22:06:33.376890Z
+- output:
+```
+issue #1411 born-green hand transition — the designed hand step was completed before the first red certification (hand-first ordering); the passing transcript below is the green evidence bound to the current subject shape.
+
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a4_test.dart                                                                
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a4_test.dart                                                                
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a4_test.dart                                                                
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a4_test.dart                                                                
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a4_test.dart                                                                
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a4_test.dart                                                                
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a4_test.dart                                                                
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a4_test.dart                                                                
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a4_test.dart                                                                
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a4_test.dart                                                                
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a4_test.dart                                                                
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a4_test.dart                                                                
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a4_test.dart                                                                
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a4_test.dart                                                                
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a4_test.dart                                                                
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a4_test.dart                                                                
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a4_test.dart                                                                
+00:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a4_test.dart                                                                
+00:18 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a4_test.dart                                                                
+00:19 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a4_test.dart                                                                
+00:20 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a4_test.dart                                                                
+00:20 +0: contract:A4 (PurchaseService.finish) contract:A4 — PurchaseService.finish(String) -> void (usecase contract)                                                                                 
+00:20 +1: contract:A4 (PurchaseService.finish) contract:A4 — PurchaseService.finish(String) -> void (usecase contract)                                                                                 
+00:20 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: 730b618d5a23683f47575eb938baf88be53279ba975a632a5c39d27673f036e6
+- hash: a9314c6fdc96f3da04d8824d6eb898e62d4b187c459cc5187d1e69b65c8c8b00
+
+## Cycle: U10 (green)
+
+- behavior: U10
+- kind: green
+- evidence: issue #1162 re-certification — the subject was hand-implemented after the certified red; this green evidence binds the NEW subject shape with the passing transcript
+- subject-hash: da5ff88d20c7237a1e4081098aea9df7bd64b2980fa86a6fb615c852f73f8c8d
+- criterion: FR-010, PurchaseSubscriptionStore.restore
+- test: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u10_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u10_test.dart --plain-name "`PurchaseSubscriptionStore.restore()` MUST return one store purchase"`
+- exit: 0
+- at: 2026-10-21T22:06:42.044792Z
+- output:
+```
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u10_test.dart                                                                        
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u10_test.dart                                                                        
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u10_test.dart                                                                        
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u10_test.dart                                                                        
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u10_test.dart                                                                        
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u10_test.dart                                                                        
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u10_test.dart                                                                        
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u10_test.dart                                                                        
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u10_test.dart                                                                        
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u10_test.dart                                                                        
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u10_test.dart                                                                        
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u10_test.dart                                                                        
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u10_test.dart                                                                        
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u10_test.dart                                                                        
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u10_test.dart                                                                        
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u10_test.dart                                                                        
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u10_test.dart                                                                        
+00:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u10_test.dart                                                                        
+00:18 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u10_test.dart                                                                        
+00:18 +0: U10 (FR-010, PurchaseSubscriptionStore.restore) U10 — `PurchaseSubscriptionStore.restore()` MUST return one store purchase                                                                   
+00:19 +0: U10 (FR-010, PurchaseSubscriptionStore.restore) U10 — `PurchaseSubscriptionStore.restore()` MUST return one store purchase                                                                   
+00:19 +1: U10 (FR-010, PurchaseSubscriptionStore.restore) U10 — `PurchaseSubscriptionStore.restore()` MUST return one store purchase                                                                   
+00:19 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: 956af9f5fdd260da669f44f8d12968cd6fd719daa3607584bd18523763bdab87
+- hash: 5fd5601a810e9499f72ffe2ab65209298f11becb8809ae87a70431ba51041448
+
+## Cycle: U11 (green)
+
+- behavior: U11
+- kind: green
+- evidence: issue #1162 re-certification — the subject was hand-implemented after the certified red; this green evidence binds the NEW subject shape with the passing transcript
+- subject-hash: 27b40a968220e5b703c329503c1c8789f6bce811b6397472fcb34011afd2a68b
+- criterion: FR-011, PurchaseSubscriptionStore.finishPurchase
+- test: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u11_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u11_test.dart --plain-name "`PurchaseSubscriptionStore.finishPurchase(String transactionId)`"`
+- exit: 0
+- at: 2026-10-21T22:07:04.445504Z
+- output:
+```
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u11_test.dart                                                                        
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u11_test.dart                                                                        
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u11_test.dart                                                                        
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u11_test.dart                                                                        
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u11_test.dart                                                                        
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u11_test.dart                                                                        
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u11_test.dart                                                                        
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u11_test.dart                                                                        
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u11_test.dart                                                                        
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u11_test.dart                                                                        
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u11_test.dart                                                                        
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u11_test.dart                                                                        
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u11_test.dart                                                                        
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u11_test.dart                                                                        
+00:13 +0: U11 (FR-011, PurchaseSubscriptionStore.finishPurchase) U11 — `PurchaseSubscriptionStore.finishPurchase(String transactionId)`                                                                
+00:13 +1: U11 (FR-011, PurchaseSubscriptionStore.finishPurchase) U11 — `PurchaseSubscriptionStore.finishPurchase(String transactionId)`                                                                
+00:14 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: a8c355e3b2fab9914869e22399e86185a60e6007ca8c6de60e687b6034b0216c
+- hash: 0a283e3354e0d9e349a0f6b0a8f322bb2443717f7e9fbafc5260c513af50ffa9
+
+## Cycle: contract:A5 (green)
+
+- behavior: contract:A5
+- kind: green
+- evidence: issue #1411 born-green hand transition — no prior red evidence exists (the hand step preceded the first certification); green certified from the passing target test with the vacuous-guard marker absent and the contract:A5:hand attestation header present
+- subject-hash: 6f1056e13322b6943baef50c271dedc872ca82b5a5baa0e888d6e89c52fb8273
+- criterion: PurchasePort.products
+- test: test/tdd/001-purchase-store/contract_a5_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart --plain-name "PurchasePort.products(List<String>) -> List<CatalogProduct> (usecase contract)"`
+- exit: 0
+- at: 2026-10-21T22:07:23.291878Z
+- output:
+```
+issue #1411 born-green hand transition — the designed hand step was completed before the first red certification (hand-first ordering); the passing transcript below is the green evidence bound to the current subject shape.
+
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:18 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:19 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a5_test.dart                                                                
+00:19 +0: contract:A5 (PurchasePort.products) contract:A5 — PurchasePort.products(List<String>) -> List<CatalogProduct> (usecase contract)                                                             
+00:19 +1: contract:A5 (PurchasePort.products) contract:A5 — PurchasePort.products(List<String>) -> List<CatalogProduct> (usecase contract)                                                             
+00:19 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: 172dca1dab52d0ee31cf72a508a733b3a404506abe07d675f4c33404507773b8
+- hash: 1bf25ba74f8c1ac908f8a3a13ae425663205ae06d1223fdad9726a59627a24f6
+
+## Cycle: U12 (green)
+
+- behavior: U12
+- kind: green
+- evidence: issue #1162 re-certification — the subject was hand-implemented after the certified red; this green evidence binds the NEW subject shape with the passing transcript
+- subject-hash: c1cef32102e3ccbdc9fce30cbc32e665f7874188561cd08d55516c60cbf4b909
+- criterion: FR-012, PurchaseException.code
+- test: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u12_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u12_test.dart --plain-name "Store failures MUST surface as the typed `PurchaseException`"`
+- exit: 0
+- at: 2026-10-21T22:07:31.131706Z
+- output:
+```
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u12_test.dart                                                                        
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u12_test.dart                                                                        
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u12_test.dart                                                                        
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u12_test.dart                                                                        
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u12_test.dart                                                                        
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u12_test.dart                                                                        
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u12_test.dart                                                                        
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u12_test.dart                                                                        
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u12_test.dart                                                                        
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u12_test.dart                                                                        
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u12_test.dart                                                                        
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u12_test.dart                                                                        
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u12_test.dart                                                                        
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u12_test.dart                                                                        
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u12_test.dart                                                                        
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u12_test.dart                                                                        
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u12_test.dart                                                                        
+00:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u12_test.dart                                                                        
+00:17 +0: U12 (FR-012, PurchaseException.code) U12 — Store failures MUST surface as the typed `PurchaseException`                                                                                      
+00:17 +1: U12 (FR-012, PurchaseException.code) U12 — Store failures MUST surface as the typed `PurchaseException`                                                                                      
+00:17 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: 37a78cd11086f6e09c7a5dd421f9ac87ae268c3be9f3c8a0d5d85317dffda521
+- hash: 5b70b57598c0062a1dd5343b3dfc25d07d0cf9449e7cef71316b39d0d7051543
+
+## Cycle: U13 (green)
+
+- behavior: U13
+- kind: green
+- evidence: issue #1162 re-certification — the subject was hand-implemented after the certified red; this green evidence binds the NEW subject shape with the passing transcript
+- subject-hash: 2596791d1b3efed5478989487edc47201af5ae4a3385e2bbb7f16186622094f8
+- criterion: FR-013, CompositionRoot.registerPurchaseDependencies
+- test: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u13_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u13_test.dart --plain-name "The composition root `registerPurchaseDependencies` MUST register the"`
+- exit: 0
+- at: 2026-10-21T22:07:57.545308Z
+- output:
+```
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u13_test.dart                                                                        
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u13_test.dart                                                                        
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u13_test.dart                                                                        
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u13_test.dart                                                                        
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u13_test.dart                                                                        
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u13_test.dart                                                                        
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u13_test.dart                                                                        
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u13_test.dart                                                                        
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u13_test.dart                                                                        
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u13_test.dart                                                                        
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u13_test.dart                                                                        
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u13_test.dart                                                                        
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u13_test.dart                                                                        
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u13_test.dart                                                                        
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u13_test.dart                                                                        
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u13_test.dart                                                                        
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u13_test.dart                                                                        
+00:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u13_test.dart                                                                        
+00:18 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u13_test.dart                                                                        
+00:19 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/u13_test.dart                                                                        
+00:19 +0: U13 (FR-013, CompositionRoot.registerPurchaseDependencies) U13 — The composition root `registerPurchaseDependencies` MUST register the                                                       
+00:19 +1: U13 (FR-013, CompositionRoot.registerPurchaseDependencies) U13 — The composition root `registerPurchaseDependencies` MUST register the                                                       
+00:19 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: 6bec1a1f870e8bdbe283c7af3df94faca0f6bc386033c09a76614cae1fac9271
+- hash: a56b36fc2284c231191606e0ff4a3bedb4f7badd9a81e92e41fe3997c8c230b0
+
+## Cycle: contract:A6 (green)
+
+- behavior: contract:A6
+- kind: green
+- evidence: issue #1411 born-green hand transition — no prior red evidence exists (the hand step preceded the first certification); green certified from the passing target test with the vacuous-guard marker absent and the contract:A6:hand attestation header present
+- subject-hash: 4c464073479e64b3903da3f9d79daf3c5274f72facd0be2423ad186689ed6dab
+- criterion: PurchasePort.purchase
+- test: test/tdd/001-purchase-store/contract_a6_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a6_test.dart --plain-name "PurchasePort.purchase(PurchaseIntent) -> PurchaseOutcome (usecase contract)"`
+- exit: 0
+- at: 2026-10-21T22:08:15.175529Z
+- output:
+```
+issue #1411 born-green hand transition — the designed hand step was completed before the first red certification (hand-first ordering); the passing transcript below is the green evidence bound to the current subject shape.
+
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a6_test.dart                                                                
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a6_test.dart                                                                
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a6_test.dart                                                                
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a6_test.dart                                                                
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a6_test.dart                                                                
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a6_test.dart                                                                
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a6_test.dart                                                                
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a6_test.dart                                                                
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a6_test.dart                                                                
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a6_test.dart                                                                
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a6_test.dart                                                                
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a6_test.dart                                                                
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a6_test.dart                                                                
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a6_test.dart                                                                
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a6_test.dart                                                                
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a6_test.dart                                                                
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a6_test.dart                                                                
+00:16 +0: contract:A6 (PurchasePort.purchase) contract:A6 — PurchasePort.purchase(PurchaseIntent) -> PurchaseOutcome (usecase contract)                                                                
+00:17 +0: contract:A6 (PurchasePort.purchase) contract:A6 — PurchasePort.purchase(PurchaseIntent) -> PurchaseOutcome (usecase contract)                                                                
+00:17 +1: contract:A6 (PurchasePort.purchase) contract:A6 — PurchasePort.purchase(PurchaseIntent) -> PurchaseOutcome (usecase contract)                                                                
+00:17 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: genesis
+- hash: 0aca531060eb68d63a4c94d86d7aca12af02570bdb2dc3623640380ea18b96ef
+
+## Cycle: contract:A7 (green)
+
+- behavior: contract:A7
+- kind: green
+- evidence: issue #1411 born-green hand transition — no prior red evidence exists (the hand step preceded the first certification); green certified from the passing target test with the vacuous-guard marker absent and the contract:A7:hand attestation header present
+- subject-hash: dd4ddb5add80196564a2195cff8afe0e0f09aee89c758ba881c2872424f6bd5b
+- criterion: PurchasePort.restore
+- test: test/tdd/001-purchase-store/contract_a7_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart --plain-name "PurchasePort.restore() -> List<PurchaseOutcome> (usecase contract)"`
+- exit: 0
+- at: 2026-10-21T22:10:05.792596Z
+- output:
+```
+issue #1411 born-green hand transition — the designed hand step was completed before the first red certification (hand-first ordering); the passing transcript below is the green evidence bound to the current subject shape.
+
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:18 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:19 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:20 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:21 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:22 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:23 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:24 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:25 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:26 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:27 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:28 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:29 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:30 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:31 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:32 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:33 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:34 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:35 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:36 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:37 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:38 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:39 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:40 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:41 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:42 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:43 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:44 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:45 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:46 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:47 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:48 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:49 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:50 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:51 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:52 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:53 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:54 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:55 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:56 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:57 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:58 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+00:59 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+01:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+01:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+01:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+01:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+01:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+01:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+01:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+01:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+01:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+01:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+01:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+01:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+01:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+01:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+01:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+01:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+01:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a7_test.dart                                                                
+01:16 +0: contract:A7 (PurchasePort.restore) contract:A7 — PurchasePort.restore() -> List<PurchaseOutcome> (usecase contract)                                                                          
+01:17 +0: contract:A7 (PurchasePort.restore) contract:A7 — PurchasePort.restore() -> List<PurchaseOutcome> (usecase contract)                                                                          
+01:17 +1: contract:A7 (PurchasePort.restore) contract:A7 — PurchasePort.restore() -> List<PurchaseOutcome> (usecase contract)                                                                          
+01:17 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: genesis
+- hash: fc968f725387cac0ec777f99e63fdf42e718b953c67447f66a865ae3283e5858
+
+## Cycle: contract:A8 (green)
+
+- behavior: contract:A8
+- kind: green
+- evidence: issue #1411 born-green hand transition — no prior red evidence exists (the hand step preceded the first certification); green certified from the passing target test with the vacuous-guard marker absent and the contract:A8:hand attestation header present
+- subject-hash: 4f166d1f6646e1e86d80c90f5d434994c58543e03fc135c98e34d7d228252ab8
+- criterion: PurchasePort.finish
+- test: test/tdd/001-purchase-store/contract_a8_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart --plain-name "PurchasePort.finish(String) -> void (usecase contract)"`
+- exit: 0
+- at: 2026-10-21T22:12:08.847915Z
+- output:
+```
+issue #1411 born-green hand transition — the designed hand step was completed before the first red certification (hand-first ordering); the passing transcript below is the green evidence bound to the current subject shape.
+
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:18 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:19 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:20 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:21 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:22 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:23 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:24 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:25 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:26 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:27 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:28 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:29 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:30 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:31 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:32 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:33 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:34 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:35 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:36 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:37 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:38 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:39 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:40 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:41 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:42 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:43 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:44 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:45 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:46 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:47 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:48 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:49 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:50 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:51 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:52 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:53 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:54 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:55 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:56 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:57 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:58 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+00:59 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+01:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+01:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+01:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+01:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+01:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+01:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+01:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+01:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+01:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+01:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+01:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+01:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+01:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+01:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+01:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+01:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+01:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+01:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+01:18 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+01:19 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+01:20 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+01:21 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+01:22 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+01:23 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+01:24 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+01:25 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a8_test.dart                                                                
+01:25 +0: contract:A8 (PurchasePort.finish) contract:A8 — PurchasePort.finish(String) -> void (usecase contract)                                                                                       
+01:25 +1: contract:A8 (PurchasePort.finish) contract:A8 — PurchasePort.finish(String) -> void (usecase contract)                                                                                       
+01:25 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: genesis
+- hash: 4dba12956f5a9643f5902fd0552a5672d00b2a6daf2f10cc9959da3ac0901812
+
+## Cycle: contract:A9 (green)
+
+- behavior: contract:A9
+- kind: green
+- evidence: issue #1411 born-green hand transition — no prior red evidence exists (the hand step preceded the first certification); green certified from the passing target test with the vacuous-guard marker absent and the contract:A9:hand attestation header present
+- subject-hash: 9c75c7bbcf744492e5f2dc8fbc88b4cd61a94b9792d10780326b4860e73357ce
+- criterion: StoreApiPurchasePort.products
+- test: test/tdd/001-purchase-store/contract_a9_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart --plain-name "StoreApiPurchasePort.products(List<String>) -> List<CatalogProduct> (usecase contract)"`
+- exit: 0
+- at: 2026-10-21T22:13:42.146136Z
+- output:
+```
+issue #1411 born-green hand transition — the designed hand step was completed before the first red certification (hand-first ordering); the passing transcript below is the green evidence bound to the current subject shape.
+
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:18 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:19 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:20 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:21 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:22 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:23 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:24 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:25 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:26 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:27 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:28 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:29 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:30 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:31 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:32 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:33 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:34 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:35 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:36 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:37 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:38 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:39 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:40 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:41 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:42 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:43 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:44 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:45 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:46 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:47 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:48 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:49 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:50 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:51 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:52 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:53 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:54 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:55 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:56 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:57 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:58 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+00:59 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+01:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+01:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+01:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+01:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a9_test.dart                                                                
+01:03 +0: contract:A9 (StoreApiPurchasePort.products) contract:A9 — StoreApiPurchasePort.products(List<String>) -> List<CatalogProduct> (usecase contract)                                             
+01:04 +0: contract:A9 (StoreApiPurchasePort.products) contract:A9 — StoreApiPurchasePort.products(List<String>) -> List<CatalogProduct> (usecase contract)                                             
+01:04 +1: contract:A9 (StoreApiPurchasePort.products) contract:A9 — StoreApiPurchasePort.products(List<String>) -> List<CatalogProduct> (usecase contract)                                             
+01:04 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: genesis
+- hash: 4d13ddcad6206878ee322df837018f9f7ff8e11782f9637a16b4618b5ccfbe81
+
+## Cycle: contract:A10 (green)
+
+- behavior: contract:A10
+- kind: green
+- evidence: issue #1411 born-green hand transition — no prior red evidence exists (the hand step preceded the first certification); green certified from the passing target test with the vacuous-guard marker absent and the contract:A10:hand attestation header present
+- subject-hash: 59f6c7b9fb05bdc3f4359d2c549dd37c0bafab0ca0cd204ee639eeb49fd12b0a
+- criterion: StoreApiPurchasePort.purchase
+- test: test/tdd/001-purchase-store/contract_a10_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a10_test.dart --plain-name "StoreApiPurchasePort.purchase(PurchaseIntent) -> PurchaseOutcome (usecase contract)"`
+- exit: 0
+- at: 2026-10-21T22:14:38.091569Z
+- output:
+```
+issue #1411 born-green hand transition — the designed hand step was completed before the first red certification (hand-first ordering); the passing transcript below is the green evidence bound to the current subject shape.
+
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a10_test.dart                                                               
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a10_test.dart                                                               
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a10_test.dart                                                               
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a10_test.dart                                                               
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a10_test.dart                                                               
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a10_test.dart                                                               
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a10_test.dart                                                               
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a10_test.dart                                                               
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a10_test.dart                                                               
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a10_test.dart                                                               
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a10_test.dart                                                               
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a10_test.dart                                                               
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a10_test.dart                                                               
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a10_test.dart                                                               
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a10_test.dart                                                               
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a10_test.dart                                                               
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a10_test.dart                                                               
+00:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a10_test.dart                                                               
+00:18 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a10_test.dart                                                               
+00:19 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a10_test.dart                                                               
+00:20 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a10_test.dart                                                               
+00:20 +0: contract:A10 (StoreApiPurchasePort.purchase) contract:A10 — StoreApiPurchasePort.purchase(PurchaseIntent) -> PurchaseOutcome (usecase contract)                                              
+00:21 +0: contract:A10 (StoreApiPurchasePort.purchase) contract:A10 — StoreApiPurchasePort.purchase(PurchaseIntent) -> PurchaseOutcome (usecase contract)                                              
+00:21 +1: contract:A10 (StoreApiPurchasePort.purchase) contract:A10 — StoreApiPurchasePort.purchase(PurchaseIntent) -> PurchaseOutcome (usecase contract)                                              
+00:21 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: genesis
+- hash: f715107a2b6f518987c99573eafdda7b8b4808be2dd1884ac62de4286a769f48
+
+## Cycle: contract:A11 (green)
+
+- behavior: contract:A11
+- kind: green
+- evidence: issue #1411 born-green hand transition — no prior red evidence exists (the hand step preceded the first certification); green certified from the passing target test with the vacuous-guard marker absent and the contract:A11:hand attestation header present
+- subject-hash: 76d831ae26c69865b0f540f9a603470b65dd70c15c30028514063d1e16cd5422
+- criterion: StoreApiPurchasePort.restore
+- test: test/tdd/001-purchase-store/contract_a11_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart --plain-name "StoreApiPurchasePort.restore() -> List<PurchaseOutcome> (usecase contract)"`
+- exit: 0
+- at: 2026-10-21T22:16:29.200465Z
+- output:
+```
+issue #1411 born-green hand transition — the designed hand step was completed before the first red certification (hand-first ordering); the passing transcript below is the green evidence bound to the current subject shape.
+
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:18 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:19 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:20 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:21 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:22 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:23 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:24 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:25 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:26 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:27 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:28 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:29 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:30 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:31 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:32 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:33 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:34 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:35 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:36 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:37 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:38 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:39 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:40 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:41 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:42 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:43 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:44 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:45 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:46 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:47 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:48 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:49 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:50 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:51 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:52 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:53 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:54 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:55 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:56 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:57 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:58 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+00:59 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+01:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+01:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+01:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+01:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+01:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+01:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+01:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+01:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+01:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+01:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+01:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+01:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+01:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+01:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+01:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+01:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+01:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+01:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+01:18 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a11_test.dart                                                               
+01:18 +0: contract:A11 (StoreApiPurchasePort.restore) contract:A11 — StoreApiPurchasePort.restore() -> List<PurchaseOutcome> (usecase contract)                                                        
+01:19 +0: contract:A11 (StoreApiPurchasePort.restore) contract:A11 — StoreApiPurchasePort.restore() -> List<PurchaseOutcome> (usecase contract)                                                        
+01:19 +1: contract:A11 (StoreApiPurchasePort.restore) contract:A11 — StoreApiPurchasePort.restore() -> List<PurchaseOutcome> (usecase contract)                                                        
+01:19 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: genesis
+- hash: 3aeb6c45da0eceeac63980224c9b84f210b3a194e4d8e1d1e1d138bc7cf53771
+
+## Cycle: contract:A12 (green)
+
+- behavior: contract:A12
+- kind: green
+- evidence: issue #1411 born-green hand transition — no prior red evidence exists (the hand step preceded the first certification); green certified from the passing target test with the vacuous-guard marker absent and the contract:A12:hand attestation header present
+- subject-hash: d42fbf6500b5c3987cbaabca41590d0e969ec24b19464e856788385443517fbe
+- criterion: StoreApiPurchasePort.finish
+- test: test/tdd/001-purchase-store/contract_a12_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart --plain-name "StoreApiPurchasePort.finish(String) -> void (usecase contract)"`
+- exit: 0
+- at: 2026-10-21T22:18:05.300772Z
+- output:
+```
+issue #1411 born-green hand transition — the designed hand step was completed before the first red certification (hand-first ordering); the passing transcript below is the green evidence bound to the current subject shape.
+
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:18 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:19 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:20 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:21 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:22 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:23 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:24 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:25 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:26 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:27 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:28 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:29 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:30 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:31 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:32 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:33 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:34 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:35 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:36 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:37 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:38 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:39 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:40 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:41 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:42 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:43 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:44 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:45 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:46 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:47 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:48 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:49 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:50 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:51 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:52 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:53 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:54 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:55 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:56 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:57 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:58 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+00:59 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+01:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+01:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+01:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+01:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+01:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+01:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+01:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a12_test.dart                                                               
+01:06 +0: contract:A12 (StoreApiPurchasePort.finish) contract:A12 — StoreApiPurchasePort.finish(String) -> void (usecase contract)                                                                     
+01:06 +1: contract:A12 (StoreApiPurchasePort.finish) contract:A12 — StoreApiPurchasePort.finish(String) -> void (usecase contract)                                                                     
+01:06 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: genesis
+- hash: 79de996eebb6964701eb829bf9af20651526d7e3f7ef3aae891e23030f6e3333
+
+## Cycle: contract:A13 (green)
+
+- behavior: contract:A13
+- kind: green
+- evidence: issue #1411 born-green hand transition — no prior red evidence exists (the hand step preceded the first certification); green certified from the passing target test with the vacuous-guard marker absent and the contract:A13:hand attestation header present
+- subject-hash: 29ce7d372026bf0a30734ec050bd123db3e657f5cb392ef3f76ff077b9dee63a
+- criterion: PurchaseSubscriptionStore.fetchProducts
+- test: test/tdd/001-purchase-store/contract_a13_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart --plain-name "PurchaseSubscriptionStore.fetchProducts(List<String>) -> List<Product> (usecase contract)"`
+- exit: 0
+- at: 2026-10-21T22:19:38.454091Z
+- output:
+```
+issue #1411 born-green hand transition — the designed hand step was completed before the first red certification (hand-first ordering); the passing transcript below is the green evidence bound to the current subject shape.
+
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:18 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:19 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:20 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:21 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:22 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:23 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:24 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:25 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:26 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:27 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:28 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:29 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:30 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:31 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:32 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:33 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:34 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:35 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:36 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:37 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:38 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:39 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:40 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:41 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:42 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:43 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:44 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:45 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:46 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:47 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:48 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:49 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:50 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:51 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:52 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:53 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:54 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:55 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:56 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:57 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:58 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+00:59 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+01:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+01:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+01:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+01:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+01:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a13_test.dart                                                               
+01:04 +0: contract:A13 (PurchaseSubscriptionStore.fetchProducts) contract:A13 — PurchaseSubscriptionStore.fetchProducts(List<String>) -> List<Product> (usecase contract)                              
+01:04 +1: contract:A13 (PurchaseSubscriptionStore.fetchProducts) contract:A13 — PurchaseSubscriptionStore.fetchProducts(List<String>) -> List<Product> (usecase contract)                              
+01:04 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: genesis
+- hash: 678fbfe734f399156b4413bdf15b812c69d7126b528ee0fdbb78f6f5302e7d06
+
+## Cycle: contract:A14 (green)
+
+- behavior: contract:A14
+- kind: green
+- evidence: issue #1411 born-green hand transition — no prior red evidence exists (the hand step preceded the first certification); green certified from the passing target test with the vacuous-guard marker absent and the contract:A14:hand attestation header present
+- subject-hash: 8648d2c66ebe3a27f8d1591fdd4cc099b7274c9396583358e29a1e3ee9f11c0b
+- criterion: PurchaseSubscriptionStore.purchase
+- test: test/tdd/001-purchase-store/contract_a14_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a14_test.dart --plain-name "PurchaseSubscriptionStore.purchase(PurchaseRequest) -> StorePurchase (usecase contract)"`
+- exit: 0
+- at: 2026-10-21T22:20:25.064358Z
+- output:
+```
+issue #1411 born-green hand transition — the designed hand step was completed before the first red certification (hand-first ordering); the passing transcript below is the green evidence bound to the current subject shape.
+
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a14_test.dart                                                               
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a14_test.dart                                                               
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a14_test.dart                                                               
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a14_test.dart                                                               
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a14_test.dart                                                               
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a14_test.dart                                                               
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a14_test.dart                                                               
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a14_test.dart                                                               
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a14_test.dart                                                               
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a14_test.dart                                                               
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a14_test.dart                                                               
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a14_test.dart                                                               
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a14_test.dart                                                               
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a14_test.dart                                                               
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a14_test.dart                                                               
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a14_test.dart                                                               
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a14_test.dart                                                               
+00:16 +0: contract:A14 (PurchaseSubscriptionStore.purchase) contract:A14 — PurchaseSubscriptionStore.purchase(PurchaseRequest) -> StorePurchase (usecase contract)                                     
+00:16 +1: contract:A14 (PurchaseSubscriptionStore.purchase) contract:A14 — PurchaseSubscriptionStore.purchase(PurchaseRequest) -> StorePurchase (usecase contract)                                     
+00:16 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: genesis
+- hash: 383a61e798aa2a9404896dc97b0a5f0d2422603ea533fdf69d84cbf95079c63e
+
+## Cycle: contract:A15 (green)
+
+- behavior: contract:A15
+- kind: green
+- evidence: issue #1411 born-green hand transition — no prior red evidence exists (the hand step preceded the first certification); green certified from the passing target test with the vacuous-guard marker absent and the contract:A15:hand attestation header present
+- subject-hash: a396cb34297d4ea0f156471683ddbbc7b24ee212983430cca674e9fddd50d765
+- criterion: PurchaseSubscriptionStore.restore
+- test: test/tdd/001-purchase-store/contract_a15_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart --plain-name "PurchaseSubscriptionStore.restore() -> List<StorePurchase> (usecase contract)"`
+- exit: 0
+- at: 2026-10-21T22:22:02.242822Z
+- output:
+```
+issue #1411 born-green hand transition — the designed hand step was completed before the first red certification (hand-first ordering); the passing transcript below is the green evidence bound to the current subject shape.
+
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:18 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:19 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:20 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:21 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:22 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:23 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:24 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:25 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:26 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:27 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:28 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:29 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:30 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:31 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:32 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:33 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:34 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:35 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:36 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:37 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:38 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:39 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:40 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:41 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:42 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:43 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:44 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:45 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:46 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:47 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:48 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:49 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:50 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:51 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:52 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:53 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:54 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:55 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:56 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:57 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:58 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+00:59 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+01:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+01:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+01:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+01:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+01:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+01:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+01:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+01:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a15_test.dart                                                               
+01:07 +0: contract:A15 (PurchaseSubscriptionStore.restore) contract:A15 — PurchaseSubscriptionStore.restore() -> List<StorePurchase> (usecase contract)                                                
+01:07 +1: contract:A15 (PurchaseSubscriptionStore.restore) contract:A15 — PurchaseSubscriptionStore.restore() -> List<StorePurchase> (usecase contract)                                                
+01:07 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: genesis
+- hash: 26f02c2b0f9abeb6f27153f457b98ebb209de4bb87be562b010e4a9e0f861538
+
+## Cycle: contract:A16 (green)
+
+- behavior: contract:A16
+- kind: green
+- evidence: issue #1411 born-green hand transition — no prior red evidence exists (the hand step preceded the first certification); green certified from the passing target test with the vacuous-guard marker absent and the contract:A16:hand attestation header present
+- subject-hash: 9996fdc9229e343dbfd201b014cc732d9cbe94d147e3b333a7f9cbd1aae0c9e1
+- criterion: PurchaseSubscriptionStore.finishPurchase
+- test: test/tdd/001-purchase-store/contract_a16_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart --plain-name "PurchaseSubscriptionStore.finishPurchase(String) -> void (usecase contract)"`
+- exit: 0
+- at: 2026-10-21T22:23:47.734965Z
+- output:
+```
+issue #1411 born-green hand transition — the designed hand step was completed before the first red certification (hand-first ordering); the passing transcript below is the green evidence bound to the current subject shape.
+
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:18 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:19 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:20 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:21 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:22 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:23 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:24 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:25 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:26 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:27 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:28 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:29 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:30 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:31 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:32 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:33 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:34 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:35 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:36 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:37 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:38 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:39 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:40 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:41 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:42 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:43 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:44 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:45 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:46 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:47 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:48 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:49 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:50 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:51 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:52 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:53 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:54 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:55 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:56 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:57 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:58 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+00:59 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+01:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+01:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+01:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+01:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+01:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+01:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+01:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+01:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+01:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+01:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+01:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+01:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+01:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+01:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+01:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+01:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a16_test.dart                                                               
+01:15 +0: contract:A16 (PurchaseSubscriptionStore.finishPurchase) contract:A16 — PurchaseSubscriptionStore.finishPurchase(String) -> void (usecase contract)                                           
+01:15 +1: contract:A16 (PurchaseSubscriptionStore.finishPurchase) contract:A16 — PurchaseSubscriptionStore.finishPurchase(String) -> void (usecase contract)                                           
+01:15 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: genesis
+- hash: 1924c37c2ef1f7ad767c6813b149e0c59bdab6833c88db498bff3151a73287a0
+
+## Cycle: contract:A17 (green)
+
+- behavior: contract:A17
+- kind: green
+- evidence: issue #1411 born-green hand transition — no prior red evidence exists (the hand step preceded the first certification); green certified from the passing target test with the vacuous-guard marker absent and the contract:A17:hand attestation header present
+- subject-hash: 33534703f81b599548ac66b0bb17a6e217233861e98eb95bcc837daaa09e46f2
+- criterion: PurchaseException.code
+- test: test/tdd/001-purchase-store/contract_a17_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart --plain-name "PurchaseException.code() -> String (usecase contract)"`
+- exit: 0
+- at: 2026-10-21T22:25:24.942274Z
+- output:
+```
+issue #1411 born-green hand transition — the designed hand step was completed before the first red certification (hand-first ordering); the passing transcript below is the green evidence bound to the current subject shape.
+
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:18 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:19 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:20 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:21 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:22 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:23 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:24 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:25 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:26 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:27 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:28 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:29 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:30 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:31 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:32 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:33 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:34 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:35 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:36 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:37 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:38 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:39 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:40 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:41 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:42 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:43 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:44 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:45 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:46 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:47 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:48 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:49 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:50 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:51 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:52 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:53 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:54 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:55 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:56 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:57 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:58 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+00:59 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+01:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+01:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+01:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+01:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+01:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+01:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+01:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+01:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+01:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a17_test.dart                                                               
+01:08 +0: contract:A17 (PurchaseException.code) contract:A17 — PurchaseException.code() -> String (usecase contract)                                                                                   
+01:09 +0: contract:A17 (PurchaseException.code) contract:A17 — PurchaseException.code() -> String (usecase contract)                                                                                   
+01:09 +1: contract:A17 (PurchaseException.code) contract:A17 — PurchaseException.code() -> String (usecase contract)                                                                                   
+01:09 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: genesis
+- hash: cfc6734d8bf5bffd9607648aeb5947387b7e22dfa1eb04380d3c48dd1cc4da6b
+
+## Cycle: contract:A18 (green)
+
+- behavior: contract:A18
+- kind: green
+- evidence: issue #1411 born-green hand transition — no prior red evidence exists (the hand step preceded the first certification); green certified from the passing target test with the vacuous-guard marker absent and the contract:A18:hand attestation header present
+- subject-hash: fd3ddd65425d78bbf532630cd4d226f439cc7300a43fab44d38eff5025a2546a
+- criterion: CompositionRoot.registerPurchaseDependencies
+- test: test/tdd/001-purchase-store/contract_a18_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a18_test.dart --plain-name "CompositionRoot.registerPurchaseDependencies(GetIt) -> void (usecase contract)"`
+- exit: 0
+- at: 2026-10-21T22:26:02.917793Z
+- output:
+```
+issue #1411 born-green hand transition — the designed hand step was completed before the first red certification (hand-first ordering); the passing transcript below is the green evidence bound to the current subject shape.
+
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a18_test.dart                                                               
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a18_test.dart                                                               
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a18_test.dart                                                               
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a18_test.dart                                                               
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a18_test.dart                                                               
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a18_test.dart                                                               
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a18_test.dart                                                               
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a18_test.dart                                                               
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a18_test.dart                                                               
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a18_test.dart                                                               
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a18_test.dart                                                               
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a18_test.dart                                                               
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a18_test.dart                                                               
+00:12 +0: contract:A18 (CompositionRoot.registerPurchaseDependencies) contract:A18 — CompositionRoot.registerPurchaseDependencies(GetIt) -> void (usecase contract)                                    
+00:12 +1: contract:A18 (CompositionRoot.registerPurchaseDependencies) contract:A18 — CompositionRoot.registerPurchaseDependencies(GetIt) -> void (usecase contract)                                    
+00:12 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: 387d1f7455e85a502a16da9d3b15c43ebb18d047616d6ce06531cd051c00a938
+- hash: ca71bcc06442861a7d97b555e88af61800842475ec59d1dc87a91414c88f60e0
+
+## Cycle: contract:A20 (green)
+
+- behavior: contract:A20
+- kind: green
+- evidence: issue #1411 born-green hand transition — no prior red evidence exists (the hand step preceded the first certification); green certified from the passing target test with the vacuous-guard marker absent and the contract:A20:hand attestation header present
+- subject-hash: 83878d9f685d85900147d5e7edbeff92062a40c80c2b1779fc33c300946a385f
+- criterion: StoreApi.queryProducts
+- test: test/tdd/001-purchase-store/contract_a20_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart --plain-name "StoreApi.queryProducts(Set<String>) -> List<StoreProduct> (interface method contract)"`
+- exit: 0
+- at: 2026-10-21T22:28:48.723351Z
+- output:
+```
+issue #1411 born-green hand transition — the designed hand step was completed before the first red certification (hand-first ordering); the passing transcript below is the green evidence bound to the current subject shape.
+
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:18 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:19 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:20 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:21 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:22 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:23 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:24 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:25 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:26 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:27 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:28 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:29 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:30 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:31 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:32 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:33 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:34 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:35 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:36 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:37 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:38 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:39 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:40 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:41 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:42 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:43 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:44 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:45 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:46 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:47 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:48 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:49 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:50 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:51 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:52 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:53 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:54 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:55 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:56 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:57 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:58 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+00:59 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+01:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+01:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+01:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+01:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+01:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+01:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+01:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+01:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+01:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a20_test.dart                                                               
+01:08 +0: contract:A20 (StoreApi.queryProducts) contract:A20 — StoreApi.queryProducts(Set<String>) -> List<StoreProduct> (interface method contract)                                                   
+01:08 +1: contract:A20 (StoreApi.queryProducts) contract:A20 — StoreApi.queryProducts(Set<String>) -> List<StoreProduct> (interface method contract)                                                   
+01:08 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: genesis
+- hash: 85a4fe8e799a64a57cc10201596a9f338fd2b1150403c95a289c215a413d80cb
+
+## Cycle: contract:A21 (green)
+
+- behavior: contract:A21
+- kind: green
+- evidence: issue #1411 born-green hand transition — no prior red evidence exists (the hand step preceded the first certification); green certified from the passing target test with the vacuous-guard marker absent and the contract:A21:hand attestation header present
+- subject-hash: 1b56df90e1e96829ea74e162126d47297957662000a77e785f9d28d2822f953f
+- criterion: StoreApi.purchase
+- test: test/tdd/001-purchase-store/contract_a21_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a21_test.dart --plain-name "StoreApi.purchase(StorePurchaseRequest) -> StoreTransaction (interface method contract)"`
+- exit: 0
+- at: 2026-10-21T22:29:36.639974Z
+- output:
+```
+issue #1411 born-green hand transition — the designed hand step was completed before the first red certification (hand-first ordering); the passing transcript below is the green evidence bound to the current subject shape.
+
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a21_test.dart                                                               
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a21_test.dart                                                               
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a21_test.dart                                                               
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a21_test.dart                                                               
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a21_test.dart                                                               
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a21_test.dart                                                               
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a21_test.dart                                                               
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a21_test.dart                                                               
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a21_test.dart                                                               
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a21_test.dart                                                               
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a21_test.dart                                                               
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a21_test.dart                                                               
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a21_test.dart                                                               
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a21_test.dart                                                               
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a21_test.dart                                                               
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a21_test.dart                                                               
+00:15 +0: contract:A21 (StoreApi.purchase) contract:A21 — StoreApi.purchase(StorePurchaseRequest) -> StoreTransaction (interface method contract)                                                      
+00:16 +0: contract:A21 (StoreApi.purchase) contract:A21 — StoreApi.purchase(StorePurchaseRequest) -> StoreTransaction (interface method contract)                                                      
+00:16 +1: contract:A21 (StoreApi.purchase) contract:A21 — StoreApi.purchase(StorePurchaseRequest) -> StoreTransaction (interface method contract)                                                      
+00:16 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: genesis
+- hash: 0ad995eb1cc369fa38b717a0905ee9e96614af887b555bc34883b70a1ac6e8fa
+
+## Cycle: contract:A22 (green)
+
+- behavior: contract:A22
+- kind: green
+- evidence: issue #1411 born-green hand transition — no prior red evidence exists (the hand step preceded the first certification); green certified from the passing target test with the vacuous-guard marker absent and the contract:A22:hand attestation header present
+- subject-hash: a5f838f0fbbf46afb755bd625064c37341e5c6bbf3124d4416ac539006370de1
+- criterion: StoreApi.restore
+- test: test/tdd/001-purchase-store/contract_a22_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart --plain-name "StoreApi.restore() -> List<StoreTransaction> (interface method contract)"`
+- exit: 0
+- at: 2026-10-21T22:31:29.056342Z
+- output:
+```
+issue #1411 born-green hand transition — the designed hand step was completed before the first red certification (hand-first ordering); the passing transcript below is the green evidence bound to the current subject shape.
+
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:18 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:19 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:20 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:21 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:22 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:23 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:24 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:25 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:26 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:27 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:28 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:29 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:30 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:31 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:32 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:33 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:34 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:35 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:36 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:37 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:38 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:39 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:40 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:41 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:42 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:43 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:44 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:45 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:46 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:47 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:48 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:49 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:50 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:51 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:52 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:53 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:54 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:55 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:56 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:57 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:58 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+00:59 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+01:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+01:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+01:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+01:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+01:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+01:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+01:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+01:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+01:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+01:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+01:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+01:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+01:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+01:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+01:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+01:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+01:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+01:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a22_test.dart                                                               
+01:17 +0: contract:A22 (StoreApi.restore) contract:A22 — StoreApi.restore() -> List<StoreTransaction> (interface method contract)                                                                      
+01:17 +1: contract:A22 (StoreApi.restore) contract:A22 — StoreApi.restore() -> List<StoreTransaction> (interface method contract)                                                                      
+01:17 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: genesis
+- hash: c4c0db2945119f3ab08d35102f86101435dce5a4f756230d342eb1ff0c8476da
+
+## Cycle: contract:A23 (green)
+
+- behavior: contract:A23
+- kind: green
+- evidence: issue #1411 born-green hand transition — no prior red evidence exists (the hand step preceded the first certification); green certified from the passing target test with the vacuous-guard marker absent and the contract:A23:hand attestation header present
+- subject-hash: 88eb8d79d348da261ea2fe649ba8dbe922703523102aaf7f65c6fd65d9e11e50
+- criterion: StoreApi.complete
+- test: test/tdd/001-purchase-store/contract_a23_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart --plain-name "StoreApi.complete(String) -> void (interface method contract)"`
+- exit: 0
+- at: 2026-10-21T22:32:54.042208Z
+- output:
+```
+issue #1411 born-green hand transition — the designed hand step was completed before the first red certification (hand-first ordering); the passing transcript below is the green evidence bound to the current subject shape.
+
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:18 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:19 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:20 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:21 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:22 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:23 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:24 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:25 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:26 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:27 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:28 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:29 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:30 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:31 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:32 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:33 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:34 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:35 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:36 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:37 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:38 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:39 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:40 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:41 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:42 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:43 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:44 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:45 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:46 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:47 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:48 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:49 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:50 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:51 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:52 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:53 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:54 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:55 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:56 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:57 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:58 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a23_test.dart                                                               
+00:58 +0: contract:A23 (StoreApi.complete) contract:A23 — StoreApi.complete(String) -> void (interface method contract)                                                                                
+00:58 +1: contract:A23 (StoreApi.complete) contract:A23 — StoreApi.complete(String) -> void (interface method contract)                                                                                
+00:58 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: genesis
+- hash: e8cc83c3fd5fdc4571921401e73833b1809354c2c5192b63851df85d4b6130dc
+
+## Cycle: contract:A25 (green)
+
+- behavior: contract:A25
+- kind: green
+- evidence: issue #1411 born-green hand transition — no prior red evidence exists (the hand step preceded the first certification); green certified from the passing target test with the vacuous-guard marker absent and the contract:A25:hand attestation header present
+- subject-hash: 31b2ad67ebc5a69c92f0977ebb394f9a37619de38807ed9517b99017b20a782e
+- criterion: RecordingStoreApi.queryProducts
+- test: test/tdd/001-purchase-store/contract_a25_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart --plain-name "RecordingStoreApi.queryProducts(Set<String>) -> List<StoreProduct> (interface method contract)"`
+- exit: 0
+- at: 2026-10-21T22:36:17.608153Z
+- output:
+```
+issue #1411 born-green hand transition — the designed hand step was completed before the first red certification (hand-first ordering); the passing transcript below is the green evidence bound to the current subject shape.
+
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:18 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:19 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:20 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:21 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:22 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:23 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:24 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:25 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:26 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:27 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:28 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:29 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:30 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:31 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:32 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:33 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:34 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:35 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:36 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:37 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:38 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:39 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:40 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:41 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:42 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:43 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:44 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:45 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:46 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:47 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:48 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:49 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:50 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:51 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:52 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:53 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:54 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:55 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:56 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:57 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:58 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+00:59 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+01:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+01:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+01:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+01:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+01:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+01:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+01:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+01:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+01:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+01:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+01:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+01:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+01:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+01:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+01:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+01:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+01:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a25_test.dart                                                               
+01:16 +0: contract:A25 (RecordingStoreApi.queryProducts) contract:A25 — RecordingStoreApi.queryProducts(Set<String>) -> List<StoreProduct> (interface method contract)                                 
+01:16 +1: contract:A25 (RecordingStoreApi.queryProducts) contract:A25 — RecordingStoreApi.queryProducts(Set<String>) -> List<StoreProduct> (interface method contract)                                 
+01:16 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: genesis
+- hash: 7b8ef7a7124ead7ee3a6d3fccd584235870cc00598dd0577d512e94a3035e106
+
+## Cycle: contract:A26 (green)
+
+- behavior: contract:A26
+- kind: green
+- evidence: issue #1411 born-green hand transition — no prior red evidence exists (the hand step preceded the first certification); green certified from the passing target test with the vacuous-guard marker absent and the contract:A26:hand attestation header present
+- subject-hash: e91160e3c95bac1f0af5a8e94f38834e92922539a54026213723e3ccee8a477a
+- criterion: RecordingStoreApi.purchase
+- test: test/tdd/001-purchase-store/contract_a26_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a26_test.dart --plain-name "RecordingStoreApi.purchase(StorePurchaseRequest) -> StoreTransaction (interface method contract)"`
+- exit: 0
+- at: 2026-10-21T22:37:05.530039Z
+- output:
+```
+issue #1411 born-green hand transition — the designed hand step was completed before the first red certification (hand-first ordering); the passing transcript below is the green evidence bound to the current subject shape.
+
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a26_test.dart                                                               
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a26_test.dart                                                               
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a26_test.dart                                                               
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a26_test.dart                                                               
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a26_test.dart                                                               
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a26_test.dart                                                               
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a26_test.dart                                                               
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a26_test.dart                                                               
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a26_test.dart                                                               
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a26_test.dart                                                               
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a26_test.dart                                                               
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a26_test.dart                                                               
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a26_test.dart                                                               
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a26_test.dart                                                               
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a26_test.dart                                                               
+00:14 +0: contract:A26 (RecordingStoreApi.purchase) contract:A26 — RecordingStoreApi.purchase(StorePurchaseRequest) -> StoreTransaction (interface method contract)                                    
+00:14 +1: contract:A26 (RecordingStoreApi.purchase) contract:A26 — RecordingStoreApi.purchase(StorePurchaseRequest) -> StoreTransaction (interface method contract)                                    
+00:14 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: genesis
+- hash: 7d975a3be36e6f1b2680f9665b70a547065e73b30f51a5ba03d9e2e216da5046
+
+## Cycle: contract:A27 (green)
+
+- behavior: contract:A27
+- kind: green
+- evidence: issue #1411 born-green hand transition — no prior red evidence exists (the hand step preceded the first certification); green certified from the passing target test with the vacuous-guard marker absent and the contract:A27:hand attestation header present
+- subject-hash: f76bb682db276b842c278406f8ce9f9ea081657cc95842d1d5a048d58f5eae0d
+- criterion: RecordingStoreApi.restore
+- test: test/tdd/001-purchase-store/contract_a27_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart --plain-name "RecordingStoreApi.restore() -> List<StoreTransaction> (interface method contract)"`
+- exit: 0
+- at: 2026-10-21T22:38:32.897234Z
+- output:
+```
+issue #1411 born-green hand transition — the designed hand step was completed before the first red certification (hand-first ordering); the passing transcript below is the green evidence bound to the current subject shape.
+
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:18 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:19 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:20 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:21 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:22 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:23 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:24 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:25 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:26 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:27 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:28 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:29 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:30 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:31 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:32 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:33 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:34 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:35 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:36 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:37 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:38 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:39 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:40 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:41 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:42 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:43 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:44 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:45 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:46 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:47 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:48 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:49 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:50 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:51 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:52 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:53 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:54 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:55 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:56 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:57 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:58 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+00:59 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+01:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a27_test.dart                                                               
+01:00 +0: contract:A27 (RecordingStoreApi.restore) contract:A27 — RecordingStoreApi.restore() -> List<StoreTransaction> (interface method contract)                                                    
+01:00 +1: contract:A27 (RecordingStoreApi.restore) contract:A27 — RecordingStoreApi.restore() -> List<StoreTransaction> (interface method contract)                                                    
+01:00 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: genesis
+- hash: b3421fb8b92ee7b3034f37f94b2014b74e1f89947c207429b652b176c5512b00
+
+## Cycle: contract:A28 (green)
+
+- behavior: contract:A28
+- kind: green
+- evidence: issue #1411 born-green hand transition — no prior red evidence exists (the hand step preceded the first certification); green certified from the passing target test with the vacuous-guard marker absent and the contract:A28:hand attestation header present
+- subject-hash: adae056c53369bf07f60f8e775d0260851ae5d196b5f146525f8a0ff8d32c283
+- criterion: RecordingStoreApi.complete
+- test: test/tdd/001-purchase-store/contract_a28_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart --plain-name "RecordingStoreApi.complete(String) -> void (interface method contract)"`
+- exit: 0
+- at: 2026-10-21T22:39:46.129106Z
+- output:
+```
+issue #1411 born-green hand transition — the designed hand step was completed before the first red certification (hand-first ordering); the passing transcript below is the green evidence bound to the current subject shape.
+
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:18 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:19 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:20 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:21 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:22 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:23 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:24 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:25 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:26 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:27 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:28 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:29 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:30 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:31 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:32 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:33 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:34 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:35 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:36 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:37 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:38 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:39 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:40 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:41 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:42 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:43 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:44 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:45 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:46 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:47 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:48 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:49 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:50 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:51 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a28_test.dart                                                               
+00:51 +0: contract:A28 (RecordingStoreApi.complete) contract:A28 — RecordingStoreApi.complete(String) -> void (interface method contract)                                                              
+00:51 +1: contract:A28 (RecordingStoreApi.complete) contract:A28 — RecordingStoreApi.complete(String) -> void (interface method contract)                                                              
+00:51 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: genesis
+- hash: fd9f3339ade274ac85be11bd8401aff0e631284d42406d8d5616a06b68d8cb62
+
+## Cycle: A11 (green)
+
+- behavior: A11
+- kind: green
+- evidence: issue #1162 re-certification — the subject was hand-implemented after the certified red; this green evidence binds the NEW subject shape with the passing transcript
+- subject-hash: 07b505b69a0bdfc55d87a384a8610c381b7644f27962e353f56d18feb4ed37a2
+- criterion: AC-11
+- test: /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/a11_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/a11_test.dart --plain-name "a store purchase is returned in state `purchased`, carrying the transaction id, the product id, the purchase timestamp, the derived expiry and the receipt, and flagged `pendingFinish`."`
+- exit: 0
+- at: 2026-10-21T22:41:32.971210Z
+- output:
+```
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/a11_test.dart                                                                        
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/a11_test.dart                                                                        
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/a11_test.dart                                                                        
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/a11_test.dart                                                                        
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/a11_test.dart                                                                        
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/a11_test.dart                                                                        
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/a11_test.dart                                                                        
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/a11_test.dart                                                                        
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/a11_test.dart                                                                        
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/a11_test.dart                                                                        
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/a11_test.dart                                                                        
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/a11_test.dart                                                                        
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/a11_test.dart                                                                        
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/a11_test.dart                                                                        
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/a11_test.dart                                                                        
+00:14 +0: A11 ... purchase is returned in state `purchased`, carrying the transaction id, the product id, the purchase timestamp, the derived expiry and the receipt, and flagged `pendingFinish`.     
+00:14 +1: A11 ... purchase is returned in state `purchased`, carrying the transaction id, the product id, the purchase timestamp, the derived expiry and the receipt, and flagged `pendingFinish`.     
+00:14 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: f82cb56e2c9222132785623798ca4a6879d3754a4d943b88d99896f5906f5142
+- hash: 55973739a9877055ab54671c068de07cd44dc4da600221b8f8f9c10b6a153173
+
+## Cycle: contract:A19 (green)
+
+- behavior: contract:A19
+- kind: green
+- evidence: issue #1411 born-green hand transition — no prior red evidence exists (the hand step preceded the first certification); green certified from the passing target test with the vacuous-guard marker absent and the contract:A19:hand attestation header present
+- subject-hash: 0093d8c8046545712913560aefa49cee1ff3cb5504465a0b0f8cdd608f3fb447
+- criterion: StoreApi.isAvailable
+- test: test/tdd/001-purchase-store/contract_a19_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a19_test.dart --plain-name "StoreApi.isAvailable() -> bool (interface method contract)"`
+- exit: 0
+- at: 2026-10-21T22:46:32.797503Z
+- output:
+```
+issue #1411 born-green hand transition — the designed hand step was completed before the first red certification (hand-first ordering); the passing transcript below is the green evidence bound to the current subject shape.
+
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a19_test.dart                                                               
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a19_test.dart                                                               
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a19_test.dart                                                               
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a19_test.dart                                                               
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a19_test.dart                                                               
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a19_test.dart                                                               
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a19_test.dart                                                               
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a19_test.dart                                                               
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a19_test.dart                                                               
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a19_test.dart                                                               
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a19_test.dart                                                               
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a19_test.dart                                                               
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a19_test.dart                                                               
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a19_test.dart                                                               
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a19_test.dart                                                               
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a19_test.dart                                                               
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a19_test.dart                                                               
+00:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a19_test.dart                                                               
+00:18 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a19_test.dart                                                               
+00:19 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a19_test.dart                                                               
+00:20 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a19_test.dart                                                               
+00:21 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a19_test.dart                                                               
+00:22 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a19_test.dart                                                               
+00:23 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a19_test.dart                                                               
+00:24 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a19_test.dart                                                               
+00:25 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a19_test.dart                                                               
+00:26 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a19_test.dart                                                               
+00:27 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a19_test.dart                                                               
+00:28 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a19_test.dart                                                               
+00:29 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a19_test.dart                                                               
+00:30 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a19_test.dart                                                               
+00:31 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a19_test.dart                                                               
+00:32 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a19_test.dart                                                               
+00:33 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a19_test.dart                                                               
+00:34 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a19_test.dart                                                               
+00:35 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a19_test.dart                                                               
+00:35 +0: contract:A19 (StoreApi.isAvailable) contract:A19 — StoreApi.isAvailable() -> bool (interface method contract)                                                                                
+00:35 +1: contract:A19 (StoreApi.isAvailable) contract:A19 — StoreApi.isAvailable() -> bool (interface method contract)                                                                                
+00:35 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: genesis
+- hash: 49b0e6d330ba965f99181a1d8e511852ec263fb1a5609e020ad9f6367626fb11
+
+## Cycle: contract:A24 (green)
+
+- behavior: contract:A24
+- kind: green
+- evidence: issue #1411 born-green hand transition — no prior red evidence exists (the hand step preceded the first certification); green certified from the passing target test with the vacuous-guard marker absent and the contract:A24:hand attestation header present
+- subject-hash: 82ff0972e6a5712c58ef5d64a8d7a2a2167385174ba70560b434b0ad15828616
+- criterion: RecordingStoreApi.isAvailable
+- test: test/tdd/001-purchase-store/contract_a24_test.dart
+- command: `dart test --concurrency=2 /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart --plain-name "RecordingStoreApi.isAvailable() -> bool (interface method contract)"`
+- exit: 0
+- at: 2026-10-21T22:47:43.891528Z
+- output:
+```
+issue #1411 born-green hand transition — the designed hand step was completed before the first red certification (hand-first ordering); the passing transcript below is the green evidence bound to the current subject shape.
+
+00:00 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:01 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:02 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:03 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:04 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:05 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:06 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:07 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:08 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:09 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:10 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:11 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:12 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:13 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:14 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:15 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:16 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:17 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:18 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:19 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:20 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:21 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:22 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:23 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:24 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:25 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:26 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:27 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:28 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:29 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:30 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:31 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:32 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:33 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:34 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:35 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:36 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:37 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:38 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:39 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:40 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:41 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:42 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:43 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:44 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:45 +0: loading /Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/test/tdd/001-purchase-store/contract_a24_test.dart                                                               
+00:45 +0: contract:A24 (RecordingStoreApi.isAvailable) contract:A24 — RecordingStoreApi.isAvailable() -> bool (interface method contract)                                                              
+00:45 +1: contract:A24 (RecordingStoreApi.isAvailable) contract:A24 — RecordingStoreApi.isAvailable() -> bool (interface method contract)                                                              
+00:45 +1: All tests passed!
+```
+- generation:
+  (none)
+- suite: baseline=0 guard=0 new=(none)
+
+- schema: 1
+- prev-hash: genesis
+- hash: d18ef8a0cb4a88e20cf5a2afc42ab3ac21058306b4b2092477a5c99680adbfc3
+
+## Two-cycle run: 001-purchase-store
+
+- feature: 001-purchase-store
+- engine-receipt: 04-engine-receipt.json (verdict: green)
+- skin-receipt: 04-skin-receipt.json (verdict: green)
+- at: 2026-10-21T22:49:31.986572Z
+
+## Two-cycle run: 001-purchase-store
+
+- feature: 001-purchase-store
+- engine-receipt: 04-engine-receipt.json (verdict: green)
+- skin-receipt: 04-skin-receipt.json (verdict: green)
+- at: 2026-10-22T02:18:59.292941Z
+

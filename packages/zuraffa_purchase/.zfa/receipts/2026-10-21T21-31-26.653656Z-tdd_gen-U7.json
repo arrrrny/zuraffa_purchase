@@ -1,0 +1,30 @@
+{
+  "schema": "proof.v1",
+  "command": "tdd gen",
+  "target": "U7",
+  "repro": "zfa tdd gen",
+  "at": "2026-10-21T21:31:26.653656Z",
+  "generator_version": "7.2.0",
+  "input": {
+    "feature": "001-purchase-store"
+  },
+  "files": [
+    {
+      "path": "test/tdd/001-purchase-store/u7_test.dart",
+      "action": "create",
+      "sha256": "a7e638961ba3a5ee6110a96526bcf6e3fd3fa2e2d2e44dbdb9f61213b757dc89",
+      "bytes": 1186,
+      "snapshot": "// GENERATED TEST — `zfa tdd gen U7` (spec 044-test-tdd-generation).\n//\n// behavior_id: U7\n// source_criterion: FR-007, StoreApiPurchasePort.purchase\n// kind: unit\n// description: The store status taxonomy MUST map onto `PurchaseStatus` as\n//\n// This test asserts the observable behavior described above. It is\n// \"honest red\" on first execution: the paired subject at\n// `package:zuraffa_purchase/tdd/001-purchase-store/u7_subject.dart` is unimplemented, so the test fails through an\n// assertion (not an uncaught error, compile/load error, skip, or\n// placeholder). Replace the subject's\n// stub body with real implementation to make this test pass.\nlibrary;\n\nimport 'package:test/test.dart';\nimport 'package:zuraffa_purchase/tdd/001-purchase-store/u7_subject.dart' as subject;\n\nvoid main() {\n  group('U7 (FR-007, StoreApiPurchasePort.purchase)', () {\n    test('U7 — The store status taxonomy MUST map onto `PurchaseStatus` as', () {\n      final result = (() {\n        try {\n          return subject.subject_u7();\n        } on UnimplementedError catch (error) {\n          return error;\n        }\n      })();\n      expect(result, isNot(isA<UnimplementedError>()));\n    });\n  });\n}\n"
+    },
+    {
+      "path": "lib/tdd/001-purchase-store/u7_subject.dart",
+      "action": "create",
+      "sha256": "567e8c6dcd0f9c05b3272fb5cf03557ecd764c3be3279a72d16135061c61c7ad",
+      "bytes": 1028,
+      "snapshot": "// GENERATED STUB — `zfa tdd gen U7` (spec 044-test-tdd-generation).\n//\n// behavior_id: U7\n// source_criterion: FR-007, StoreApiPurchasePort.purchase\n// description: The store status taxonomy MUST map onto `PurchaseStatus` as\n//\n// This is a MINIMAL COMPILABLE STUB. It compiles cleanly (FR-011) but\n// does NOT satisfy the behavior described above — the paired test will\n// fail on first execution with an assertion-level failure (honest red).\n// Replace this stub body with real implementation to make the test pass.\n//\n// The subject name is derived from the behavior id (`subject_u1`) and is\n// deliberately snake_cased — the generator KNOWS the name it emits, so\n// the lint its shape provably trips is suppressed here rather than\n// renaming the contract surface (issue #1035).\n// ignore_for_file: non_constant_identifier_names\nlibrary;\n\n/// Subject for behavior U7.\n///\n/// Throws [UnimplementedError] until the real implementation lands.\nint subject_u7() => throw UnimplementedError('subject_u7 not implemented');\n"
+    }
+  ],
+  "receipt_version": 1,
+  "min_core_version": "6.0.0",
+  "generated_against_core": "7.2.0"
+}

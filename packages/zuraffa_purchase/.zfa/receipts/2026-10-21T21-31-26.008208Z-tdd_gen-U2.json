@@ -1,0 +1,30 @@
+{
+  "schema": "proof.v1",
+  "command": "tdd gen",
+  "target": "U2",
+  "repro": "zfa tdd gen",
+  "at": "2026-10-21T21:31:26.008208Z",
+  "generator_version": "7.2.0",
+  "input": {
+    "feature": "001-purchase-store"
+  },
+  "files": [
+    {
+      "path": "test/tdd/001-purchase-store/u2_test.dart",
+      "action": "create",
+      "sha256": "17bbd79801a49b32c419ef35abad023be8af625a56bcf2459d5d34d4931b6bb3",
+      "bytes": 1746,
+      "snapshot": "// GENERATED TEST — `zfa tdd gen U2` (spec 044-test-tdd-generation).\n//\n// behavior_id: U2\n// source_criterion: FR-002, PurchaseService.products\n// kind: unit\n// description: A store that reports itself unavailable MUST surface as a typed\n//\n// This test asserts the observable behavior described above. It is\n// \"honest red\" on first execution: the paired subject at\n// `package:zuraffa_purchase/tdd/001-purchase-store/u2_subject.dart` is unimplemented, so the test fails through an\n// assertion (not an uncaught error, compile/load error, skip, or\n// placeholder). Replace the subject's\n// stub body with real implementation to make this test pass.\nlibrary;\n\nimport 'package:test/test.dart';\nimport 'package:zuraffa_purchase/tdd/001-purchase-store/u2_subject.dart' as subject;\n\nvoid main() {\n  group('U2 (FR-002, PurchaseService.products)', () {\n    test('U2 — A store that reports itself unavailable MUST surface as a typed', () {\n      List<String> _arg0() => throw UnimplementedError('provide a representative argument for subject_u2 (declared param 0: List<String>)');\n          final result = (() {\n        try {\n          return subject.subject_u2(_arg0());\n        } on UnimplementedError catch (error) {\n          return error;\n        }\n      })();\n      // zfa:tdd: vacuous-guard (issue #1259): the assertion set below is the\n      // UnimplementedError guard ONLY — a green here proves nothing about\n      // the behavior (a dummy `return 0;` flips it green with zero\n      // declared-contract code). Replace this guard with an assertion on\n      // the observable outcome named by the behavior description, remove\n      // this marker, and re-run make.\n      expect(result, isNot(isA<UnimplementedError>()));\n    });\n  });\n}\n"
+    },
+    {
+      "path": "lib/tdd/001-purchase-store/u2_subject.dart",
+      "action": "create",
+      "sha256": "08303325643045c6732c556d5ad10c45d1d5816d65a8eaec3815aa61655c6264",
+      "bytes": 1694,
+      "snapshot": "// GENERATED STUB — `zfa tdd gen U2` (spec 044-test-tdd-generation\n// + issue #1259 contract derivation).\n//\n// behavior_id: U2\n// source_criterion: FR-002, PurchaseService.products\n// description: A store that reports itself unavailable MUST surface as a typed\n//\n// CONTRACT-DERIVED SUBJECT (issue #1259): the signature below is\n// derived from the spec's declared Layer Contract:\n//\n//     products(List<String>) -> List<CatalogProduct>\n//\n// The declared request and result types are preserved above. A\n// declared type whose entity does not exist yet renders as `Object?`\n// so the stub compiles cleanly (FR-011) — the degradation is\n// unconditional ONLY for entities that do not exist on disk; replace\n// it with the declared type once the entity lands. This is a MINIMAL\n// COMPILABLE STUB: it does NOT satisfy the behavior — the paired test\n// fails on first execution (honest red). Replace this stub body with\n// the real implementation of the declared contract to make the test\n// pass.\n// Declared parameters: listString: List<String>\n//\n// The subject name is derived from the behavior id and is deliberately\n// snake_cased — the generator KNOWS the name it emits, so the lint its\n// shape provably trips is suppressed here rather than renaming the\n// contract surface (issue #1035).\n// ignore_for_file: non_constant_identifier_names\nlibrary;\n\n/// Subject for behavior U2 — declared contract:\n/// `products(List<String>) -> List<CatalogProduct>`.\n///\n/// Throws [UnimplementedError] until the real implementation lands.\nObject? subject_u2(List<String> listString) => throw UnimplementedError('subject_u2 not implemented: products(List<String>) -> List<CatalogProduct>');\n"
+    }
+  ],
+  "receipt_version": 1,
+  "min_core_version": "6.0.0",
+  "generated_against_core": "7.2.0"
+}

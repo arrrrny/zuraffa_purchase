@@ -1,20 +1,31 @@
 # Federated plugin monorepo created by `zfa package create-plugin` (issue #1604).
 name: zuraffa_purchase_platform
 description: >-
-  Shared channel-envelope core for the zuraffa_purchase platform adapters: decode, typed-error plumbing, and timeout policy over an injected platform channel.
+  Shared store core for the zuraffa_purchase platform adapters: the StoreApi contract,
+  the in_app_purchase-backed implementation, and the shared purchase/restore flow.
 version: 0.1.0
 homepage: https://zuraffa.com
 
 environment:
   sdk: ^3.11.0
+  flutter: ">=3.41.0"
 
 dependencies:
-  zuraffa: ^7.1.0
+  flutter:
+    sdk: flutter
   zuraffa_purchase: ^0.1.0
+  # The store plugin this family wraps: StoreKit on macOS/iOS (via
+  # in_app_purchase_storekit), Play Billing on Android.
+  in_app_purchase: ^3.3.1
+  # Pinned past 0.4.13 so the app's build is free of the StoreKit 1
+  # deprecation warnings — `in_app_purchase` allows any 0.4.x, so the
+  # constraint is what actually holds the version.
+  in_app_purchase_storekit: ^0.4.15
 
 dev_dependencies:
+  flutter_test:
+    sdk: flutter
   lints: ^4.0.0
-  test: ^1.25.0
 
 dependency_overrides:
   # Local development only — resolve the app-facing package to this
@@ -27,5 +38,5 @@ issue_tracker: https://github.com/arrrrny/zuraffa_purchase/issues
 
 topics:
   - purchase
-  - clean-architecture
+  - in-app-purchase
   - zuraffa

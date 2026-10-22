@@ -1,0 +1,27 @@
+{
+  "schema": "proof.v1",
+  "command": "tdd verify-red A11 --re-certify",
+  "target": "A11",
+  "repro": "zfa tdd verify-red A11 --re-certify",
+  "at": "2026-10-21T22:41:34.634537Z",
+  "generator_version": "7.2.0",
+  "input": {
+    "sanctioned": true,
+    "hand_delta": true,
+    "transition": "re-certify",
+    "behavior": "A11",
+    "feature": "001-purchase-store"
+  },
+  "files": [
+    {
+      "path": "lib/tdd/001-purchase-store/a11_subject.dart",
+      "action": "update",
+      "sha256": "07b505b69a0bdfc55d87a384a8610c381b7644f27962e353f56d18feb4ed37a2",
+      "bytes": 3640,
+      "snapshot": "// GENERATED IMPLEMENTATION — `zfa tdd compose A11` (issue\n// #642; spec 052-acceptance-make-composition: the acceptance subject is\n// composed against the feature's green / entity-wired unit subjects by a\n// generation-pipeline step, never by a wrapper or by hand).\n//\n// behavior_id: A11\n// source_criterion: AC-11\n// composed against: U1 (/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/001-purchase-store/u1_subject.dart), U2 (/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/001-purchase-store/u2_subject.dart)\n// description: a store purchase is returned in state `purchased`, carrying the transaction id, the product id, the purchase timestamp, the derived expiry and the receipt, and flagged `pendingFinish`.\n//\n// This replaces the `zfa tdd gen` stub with the minimal composed\n// implementation (spec 047 FR-005): the feature's unit subjects are the\n// implementation anchors. An anchor marked [entity-wired] carries only\n// the `zfa tdd wire` wiring so far (issue #923) — the composed scenario's\n// real green transition lands when those unit subjects are filled with\n// business logic in later cycles. Extend the body with real behavior in\n// later cycles — the paired test file is immutable (044 ownership).\n//\n// The subject name is derived from the behavior id (`subject_a11`) and is\n// deliberately snake_cased — the generator KNOWS the name it emits, so\n// the lint its shape provably trips is suppressed here rather than\n// renaming the contract surface (issue #1035).\n// ignore_for_file: non_constant_identifier_names\nlibrary;\n\nimport 'package:test/test.dart';\nimport 'package:zuraffa_subscriptions/zuraffa_subscriptions.dart' as subs;\nimport 'package:zuraffa_purchase/zuraffa_purchase.dart';\nimport 'package:zuraffa_purchase/tdd/001-purchase-store/u1_subject.dart' as anchor0;\nimport 'package:zuraffa_purchase/tdd/001-purchase-store/u2_subject.dart' as anchor1;\n\n/// Subject for behavior A11 — the acceptance scenario: the subscription\n/// store purchases through the purchase port, and the store purchase comes\n/// back in state `purchased` with the transaction id, the product id, the\n/// purchase timestamp, the derived expiry, the receipt, and `pendingFinish`.\nFuture<void> subject_a11() async {\n  // Composition anchor: references the feature's green unit subjects.\n  // ignore: unused_local_variable\n  final composedUnitAnchors = <Function>[\n    anchor0.subject_u1,\n    anchor1.subject_u2,\n  ];\n\n  final store = RecordingStoreApi(\n    catalog: const [\n      StoreProduct(\n        id: 'pro.monthly',\n        title: 'Pro monthly',\n        description: 'monthly plan',\n        priceMicros: 4990000,\n        currency: 'USD',\n      ),\n    ],\n    onPurchase: (request) async => StoreTransaction(\n      transactionId: 'tx-1',\n      productId: request.productId,\n      status: StoreTransactionStatus.purchased,\n      purchasedAt: 1700000000000,\n      receipt: 'receipt-abc',\n      needsFinish: true,\n    ),\n  );\n  final subscriptionStore = PurchaseSubscriptionStore(\n    port: StoreApiPurchasePort(store: store),\n    billingPeriod: const Duration(days: 31),\n  );\n\n  final purchase = await subscriptionStore.purchase(\n    const subs.PurchaseRequest(productId: 'pro.monthly'),\n  );\n\n  expect(purchase.state, subs.PurchaseState.purchased);\n  expect(purchase.transactionId, 'tx-1');\n  expect(purchase.productId, 'pro.monthly');\n  expect(purchase.purchasedAt, 1700000000000);\n  expect(\n    purchase.expiresAt,\n    1700000000000 + const Duration(days: 31).inMilliseconds,\n  );\n  expect(purchase.receipt, 'receipt-abc');\n  expect(purchase.pendingFinish, isTrue);\n}\n"
+    }
+  ],
+  "receipt_version": 1,
+  "min_core_version": "6.0.0",
+  "generated_against_core": "7.2.0"
+}

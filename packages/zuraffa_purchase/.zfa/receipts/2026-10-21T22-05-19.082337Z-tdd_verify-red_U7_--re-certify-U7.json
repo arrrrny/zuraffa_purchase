@@ -1,0 +1,34 @@
+{
+  "schema": "proof.v1",
+  "command": "tdd verify-red U7 --re-certify",
+  "target": "U7",
+  "repro": "zfa tdd verify-red U7 --re-certify",
+  "at": "2026-10-21T22:05:19.082337Z",
+  "generator_version": "7.2.0",
+  "input": {
+    "sanctioned": true,
+    "hand_delta": true,
+    "transition": "re-certify",
+    "behavior": "U7",
+    "feature": "001-purchase-store"
+  },
+  "files": [
+    {
+      "path": "test/tdd/001-purchase-store/u7_test.dart",
+      "action": "update",
+      "sha256": "b30dfccce162edf9c648d9553fb0b05550ddd6c63c721caf4c83ceaa4806c5f0",
+      "bytes": 1419,
+      "snapshot": "// GENERATED TEST — `zfa tdd gen U7` (spec 044-test-tdd-generation).\n//\n// behavior_id: U7\n// source_criterion: FR-007, StoreApiPurchasePort.purchase\n// kind: unit\n// description: The store status taxonomy MUST map onto `PurchaseStatus` as\n//\n// This test asserts the observable behavior described above. It is\n// \"honest red\" on first execution: the paired subject at\n// `package:zuraffa_purchase/tdd/001-purchase-store/u7_subject.dart` is unimplemented, so the test fails through an\n// assertion (not an uncaught error, compile/load error, skip, or\n// placeholder). Replace the subject's\n// stub body with real implementation to make this test pass.\nlibrary;\n\nimport 'package:test/test.dart';\nimport 'package:zuraffa_purchase/zuraffa_purchase.dart';\nimport 'package:zuraffa_purchase/tdd/001-purchase-store/u7_subject.dart' as subject;\n\nvoid main() {\n  group('U7 (FR-007, StoreApiPurchasePort.purchase)', () {\n    test('U7 — The store status taxonomy MUST map onto `PurchaseStatus` as', () async {\n      final outcomes = await subject.subject_u7();\n      expect(\n        outcomes.map((outcome) => outcome.status).toList(),\n        [\n          PurchaseStatus.purchased,\n          PurchaseStatus.restored,\n          PurchaseStatus.pending,\n          PurchaseStatus.cancelled,\n          PurchaseStatus.failed,\n        ],\n        reason: 'every store status maps onto its own PurchaseStatus',\n      );\n    });\n  });\n}\n"
+    },
+    {
+      "path": "lib/tdd/001-purchase-store/u7_subject.dart",
+      "action": "update",
+      "sha256": "1da38aa6bc84518ce9d200b336a162e301e262993e94d2a5d9544cd20a643a5f",
+      "bytes": 2294,
+      "snapshot": "// GENERATED STUB — `zfa tdd gen U7` (spec 044-test-tdd-generation).\n//\n// behavior_id: U7\n// source_criterion: FR-007, StoreApiPurchasePort.purchase\n// description: The store status taxonomy MUST map onto `PurchaseStatus` as\n//\n// This is a MINIMAL COMPILABLE STUB. It compiles cleanly (FR-011) but\n// does NOT satisfy the behavior described above — the paired test will\n// fail on first execution with an assertion-level failure (honest red).\n// Replace this stub body with real implementation to make the test pass.\n//\n// The subject name is derived from the behavior id (`subject_u1`) and is\n// deliberately snake_cased — the generator KNOWS the name it emits, so\n// the lint its shape provably trips is suppressed here rather than\n// renaming the contract surface (issue #1035).\n// ignore_for_file: non_constant_identifier_names\nlibrary;\n\n// IMPLEMENTED (spec 001-purchase-store): the subject drives the real\n// implementation over the scriptable RecordingStoreApi and returns the\n// observable outcome the paired test asserts.\n\nimport 'package:zuraffa_purchase/zuraffa_purchase.dart';\n\n/// Subject for behavior U7 — every store status is mapped onto its own\n/// `PurchaseStatus`.\nFuture<List<PurchaseOutcome>> subject_u7() async {\n  final store = RecordingStoreApi(\n    restoredTransactions: const [\n      StoreTransaction(\n        transactionId: 'tx-purchased',\n        productId: 'pro.monthly',\n        status: StoreTransactionStatus.purchased,\n        purchasedAt: 1,\n      ),\n      StoreTransaction(\n        transactionId: 'tx-restored',\n        productId: 'pro.monthly',\n        status: StoreTransactionStatus.restored,\n        purchasedAt: 2,\n      ),\n      StoreTransaction(\n        transactionId: 'tx-pending',\n        productId: 'pro.monthly',\n        status: StoreTransactionStatus.pending,\n        purchasedAt: 3,\n      ),\n      StoreTransaction(\n        transactionId: 'tx-cancelled',\n        productId: 'pro.monthly',\n        status: StoreTransactionStatus.cancelled,\n        purchasedAt: 4,\n      ),\n      StoreTransaction(\n        transactionId: 'tx-failed',\n        productId: 'pro.monthly',\n        status: StoreTransactionStatus.failed,\n        purchasedAt: 5,\n      ),\n    ],\n  );\n  return PurchaseService(port: StoreApiPurchasePort(store: store)).restore();\n}\n"
+    }
+  ],
+  "receipt_version": 1,
+  "min_core_version": "6.0.0",
+  "generated_against_core": "7.2.0"
+}

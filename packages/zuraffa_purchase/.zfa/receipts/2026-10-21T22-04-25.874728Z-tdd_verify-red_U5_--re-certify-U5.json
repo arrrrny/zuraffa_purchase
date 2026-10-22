@@ -1,0 +1,34 @@
+{
+  "schema": "proof.v1",
+  "command": "tdd verify-red U5 --re-certify",
+  "target": "U5",
+  "repro": "zfa tdd verify-red U5 --re-certify",
+  "at": "2026-10-21T22:04:25.874728Z",
+  "generator_version": "7.2.0",
+  "input": {
+    "sanctioned": true,
+    "hand_delta": true,
+    "transition": "re-certify",
+    "behavior": "U5",
+    "feature": "001-purchase-store"
+  },
+  "files": [
+    {
+      "path": "test/tdd/001-purchase-store/u5_test.dart",
+      "action": "update",
+      "sha256": "bb90a023776ecca972df22fad5a6ac6ef75e4aee6d772f981b234d2dfeddd2fe",
+      "bytes": 1358,
+      "snapshot": "// GENERATED TEST — `zfa tdd gen U5` (spec 044-test-tdd-generation).\n//\n// behavior_id: U5\n// source_criterion: FR-005, PurchaseService.restore\n// kind: unit\n// description: `PurchaseService.restore()` MUST return every transaction the store\n//\n// This test asserts the observable behavior described above. It is\n// \"honest red\" on first execution: the paired subject at\n// `package:zuraffa_purchase/tdd/001-purchase-store/u5_subject.dart` is unimplemented, so the test fails through an\n// assertion (not an uncaught error, compile/load error, skip, or\n// placeholder). Replace the subject's\n// stub body with real implementation to make this test pass.\nlibrary;\n\nimport 'package:test/test.dart';\nimport 'package:zuraffa_purchase/zuraffa_purchase.dart';\nimport 'package:zuraffa_purchase/tdd/001-purchase-store/u5_subject.dart' as subject;\n\nvoid main() {\n  group('U5 (FR-005, PurchaseService.restore)', () {\n    test('U5 — `PurchaseService.restore()` MUST return every transaction the store', () async {\n      final outcomes = await subject.subject_u5();\n      expect(outcomes, hasLength(2));\n      expect(\n        outcomes.map((outcome) => outcome.transactionId).toList(),\n        ['tx-1', 'tx-2'],\n      );\n      expect(\n        outcomes.map((outcome) => outcome.status).toList(),\n        everyElement(PurchaseStatus.restored),\n      );\n    });\n  });\n}\n"
+    },
+    {
+      "path": "lib/tdd/001-purchase-store/u5_subject.dart",
+      "action": "update",
+      "sha256": "aecc409b08d23143064bc4bbdb41aacf6dd0795e3df008df9c787ff38e1d76fd",
+      "bytes": 1730,
+      "snapshot": "// GENERATED STUB — `zfa tdd gen U5` (spec 044-test-tdd-generation).\n//\n// behavior_id: U5\n// source_criterion: FR-005, PurchaseService.restore\n// description: `PurchaseService.restore()` MUST return every transaction the store\n//\n// This is a MINIMAL COMPILABLE STUB. It compiles cleanly (FR-011) but\n// does NOT satisfy the behavior described above — the paired test will\n// fail on first execution with an assertion-level failure (honest red).\n// Replace this stub body with real implementation to make the test pass.\n//\n// The subject name is derived from the behavior id (`subject_u1`) and is\n// deliberately snake_cased — the generator KNOWS the name it emits, so\n// the lint its shape provably trips is suppressed here rather than\n// renaming the contract surface (issue #1035).\n// ignore_for_file: non_constant_identifier_names\nlibrary;\n\n// IMPLEMENTED (spec 001-purchase-store): the subject drives the real\n// implementation over the scriptable RecordingStoreApi and returns the\n// observable outcome the paired test asserts.\n\nimport 'package:zuraffa_purchase/zuraffa_purchase.dart';\n\n/// Subject for behavior U5 — the store replays two restored transactions.\nFuture<List<PurchaseOutcome>> subject_u5() async {\n  final store = RecordingStoreApi(\n    restoredTransactions: const [\n      StoreTransaction(\n        transactionId: 'tx-1',\n        productId: 'pro.monthly',\n        status: StoreTransactionStatus.restored,\n        purchasedAt: 1,\n      ),\n      StoreTransaction(\n        transactionId: 'tx-2',\n        productId: 'pro.yearly',\n        status: StoreTransactionStatus.restored,\n        purchasedAt: 2,\n      ),\n    ],\n  );\n  return PurchaseService(port: StoreApiPurchasePort(store: store)).restore();\n}\n"
+    }
+  ],
+  "receipt_version": 1,
+  "min_core_version": "6.0.0",
+  "generated_against_core": "7.2.0"
+}

@@ -1,0 +1,10 @@
+# The TDD subjects are generated scaffolding that lives under `lib/` so the
+# generated tests can reach them as `package:zuraffa_purchase/tdd/...`. They
+# assert through `package:test`, which is a dev dependency — the lint that
+# forbids dev-only imports in published `lib/` code is scoped away here
+# instead of package-wide.
+include: package:lints/recommended.yaml
+
+analyzer:
+  errors:
+    depend_on_referenced_packages: ignore

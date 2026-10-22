@@ -1,34 +1,33 @@
 # zuraffa_purchase_macos
 
-macOS adapter for the [zuraffa_purchase](https://github.com/arrrrny/zuraffa_purchase) federated monorepo:
-the Purchase port over an injected platform channel, with the shared
-envelope machinery from `zuraffa_purchase_platform` and a typed failure taxonomy
-as pure data.
+The macOS adapter of the `zuraffa_purchase` family: StoreKit, reached
+through `package:in_app_purchase` (`in_app_purchase_storekit`).
 
-The channel transport is injected — no Flutter plugin boilerplate, no
-native code in this repo. The consuming app (or a native shell) supplies
-the `ChannelInvoke` seam:
+Part of the [zuraffa_purchase](https://github.com/arrrrny/zuraffa_purchase) federated monorepo, built on the
+[Zuraffa](https://pub.dev/packages/zuraffa) framework.
+
+## Use
 
 ```dart
-import 'package:zuraffa/zuraffa.dart';
 import 'package:zuraffa_purchase_macos/zuraffa_purchase_macos.dart';
+import 'package:zuraffa_purchase/zuraffa_purchase.dart';
 
-void register() {
-  registerMacosPurchaseDependencies(
-    GetIt.instance,
-    channel: MacosPurchaseChannel(
-      invoke: (method, args) => nativeBridge.call(method, args),
-    ),
-  );
-}
+registerMacosPurchaseDependencies(getIt); // the StoreApi on the locator
+registerPurchaseDependencies(getIt); // the port, the service, the store
 ```
 
-Without an injected channel every call surfaces the typed
-`channel_not_wired` failure instead of hanging.
+Afterwards the app resolves `PurchaseService` and `PurchaseSubscriptionStore`
+from the locator like any other Zuraffa service. Native failures are
+classified into a typed taxonomy (`MacosPurchaseException`) with a
+`recoverable` flag.
+
+The adapter pins `in_app_purchase_storekit: ^0.4.15` — past 0.4.13, so the
+app's macOS build carries none of the StoreKit 1 deprecation warnings
+(`SKPaymentTransaction`, `SKPayment`, `SKProduct`).
 
 ## Develop
 
 ```bash
-dart pub get
-dart test
+flutter pub get
+flutter test
 ```

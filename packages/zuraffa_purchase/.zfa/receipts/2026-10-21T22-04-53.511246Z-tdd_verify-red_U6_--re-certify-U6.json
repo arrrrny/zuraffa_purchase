@@ -1,0 +1,34 @@
+{
+  "schema": "proof.v1",
+  "command": "tdd verify-red U6 --re-certify",
+  "target": "U6",
+  "repro": "zfa tdd verify-red U6 --re-certify",
+  "at": "2026-10-21T22:04:53.511246Z",
+  "generator_version": "7.2.0",
+  "input": {
+    "sanctioned": true,
+    "hand_delta": true,
+    "transition": "re-certify",
+    "behavior": "U6",
+    "feature": "001-purchase-store"
+  },
+  "files": [
+    {
+      "path": "test/tdd/001-purchase-store/u6_test.dart",
+      "action": "update",
+      "sha256": "e1ab6b1792bf694d3e20baf3f7b35e8a6759a8f26d5980b58888d8edc677c941",
+      "bytes": 1214,
+      "snapshot": "// GENERATED TEST — `zfa tdd gen U6` (spec 044-test-tdd-generation).\n//\n// behavior_id: U6\n// source_criterion: FR-006, PurchaseService.finish\n// kind: unit\n// description: `PurchaseService.finish(String transactionId)` MUST ask the store to\n//\n// This test asserts the observable behavior described above. It is\n// \"honest red\" on first execution: the paired subject at\n// `package:zuraffa_purchase/tdd/001-purchase-store/u6_subject.dart` is unimplemented, so the test fails through an\n// assertion (not an uncaught error, compile/load error, skip, or\n// placeholder). Replace the subject's\n// stub body with real implementation to make this test pass.\nlibrary;\n\nimport 'package:test/test.dart';\nimport 'package:zuraffa_purchase/tdd/001-purchase-store/u6_subject.dart' as subject;\n\nvoid main() {\n  group('U6 (FR-006, PurchaseService.finish)', () {\n    test('U6 — `PurchaseService.finish(String transactionId)` MUST ask the store to', () async {\n      final completed = await subject.subject_u6('tx-1');\n      expect(completed, ['tx-1', 'tx-unknown'],\n          reason: 'the store is asked to complete exactly the id it is given, '\n              'and an unknown id completes without raising');\n    });\n  });\n}\n"
+    },
+    {
+      "path": "lib/tdd/001-purchase-store/u6_subject.dart",
+      "action": "update",
+      "sha256": "b7331c031785c139a4d8acd680c0fa2c3d018ad399b860180b4b7a71e96621d3",
+      "bytes": 1821,
+      "snapshot": "// GENERATED STUB — `zfa tdd gen U6` (spec 044-test-tdd-generation\n// + issue #1259 contract derivation).\n//\n// behavior_id: U6\n// source_criterion: FR-006, PurchaseService.finish\n// description: `PurchaseService.finish(String transactionId)` MUST ask the store to\n//\n// CONTRACT-DERIVED SUBJECT (issue #1259): the signature below is\n// derived from the spec's declared Layer Contract:\n//\n//     finish(String) -> void\n//\n// The declared request and result types are preserved above: every\n// declared type exists on disk and renders verbatim, import included —\n// implement the body, never the signature. This is a MINIMAL\n// COMPILABLE STUB: it does NOT satisfy the behavior — the paired test\n// fails on first execution (honest red). Replace this stub body with\n// the real implementation of the declared contract to make the test\n// pass.\n// Declared parameters: text: String\n//\n// The subject name is derived from the behavior id and is deliberately\n// snake_cased — the generator KNOWS the name it emits, so the lint its\n// shape provably trips is suppressed here rather than renaming the\n// contract surface (issue #1035).\n// ignore_for_file: non_constant_identifier_names\nlibrary;\n\n// IMPLEMENTED (spec 001-purchase-store): the subject drives the real\n// implementation over the scriptable RecordingStoreApi and returns the\n// observable outcome the paired test asserts.\n\nimport 'package:zuraffa_purchase/zuraffa_purchase.dart';\n\n/// Subject for behavior U6 — the store is asked to complete the transaction.\nFuture<List<String>> subject_u6(String transactionId) async {\n  final store = RecordingStoreApi();\n  final service = PurchaseService(port: StoreApiPurchasePort(store: store));\n  await service.finish(transactionId);\n  await service.finish('tx-unknown');\n  return store.completedTransactionIds;\n}\n"
+    }
+  ],
+  "receipt_version": 1,
+  "min_core_version": "6.0.0",
+  "generated_against_core": "7.2.0"
+}
