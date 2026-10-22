@@ -80,6 +80,64 @@ void main() {
       },
     );
 
+    test('ignores a restored transaction', () async {
+      final queue = StoreEventQueue(source: source.stream);
+      addTearDown(queue.dispose);
+
+      final pending = queue.waitForTerminal(
+        productId: 'pro.monthly',
+        timeout: const Duration(milliseconds: 120),
+      );
+      source.add([
+        _transaction('tx-restored', status: StoreTransactionStatus.restored),
+      ]);
+
+      expect(
+        await pending.future,
+        isEmpty,
+        reason: 'a restored transaction is not the outcome of a fresh purchase',
+      );
+    });
+
+    test('ignores a pending transaction', () async {
+      final queue = StoreEventQueue(source: source.stream);
+      addTearDown(queue.dispose);
+
+      final pending = queue.waitForTerminal(
+        productId: 'pro.monthly',
+        timeout: const Duration(milliseconds: 120),
+      );
+      source.add([
+        _transaction('tx-pending', status: StoreTransactionStatus.pending),
+      ]);
+
+      expect(
+        await pending.future,
+        isEmpty,
+        reason: 'a deferred purchase has not reached a terminal state',
+      );
+    });
+
+    test('ignores the events that arrived before the given sequence', () async {
+      final queue = StoreEventQueue(source: source.stream);
+      addTearDown(queue.dispose);
+
+      source.add([_transaction('tx-stale')]);
+      await Future<void>.delayed(Duration.zero);
+      final fromSeq = queue.seq;
+
+      final pending = queue.waitForTerminal(
+        productId: 'pro.monthly',
+        timeout: const Duration(milliseconds: 120),
+        fromSeq: fromSeq,
+      );
+      source.add([_transaction('tx-fresh')]);
+
+      final transactions = await pending.future;
+      expect(transactions, hasLength(1));
+      expect(transactions.single.transactionId, 'tx-fresh');
+    });
+
     test('times out with no transactions', () async {
       final queue = StoreEventQueue(source: source.stream);
       addTearDown(queue.dispose);

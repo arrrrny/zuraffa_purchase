@@ -2,12 +2,17 @@ import 'package:zuraffa_purchase/zuraffa_purchase.dart';
 import 'package:zuraffa_purchase_platform/zuraffa_purchase_platform.dart';
 
 import 'android_purchase_exception.dart';
+import 'play_dialect.dart';
 
 /// Builds the Android [StoreApi] — Play Billing through
 /// `package:in_app_purchase`.
 ///
 /// The native side is `in_app_purchase_android`, which this package depends
 /// on so the Play Billing implementation is bundled with the app.
+///
+/// The Play-Billing-specific knowledge the shared core cannot hold itself —
+/// the billing period of a product, the purchase parameter, the native error
+/// taxonomy — is handed to the client here.
 StoreApi createAndroidPurchaseStore({
   StoreClient? client,
   Duration purchaseTimeout = const Duration(minutes: 2),
@@ -18,7 +23,9 @@ StoreApi createAndroidPurchaseStore({
   client:
       client ??
       InAppPurchaseStoreClient(
-        isRecoverable: AndroidPurchaseException.isRecoverable,
+        periodResolver: playPeriod,
+        purchaseParamBuilder: playPurchaseParam,
+        errorFactory: AndroidPurchaseException.fromError,
       ),
   purchaseTimeout: purchaseTimeout,
   restoreQuietPeriod: restoreQuietPeriod,

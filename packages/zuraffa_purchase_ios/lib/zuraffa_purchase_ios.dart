@@ -5,3 +5,4 @@ library;
 export 'src/ios_purchase_exception.dart';
 export 'src/ios_purchase_store.dart';
 export 'src/register.dart';
+export 'src/storekit_dialect.dart';

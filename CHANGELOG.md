@@ -1,5 +1,51 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- A purchase now resolves on the terminal transaction of *its own* request.
+  The store accepts the request first, the wait starts from the sequence the
+  store had reached by then, and a restored or a deferred transaction does
+  not settle it — so a purchase never resolves on a transaction the store
+  replayed from an earlier session.
+- A purchase that asks to replace a subscription is either replaced by the
+  store or refused with `plan_change_unsupported` or `plan_change_unknown`.
+  It is never bought as a second purchase, which would leave the user with
+  both entitlements and charge them twice.
+- A purchase that never settles fails with the typed `timeout` failure
+  instead of an unreachable-store failure: the sheet was opened and the store
+  never answered, which is a different condition with a different retry
+  decision.
+- The `PurchaseException` codes are one condition each. `store_error` is the
+  store answering with an error, `store_unavailable` is the store that
+  cannot be reached at all, and the two no longer share a code with opposite
+  recoverability.
+- Finishing a purchase is idempotent: a transaction the store does not know,
+  a deferred one and one the store no longer waits for are no-ops, and a
+  transaction is never finished twice.
+- The billing period of a product is read from the store itself — `P1M` for a
+  monthly plan, `P1Y` for a yearly one — so the expiry of a purchase is the
+  purchase date plus the real period instead of a fixed month.
+- The purchase path makes two round trips to the store instead of three: the
+  store reuses the product details the catalog query already resolved.
+- The store looks the port up when it is used, not when it is resolved, so
+  registering the platform adapter after the port no longer pins the app to
+  an unwired port for the lifetime of the process.
+- `StoreApi` grew a `dispose()` lifecycle hook, so a store that holds a
+  subscription to the platform's stream can release it.
+
+### Changed
+
+- The shared core no longer depends on `in_app_purchase_storekit`. The
+  store-specific knowledge — the billing period of a product, the
+  plan-change purchase parameter, the native error taxonomy — reaches it
+  through three seams the platform adapter supplies, so an Android consumer
+  does not pull a StoreKit implementation it can never use.
+- `IosPurchaseException`, `MacosPurchaseException` and
+  `AndroidPurchaseException` are now `PurchaseException`s — the typed failure
+  the domain speaks — instead of separate types.
+
 ## 0.1.1
 
 ### Added

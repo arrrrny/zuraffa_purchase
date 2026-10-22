@@ -58,6 +58,9 @@ class RecordingStoreApi implements StoreApi {
   Future<void> close() => _controller.close();
 
   @override
+  Future<void> dispose() => close();
+
+  @override
   Stream<List<StoreTransaction>> get transactions => _controller.stream;
 
   @override

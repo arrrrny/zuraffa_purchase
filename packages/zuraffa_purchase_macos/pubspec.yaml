@@ -16,6 +16,8 @@ dependencies:
   zuraffa: ^7.1.0
   zuraffa_purchase: ^0.1.1
   zuraffa_purchase_platform: ^0.1.1
+  # The store plugin this adapter speaks through.
+  in_app_purchase: ^3.3.1
   # The native StoreKit implementation. Pinned past 0.4.13 so the app's
   # build is free of the StoreKit 1 deprecation warnings — `in_app_purchase`
   # allows any 0.4.x, so the constraint is what actually holds the version.

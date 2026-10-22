@@ -1,5 +1,33 @@
 # Changelog
 
+## Unreleased
+
+- The `PurchaseException` codes are now one condition each. `store_error` is
+  the store answering with an error, while `store_unavailable` stays the
+  store that cannot be reached at all; the two no longer share a code with
+  opposite recoverability. `timeout` is the store that did not settle in
+  time, `plan_change_unsupported` the store that cannot replace a
+  subscription, and `plan_change_unknown` a subscription being replaced that
+  the store client does not know. `PurchaseException.storeUnavailable` is now
+  an alias of `storeError` — the name survives, the code did not.
+- `StoreApi` grew a `dispose()` lifecycle hook, so a store that holds a
+  subscription to the platform's stream can release it. The default
+  implementation does nothing.
+- `PurchaseSubscriptionStore` resolves the billing period per product:
+  `billingPeriods` names the cycle length of a product id, and the fallback
+  `billingPeriod` no longer decides the lifetime of every plan on its own.
+- The purchase path makes two round trips to the store instead of three: the
+  store reuses the product details the catalog query already resolved instead
+  of asking the store for the product a second time. The port still asks the
+  store whether it offers the product — the store reports a product it does
+  not offer, and the domain contract depends on that answer.
+- The port looks the store up when it is used, not when it is resolved, so
+  registering the platform adapter after the port no longer pins the app to
+  an unwired port for the lifetime of the process.
+- `RecordingStoreApi` is a supported part of the public API, not an
+  implementation detail: it is the scriptable store double an app uses to
+  drive the store in its own tests.
+
 ## 0.1.1
 
 - `PurchaseSubscriptionStore` now speaks the port's own error vocabulary: a

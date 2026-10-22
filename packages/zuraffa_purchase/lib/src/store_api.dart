@@ -37,6 +37,13 @@ abstract class StoreApi {
   /// The store's transaction stream — purchases, restores and the replay of
   /// unfinished transactions all arrive here.
   Stream<List<StoreTransaction>> get transactions;
+
+  /// Releases the resources this store holds.
+  ///
+  /// A store that subscribes to the platform's stream releases the
+  /// subscription here, so a torn-down store does not keep the process
+  /// alive. Safe to call more than once.
+  Future<void> dispose() async {}
 }
 
 /// A product as the store reports it.
@@ -57,6 +64,9 @@ class StoreProduct {
   final String currency;
 
   /// The billing period label, when the store reports one.
+  ///
+  /// An ISO-8601 duration — `P1M` for a monthly plan, `P3M` for a quarterly
+  /// one, `P1Y` for a yearly one. Null for a one-off product.
   final String? period;
 
   const StoreProduct({
@@ -96,6 +106,11 @@ class StorePurchaseRequest {
   final String? appAccountId;
 
   /// The transaction id of the purchase being replaced.
+  ///
+  /// Set when the purchase replaces an existing subscription — an upgrade or
+  /// a downgrade. The store either replaces the subscription or refuses the
+  /// purchase: it never buys the target plan as a second, separate
+  /// purchase.
   final String? oldPurchaseId;
 
   const StorePurchaseRequest({
