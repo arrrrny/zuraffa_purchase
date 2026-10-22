@@ -63,6 +63,19 @@ void main() {
       expect(port.purchaseIntents.single.oldPurchaseId, 'tx-0');
     });
 
+    test('answers an unscripted purchase with its documented default', () async {
+      final port = ScriptedPurchasePort();
+
+      final outcome = await port.purchase(
+        const PurchaseIntent(productId: 'pro.monthly'),
+      );
+
+      expect(outcome.transactionId, 'tx-1');
+      expect(outcome.productId, 'pro.monthly');
+      expect(outcome.status, PurchaseStatus.purchased);
+      expect(outcome.purchasedAt, 0);
+    });
+
     test('replays the scripted purchases on restore', () async {
       final port = ScriptedPurchasePort(
         restored: const [
