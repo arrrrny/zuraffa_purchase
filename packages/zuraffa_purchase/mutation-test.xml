@@ -9,15 +9,18 @@
   specs/002-subscription-error-vocabulary.
 
   THE OTHER SCOPE — `zfa tdd verify` does NOT read this file. It writes its
-  own feature-scoped config (.dart_tool/zfa/tdd-verify-mutation.xml) whose
-  <file> list is the feature's registered harness subjects, taken from
-  specs/<feature>/tdd/artifacts.json — so a mutation score read from a
-  verification record describes the harness scope (lib/tdd), while a score
-  read from this config describes the production scope (lib/src). Two
-  different surfaces, two different numbers; the harness subjects are not
-  "noise" to the gate, they are its entire scope.
+  own config (.dart_tool/zfa/tdd-verify-mutation.xml) and mutates the harness
+  subjects under lib/tdd/ as a WHOLE, not just the feature's registered ones:
+  verifying specs/002-subscription-error-vocabulary reports its 79 surviving
+  mutants in lib/tdd/001-purchase-store/ (34 files of the previous feature),
+  although specs/002-…/tdd/artifacts.json registers 22 subjects all under
+  lib/tdd/002-…/. So a mutation score read from a verification record
+  describes the harness scope (all of lib/tdd), while a score read from this
+  config describes the production scope (lib/src). Two different surfaces, two
+  different numbers; the harness subjects are not "noise" to the gate, they
+  are its entire scope. Upstream: arrrrny/zuraffa#1998.
 
-  The harness subjects carry the feature's expects, so their mutants are the
+  The harness subjects carry the features' expects, so their mutants are the
   ones that survive — that is what makes the verify gate `fail_survived`
   while no production mutant survives. This config is the production-surface
   half of that story.

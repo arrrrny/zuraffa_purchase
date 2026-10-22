@@ -2,7 +2,7 @@
 feature: 002-subscription-error-vocabulary
 verdict: PASS
 standard: .specify/extensions/tdd/templates/tdd-test-quality-rubric.md # rubric graded against
-verified_at: fd61160..714b944 # commits audited
+verified_at: fd61160..de2758e # commits audited
 behaviors: 22
 proven: 22
 likely: 0
@@ -18,7 +18,7 @@ mutation_tool: mutation_test 1.8.1
 mutation_scope: packages/zuraffa_purchase/lib/src (the whole production surface both features pin)
 mutants: 104
 mutants_survived: 2 # both proven equivalent, not merely unreached
-mutation_score: 98.08 # 102/102 non-equivalent killed; the tool counts 98/104 because it cannot tell an equivalent mutant from a gap
+mutation_score: 98.08 # 102 of 104 killed; the 2 survivors are proven equivalent
 suite: 122 passed, 0 failed (dart test -j 2, packages/zuraffa_purchase)
 analyzer: No issues found!
 ---
@@ -32,6 +32,24 @@ requirement maps to a behavior that exists, runs and asserts something related t
 it; the mutation audit over the production surface leaves **no reachable mutant
 alive**; there are no HIGH test smells; and the analyzer is clean.
 
+One caveat belongs next to that verdict rather than at the bottom of the record:
+the preserved raw run (`verification.raw.md:48-69`) lists all 22 behaviors as
+*"not traced: no scenario-assertions header"* (FR-018), while this record counts
+them as proven. The two files are not in conflict — the check looks for a section
+heading the generator does not emit, not for missing evidence:
+
+- Every generated test carries the generator's header block — `behavior_id`,
+  `source_criterion`, `description` (e.g. `test/tdd/002-subscription-error-vocabulary/u1_test.dart:1-11`)
+  — and its assertions.
+- FR-018 looks for a *scenario-assertions* section heading, which `zfa tdd gen`
+  never writes. The generated tests are not hand-editable, so the heading cannot
+  be added here; the gap is in the check (arrrrny/zuraffa#1996).
+- Traceability is carried independently by `tdd/traceability.md`, which maps
+  every one of the 18 requirement statements to those same test files.
+
+The raw output is preserved byte-for-byte and is not rewritten to hide the
+disagreement; the three points above are the reconciliation.
+
 ## What this feature is
 
 `PurchaseSubscriptionStore` used to let a `PurchaseException` escape the purchase
@@ -44,22 +62,34 @@ the port boundary — same code, same message, different type — and ships
 ## Test-first evidence
 
 Every behavior was certified RED before it was certified GREEN. The red receipts
-live in `specs/002-subscription-error-vocabulary/tdd/cycle-log.md` (append-only)
-and in `packages/zuraffa_purchase/.zfa/receipts/`.
+live in `specs/002-subscription-error-vocabulary/tdd/cycle-log.md` (append-only),
+which is the receipt of record for this feature — see the receipt caveat below
+for why `packages/zuraffa_purchase/.zfa/receipts/` cannot serve that role here.
 
 | Lane | Behaviors | Red evidence | Green evidence |
 | --- | --- | --- | --- |
 | Unit (U1–U7) | 7 | 10 entries, `classification: assertionFailure` | 7 |
 | Acceptance (A1–A11) | 11 | 11 entries, `classification: assertionFailure` | 11 |
-| Contract (contract:A1–A4) | 4 | 4 × BLOCKED receipts, then born-green | 4 |
+| Contract (contract:A1–A4) | 4 | 4 red cycles, `classification: assertionFailure` (BLOCKED per issue #1007) | 4 |
 
 - **Unit and acceptance lanes** fail through an *assertion*, never a compile or
   load error — the honest-red property the spec demands. U5, U6 and U7 each
   took two red cycles (the second after the translation table grew).
-- **The contract lane can never be RED by design** (spec
+- **The contract lane goes red through the tool's BLOCKED path** (spec
   `1007-contract-tests-first-class`): a failing contract test is reported as
-  `BLOCKED` with an `UnimplementedError` naming the unimplemented seam. All four
-  went through stub → red(BLOCKED) → wire to the real implementation → green.
+  `BLOCKED` with an `UnimplementedError` naming the unimplemented seam, and the
+  cycle is recorded with `classification: assertionFailure`. `cycle-log.md:464-575`
+  holds the four cycles — `## Cycle: contract:A1 (red)` through
+  `contract:A4 (red)` — one per contract behavior, in parallel with the unit and
+  acceptance lanes. All four went through stub → red(BLOCKED) → wire to the real
+  implementation → green. There is no "born-green" lane here: the BLOCKED text is
+  the tool's message inside each red cycle, not a separate receipt type.
+- **Receipt caveat.** The `contract-blocked.<id>.json` receipts in
+  `packages/zuraffa_purchase/.zfa/receipts/` are all feature 001's: the file name
+  carries only the behavior id (`contract-blocked.A1.json` for behavior
+  `contract:A1`), so a 002 receipt would overwrite 001's, and none of the 28
+  files present mentions this feature. The cycle log is cited instead; the naming
+  collision is reported upstream (arrrrny/zuraffa#1997).
 
 `zfa tdd status 002-subscription-error-vocabulary` →
 `engine ✅ 22/22 | skin ✅ 0/0 | 0 violations`.
@@ -81,9 +111,19 @@ private structure.
   is excluded because those subjects are the harness of these features (their
   `expect` calls ARE the assertions); mutating them measures the harness, not
   the product.
-- **Result**: **104 mutants, 98 killed by the tool.** Two of the six it reports
-  as undetected are proven equivalent below, so the honest figure is
-  **102/102 non-equivalent mutants killed**.
+- **Result**: **104 mutants — 102 killed, 2 survived.** Both survivors are
+  proven equivalent below, so the honest figure is **102/102 non-equivalent
+  mutants killed** (`mutation_score: 98.08`).
+
+  Two numbers appear in this section and they are deliberately kept apart: the
+  tool's full run at `714b944` — the tree *before* this PR's tests landed —
+  reported **98 killed / 6 undetected**. Each of those six was then re-applied
+  by hand at the head sha and the failing test observed: **four are killed by
+  the tests this PR adds** (they are exactly the two gaps the table below calls
+  closed), and the other two are the equivalent mutants described under
+  "The two equivalent mutants". The post-fix count therefore follows
+  arithmetically from the tool's own run — 104 − 2 — it is not a second,
+  contradictory audit.
 
   | File | Mutants | Undetected |
   | --- | --- | --- |
@@ -95,8 +135,13 @@ private structure.
   | `lib/src/store_api_purchase_port.dart` | 8 | 0 |
   | `lib/src/scripted_purchase_port.dart` | 4 | 0 |
   | `lib/src/purchase_not_wired.dart` | 1 | 0 |
-  | the remaining six files | 0 (no executable code to mutate) | — |
+  | the remaining seven files (below) | 0 (no executable code to mutate) | — |
   | **total** | **104** | **2** |
+
+  The seven files with no mutatable code — 8 named above + 7 = the 15 in
+  `mutation-test.xml` — are `lib/src/port_code_vocabulary.dart`,
+  `purchase_exception.dart`, `purchase_intent.dart`, `purchase_port.dart`,
+  `purchase_service.dart`, `purchase_status.dart` and `store_api.dart`.
 
   The audit is pinned to the surface as of `714b944`. It was re-run rather than
   carried over from an earlier tree because the review-findings work (`#5`,
@@ -112,9 +157,14 @@ Two real gaps, both closed:
 | `ScriptedPurchasePort`'s default `outcome` carried `transactionId: 'tx-1'` and no test constructed the port bare — every purchase test scripted its own outcome, so flipping the default to `'tx+1'` broke nothing. The double ships as production code, so its default is part of the contract a consumer inherits. | `test/scripted_purchase_port_test.dart` → `answers an unscripted purchase with its documented default` pins `transactionId`, `productId`, `status` and `purchasedAt`. |
 | `_label`, the ISO-8601 billing-period formatter, was never driven with a **yearly** period or a degenerate one: every test used the 31-day default, so the `P{n}Y` branch was unreachable and a zero-day period would have been silently promoted to a month. Yearly StoreKit products exist, so this was a hole in the shipped behavior rather than in the harness. | `test/billing_period_label_test.dart` (8 cases): `P1Y`, `P2Y`, `P1M`, `P2M`, the `P7D` fallback, `P0D`, a port-declared period winning over the derived label, and a per-product override beating the store default. |
 
-Each surviving mutant was re-applied by hand afterwards and the failing test
-observed, so the closing is demonstrated per-mutant rather than assumed — the
-3h13m audit was not re-run to confirm four line edits.
+Each of the six survivors was re-applied by hand and the failing test observed,
+so the closing is demonstrated per-mutant rather than assumed. The 3h13m full
+run was not repeated to confirm four line edits, which is also why
+`mutation-test-report.md` is not committed beside the XML: the report a fresh
+run would produce describes the same 104 mutants this table already breaks down,
+and the four changed outcomes are the ones the new tests assert directly. The
+pre-fix totals quoted above are that run's; the post-fix totals are its result
+minus the two equivalents.
 
 ### The two equivalent mutants
 
@@ -139,14 +189,21 @@ real mutants alongside the equivalent ones; that was not done.
 ### The tool's own subject-scoped run
 
 `zfa tdd verify --feature 002-subscription-error-vocabulary` additionally runs a
-mutation audit over the registered behavior artifacts — the 22 subjects in
-`lib/tdd/002-subscription-error-vocabulary`. That run reports **77 killed /
-79 survived**, with `gate: fail_survived`.
+mutation audit over the harness subjects. That run reports **77 killed /
+79 survived** (156 mutants), with `gate: fail_survived`.
 
-Every one of the 79 survivors sits in **`lib/tdd/001-purchase-store/`** — the
-*previous* feature's subjects, not this one's. Not a single survivor is in 002's
-own subjects. The survivors are of the two kinds the rubric says to judge rather
-than report raw:
+Every one of the 79 survivors sits in **`lib/tdd/001-purchase-store/`** — 34
+files belonging to the *previous* feature's subjects, not this one's. Not a
+single survivor is in 002's own subjects, and the verify run's scope is
+therefore wider than the 22 records in
+`specs/002-subscription-error-vocabulary/tdd/artifacts.json`: it mutates the
+harness subjects under `lib/tdd/` as a whole. `mutation-test.xml`'s header used
+to claim the verify config takes its `<file>` list from `artifacts.json`; the
+observed survivors disprove that, and the header now states the scope the tool
+actually uses (reported upstream as arrrrny/zuraffa#1998).
+
+The survivors are of the two kinds the rubric says to judge rather than report
+raw:
 
 - **equivalent mutants** — `expect(actual, expected)` → `expect(expected, actual)`
   inside a subject still passes, because both sides are plain values.
@@ -157,7 +214,7 @@ The raw tool record is preserved verbatim at
 `specs/002-subscription-error-vocabulary/tdd/verification.raw.md`. Its
 `exit_code: -15` is that run being terminated after 1647s; the report it emitted
 is complete, and every number in it is reproduced above. The production-surface
-run is the audit of record for this feature — `mutation-test.xml`'s own header
+run is the audit of record for this feature — `mutation-test.xml`'s header
 states the two scopes and why they differ.
 
 ## Traceability
@@ -183,11 +240,19 @@ exercises the real entry point — `PurchaseSubscriptionStore` over a scripted
 | `zfa tdd status 002-subscription-error-vocabulary` | `engine ✅ 22/22, skin ✅ 0/0, 0 violations` |
 | Mutation audit (production scope) | 104 mutants, 2 equivalent survivors, 102/102 non-equivalent killed |
 
-## Known limitation
+## Known limitations
 
-The contract lane's four behaviors are certified through the `born-green` path
-rather than a red-first path, because the spec makes contract tests first-class
-and therefore never RED. Their BLOCKED receipts
-(`.zfa/receipts/contract-blocked.<id>.json`) are the equivalent of a red receipt
-for that lane: each records that the test existed, failed, and blocked the cycle
-before the seam was wired.
+**FR-018 "not traced".** The raw record lists all 22 behaviors as
+*"not traced: no scenario-assertions header"*. The generated tests do carry a
+header block (`behavior_id`, `source_criterion`, `description`) but not the
+section heading the check looks for, and generated tests are not hand-editable.
+The behaviors are traced through `tdd/traceability.md`, which maps all 18
+requirement statements to those files; the check's finding is a tool gap
+(arrrrny/zuraffa#1996), not missing coverage.
+
+**Contract receipts.** The contract lane's four red cycles are recorded in
+`cycle-log.md:464-575` with `classification: assertionFailure` and the tool's
+BLOCKED message; there are no 002-specific `contract-blocked.<id>.json`
+receipts, because the receipt file name carries only the behavior id and the 28
+files in `.zfa/receipts/` are all 001's (arrrrny/zuraffa#1997). The cycle log is
+the receipt of record for this lane.
