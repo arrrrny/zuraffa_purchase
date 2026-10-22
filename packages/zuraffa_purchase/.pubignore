@@ -1,0 +1,24 @@
+# Development and TDD artifacts — not part of the published package.
+#
+# `.pubignore` replaces `.gitignore` for the purposes of building the
+# published archive, so the ignore rules that matter are repeated here.
+
+# The TDD subject harness. Its subjects import `package:test`, which is a
+# dev dependency — shipping them would make the package fail pub's
+# validation ("packages used in lib/ must be declared in dependencies").
+lib/tdd/
+
+# The TDD specification, its generated lanes and the fleet tooling.
+.specify/
+.zfa/
+specs/
+tool/
+
+# The mutation-audit configuration and its reports.
+mutation-test.xml
+mutation-test-report/
+
+# Build output and local resolution state.
+.dart_tool/
+build/
+pubspec.lock
