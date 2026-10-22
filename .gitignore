@@ -5,7 +5,7 @@ pubspec.lock
 .DS_Store
 mutation-test-report/
 
-# The package-local receipt store. The durable proof record lives in
-# specs/<feature>/tdd/ (ledger, cycle-log, verification.md); the receipts
-# themselves are a local cache of that evidence.
-packages/*/.zfa/
+# NOTE: the package-local receipt store (packages/*/.zfa/) is tracked on
+# purpose. Pub refuses to publish a file that is tracked and git-ignored at
+# the same time, so those receipts are either tracked or ignored — never
+# both. They are excluded from the published archive by .pubignore.
