@@ -31,6 +31,7 @@
     <file>lib/src/port_code_vocabulary.dart</file>
     <file>lib/src/purchase_exception.dart</file>
     <file>lib/src/purchase_intent.dart</file>
+    <file>lib/src/purchase_not_wired.dart</file>
     <file>lib/src/purchase_outcome.dart</file>
     <file>lib/src/purchase_port.dart</file>
     <file>lib/src/purchase_service.dart</file>
