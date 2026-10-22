@@ -15,17 +15,19 @@ dependencies:
     sdk: flutter
   zuraffa_purchase: ^0.1.1
   # The store plugin this family wraps: StoreKit on macOS/iOS (via
-  # in_app_purchase_storekit), Play Billing on Android.
+  # in_app_purchase_storekit), Play Billing on Android. The native
+  # implementation is pinned by the adapter that owns it — the Apple
+  # adapters pin in_app_purchase_storekit — so the shared core does not
+  # pull a native plugin an Android consumer can never use.
   in_app_purchase: ^3.3.1
-  # Pinned past 0.4.13 so the app's build is free of the StoreKit 1
-  # deprecation warnings — `in_app_purchase` allows any 0.4.x, so the
-  # constraint is what actually holds the version.
-  in_app_purchase_storekit: ^0.4.15
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   lints: ^4.0.0
+  # The plugin's platform interface — the seam the store plugin itself is
+  # driven through, and the only way to fake it in a test.
+  in_app_purchase_platform_interface: ^1.4.1
 
 dependency_overrides:
   # Local development only — resolve the app-facing package to this

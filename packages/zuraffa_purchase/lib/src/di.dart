@@ -2,12 +2,15 @@ import 'package:zuraffa/zuraffa.dart';
 
 import 'catalog_product.dart';
 import 'purchase_intent.dart';
+import 'purchase_not_wired.dart';
 import 'purchase_outcome.dart';
 import 'purchase_port.dart';
 import 'purchase_service.dart';
 import 'purchase_subscription_store.dart';
 import 'store_api.dart';
 import 'store_api_purchase_port.dart';
+
+export 'purchase_not_wired.dart';
 
 /// The port used when no platform adapter has been registered.
 ///
@@ -33,25 +36,17 @@ class UnwiredPurchasePort implements PurchasePort {
   Future<void> finish(String transactionId) async => _fail();
 }
 
-/// The typed failure raised while no platform adapter is registered.
-class PurchaseNotWired implements Exception {
-  const PurchaseNotWired();
-
-  @override
-  String toString() =>
-      'PurchaseNotWired: no store was registered — call the platform '
-      "adapter's register*PurchaseDependencies before using the port.";
-}
-
 /// Registers the purchase family on [getIt].
 ///
 /// The platform adapter registers its [StoreApi] first; this wires the
 /// purchase port over it, then the service and the subscription store over
 /// the port.
 ///
-/// The port is resolved lazily, so the order the caller registers in does
-/// not matter — whichever [StoreApi] is on [getIt] when the port is first
-/// resolved is the one it speaks to.
+/// The port looks the store up when it is *used*, not when it is resolved, so
+/// the order the caller registers in does not matter: whichever [StoreApi]
+/// is on [getIt] when the port is called is the one it speaks to. A port
+/// resolved before the adapter registered is not pinned to an unwired store
+/// for the lifetime of the process.
 ///
 /// [port] and [store] let a caller inject its own implementations — in tests,
 /// or when an app drives the store itself.
@@ -68,9 +63,10 @@ void registerPurchaseDependencies(
   }
   if (!getIt.isRegistered<PurchasePort>()) {
     getIt.registerLazySingleton<PurchasePort>(
-      () => getIt.isRegistered<StoreApi>()
-          ? StoreApiPurchasePort(store: getIt<StoreApi>())
-          : const UnwiredPurchasePort(),
+      () => StoreApiPurchasePort(
+        storeResolver: () =>
+            getIt.isRegistered<StoreApi>() ? getIt<StoreApi>() : null,
+      ),
     );
   }
   if (!getIt.isRegistered<PurchaseService>()) {

@@ -30,8 +30,8 @@ class PendingStoreEvent {
 
 /// The store's event buffer.
 ///
-/// It subscribes to the store's transaction stream once, keeps every
-/// transaction it saw, and hands out two kinds of wait:
+/// It subscribes to the store's transaction stream once, keeps the last
+/// [recentLimit] transactions it saw, and hands out two kinds of wait:
 ///
 /// * [waitForTerminal] — the first transaction for one product, used by the
 ///   purchase flow;
@@ -48,6 +48,12 @@ class StoreEventQueue {
   /// Every transaction the queue has seen, oldest first.
   final List<StoreTransaction> _recent = <StoreTransaction>[];
 
+  /// How many transactions [recent] keeps.
+  ///
+  /// The buffer is a diagnostic window, not a log: a long-lived app would
+  /// otherwise keep every transaction it ever saw.
+  static const int recentLimit = 64;
+
   int _nextSeq = 0;
 
   StoreEventQueue({required Stream<List<StoreTransaction>> source}) {
@@ -57,6 +63,13 @@ class StoreEventQueue {
   /// The events as they arrive.
   Stream<StoreEvent> get events => _controller.stream;
 
+  /// The sequence number the next event will carry.
+  ///
+  /// A wait that starts at this sequence only sees the events that arrive
+  /// after it — which is how a purchase is kept from settling on a
+  /// transaction the store replayed from an earlier session.
+  int get seq => _nextSeq;
+
   /// Every transaction the queue has seen, oldest first.
   List<StoreTransaction> get recent =>
       List<StoreTransaction>.unmodifiable(_recent);
@@ -65,19 +78,30 @@ class StoreEventQueue {
     for (final transaction in batch) {
       final event = StoreEvent(_nextSeq++, transaction);
       _recent.add(transaction);
+      if (_recent.length > recentLimit) {
+        _recent.removeAt(0);
+      }
       _controller.add(event);
     }
   }
 
   /// Waits for the first transaction of [productId] that arrives from now on.
   ///
-  /// The wait ends with a [StoreTimeoutException] when [timeout] elapses
-  /// without a matching transaction.
+  /// Only a transaction the store reports *for this purchase* settles the
+  /// wait: a restored transaction and a deferred one are not the outcome of
+  /// a fresh purchase, so they are ignored. A transaction the store
+  /// replayed from an earlier session is ignored as well, by starting the
+  /// wait at [fromSeq] — the sequence the store had reached when it
+  /// accepted the purchase request.
+  ///
+  /// The wait ends with an empty list when [timeout] elapses without a
+  /// matching transaction.
   PendingStoreEvent waitForTerminal({
     required String productId,
     required Duration timeout,
+    int? fromSeq,
   }) {
-    final startSeq = _nextSeq;
+    final startSeq = fromSeq ?? _nextSeq;
     final completer = Completer<List<StoreTransaction>>();
     StreamSubscription<StoreEvent>? subscription;
     Timer? timer;
@@ -92,6 +116,9 @@ class StoreEventQueue {
     subscription = _controller.stream.listen((event) {
       if (event.seq < startSeq) return;
       if (event.transaction.productId != productId) return;
+      // A replayed or deferred transaction is not this purchase's outcome.
+      if (event.transaction.status == StoreTransactionStatus.restored) return;
+      if (event.transaction.status == StoreTransactionStatus.pending) return;
       finish([event.transaction]);
     });
 

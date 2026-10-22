@@ -48,19 +48,18 @@ class InAppPurchaseStoreApi implements StoreApi {
 
   @override
   Future<StoreTransaction> purchase(StorePurchaseRequest request) async {
+    // The store accepts the request first, and the wait starts from the
+    // sequence the store had reached by then: a transaction the store
+    // replayed from an earlier session cannot settle this purchase.
+    await client.startPurchase(request);
     final pending = _queue.waitForTerminal(
       productId: request.productId,
       timeout: purchaseTimeout,
+      fromSeq: _queue.seq,
     );
-    try {
-      await client.startPurchase(request);
-    } catch (_) {
-      pending.cancel();
-      rethrow;
-    }
     final transactions = await pending.future;
     if (transactions.isEmpty) {
-      throw PurchaseException.storeUnavailable(
+      throw PurchaseException.timeout(
         'the purchase of "${request.productId}" did not reach a terminal state '
         'within ${purchaseTimeout.inSeconds}s',
       );
@@ -93,4 +92,7 @@ class InAppPurchaseStoreApi implements StoreApi {
       yield [event.transaction];
     }
   }
+
+  @override
+  Future<void> dispose() => _queue.dispose();
 }

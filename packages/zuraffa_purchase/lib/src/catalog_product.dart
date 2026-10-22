@@ -16,9 +16,9 @@ class CatalogProduct {
 
   /// The price in micro-units of [currency] — `9.99` USD is `9900000`.
   ///
-  /// The store's own price string is locale-formatted, so it is normalized to
-  /// an integer at the adapter boundary; a price the store reports in an
-  /// unparsable form normalizes to `0` rather than failing the catalog.
+  /// The adapter normalises the store's unformatted price (`rawPrice`) at the
+  /// adapter boundary; the store's locale-formatted price string is never
+  /// parsed here.
   final int priceMicros;
 
   /// The ISO currency code, e.g. `USD`.
@@ -26,6 +26,9 @@ class CatalogProduct {
 
   /// The billing period label for a subscription, e.g. `P1M`. Null for
   /// one-off products.
+  ///
+  /// An ISO-8601 duration — `P1M` for a monthly plan, `P3M` for a quarterly
+  /// one, `P1Y` for a yearly one.
   final String? period;
 
   const CatalogProduct({

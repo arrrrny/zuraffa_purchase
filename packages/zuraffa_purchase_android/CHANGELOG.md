@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+- The adapter hands the shared core the Play Billing-specific knowledge it
+  cannot hold itself: `playPeriod` reads the billing period of a product
+  from the pricing phase that recurs — the first phase is often a free
+  trial, which does not repeat — so a monthly plan reads `P1M` and a yearly
+  one `P1Y`, and `playPurchaseParam` builds the purchase parameter.
+- A purchase that asks to replace a subscription goes to the store as a
+  `GooglePlayPurchaseParam` with a `ChangeSubscriptionParam`, so an upgrade
+  or a downgrade replaces the old subscription instead of buying a second
+  one.
+- `AndroidPurchaseException` is now a `PurchaseException` — the typed
+  failure the domain speaks — instead of a separate type, so a native Play
+  Billing failure reaches the caller as a typed failure with its own code.
+
 ## 0.1.1
 
 - No code change: released in lockstep with the `zuraffa_purchase` family so

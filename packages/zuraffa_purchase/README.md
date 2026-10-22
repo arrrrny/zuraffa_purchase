@@ -35,8 +35,40 @@ failure — a mis-registered adapter shows up at the first purchase, never as a
 silent no-op.
 
 Failures are typed: `PurchaseException` carries a stable machine `code`
-(`cancelled`, `product_unavailable`, `store_unavailable`, `pending`) and a
-`recoverable` flag.
+(`cancelled`, `product_unavailable`, `store_unavailable`, `store_error`,
+`timeout`, `pending`, `plan_change_unsupported`, `plan_change_unknown`) and a
+`recoverable` flag. Every condition has its own code, so a caller that
+branches on the code can always tell them apart.
+
+### Driving the store in a test
+
+`RecordingStoreApi` is a supported part of the API, not an implementation
+detail: it is the scriptable store double an app uses to drive the store
+without a device and without a platform adapter. Every call is recorded and
+the outcome is scripted by the caller.
+
+```dart
+final store = RecordingStoreApi(
+  catalog: [
+    StoreProduct(
+      id: 'pro.monthly',
+      title: 'Pro monthly',
+      description: 'monthly plan',
+      priceMicros: 4990000,
+      currency: 'USD',
+    ),
+  ],
+  onPurchase: (request) async => StoreTransaction(
+    transactionId: 'tx-1',
+    productId: request.productId,
+    status: StoreTransactionStatus.purchased,
+    purchasedAt: 1700000000000,
+  ),
+);
+```
+
+A store that holds a subscription to the platform's stream releases it
+through `dispose()` — the hook on the `StoreApi` contract.
 
 ### Handing the store to `zuraffa_subscriptions`
 

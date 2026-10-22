@@ -111,11 +111,43 @@ void main() {
       final pending = store.purchase(
         const StorePurchaseRequest(productId: 'pro.monthly'),
       );
+      // The store accepts the request before the wait is armed, so the
+      // transaction has to be emitted after that step has happened.
+      await Future<void>.delayed(Duration.zero);
       client.emit([_transaction('tx-1')]);
 
       final transaction = await pending;
       expect(transaction.transactionId, 'tx-1');
       expect(client.purchaseRequests.single.productId, 'pro.monthly');
+    });
+
+    test('does not settle on a restored or a pending transaction', () async {
+      final store = InAppPurchaseStoreApi(
+        client: client,
+        purchaseTimeout: const Duration(milliseconds: 120),
+      );
+
+      final pending = store.purchase(
+        const StorePurchaseRequest(productId: 'pro.monthly'),
+      );
+      await Future<void>.delayed(Duration.zero);
+      client.emit([
+        _transaction('tx-restored', status: StoreTransactionStatus.restored),
+      ]);
+      client.emit([
+        _transaction('tx-pending', status: StoreTransactionStatus.pending),
+      ]);
+
+      await expectLater(
+        pending,
+        throwsA(
+          isA<PurchaseException>().having(
+            (error) => error.code,
+            'code',
+            'timeout',
+          ),
+        ),
+      );
     });
 
     test(
@@ -130,7 +162,7 @@ void main() {
           store.purchase(const StorePurchaseRequest(productId: 'pro.monthly')),
           throwsA(
             isA<PurchaseException>()
-                .having((error) => error.code, 'code', 'store_unavailable')
+                .having((error) => error.code, 'code', 'timeout')
                 .having((error) => error.recoverable, 'recoverable', isTrue),
           ),
         );

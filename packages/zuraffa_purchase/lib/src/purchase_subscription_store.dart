@@ -21,14 +21,24 @@ import 'port_code_vocabulary.dart';
 ///
 /// It maps the purchase domain onto the subscription domain: products become
 /// subscription products, and outcomes become store purchases with the expiry
-/// derived from the configured billing period.
+/// derived from the billing period of the product.
 class PurchaseSubscriptionStore implements SubscriptionStorePort {
   /// The purchase port the store transactions come from.
   final PurchasePort port;
 
   /// The billing-cycle length used to derive the expiry of a purchase the
-  /// store does not date itself. One monthly cycle by default.
+  /// store does not date itself, and of a product [billingPeriods] does not
+  /// name. One monthly cycle by default.
   final Duration billingPeriod;
+
+  /// The billing-cycle length per product id.
+  ///
+  /// A store that reports the expiry of a purchase itself — which the
+  /// platform adapters do, from the billing period the store reports for
+  /// the product — never needs this. It is the fallback for a store that
+  /// does not: one global period cannot be right for more than one plan, so
+  /// a yearly plan is named here instead of expiring after a month.
+  final Map<String, Duration> billingPeriods;
 
   /// The injectable clock (epoch ms) — the fallback timestamp when the store
   /// reports no purchase date.
@@ -37,6 +47,7 @@ class PurchaseSubscriptionStore implements SubscriptionStorePort {
   const PurchaseSubscriptionStore({
     required this.port,
     this.billingPeriod = const Duration(days: 31),
+    this.billingPeriods = const {},
     this.now,
   });
 
@@ -52,7 +63,7 @@ class PurchaseSubscriptionStore implements SubscriptionStorePort {
           description: product.description,
           priceMicros: product.priceMicros,
           currency: product.currency,
-          period: product.period ?? 'P1M',
+          period: product.period ?? _label(_periodOf(product.id)),
         ),
     ];
   }
@@ -105,6 +116,18 @@ class PurchaseSubscriptionStore implements SubscriptionStorePort {
   String _code(String code) =>
       portCodeVocabulary.contains(code) ? code : 'store_unavailable';
 
+  /// The billing-cycle length of [productId].
+  Duration _periodOf(String productId) =>
+      billingPeriods[productId] ?? billingPeriod;
+
+  /// The ISO-8601 label of [period] — `P1M` for a month, `P1Y` for a year.
+  String _label(Duration period) {
+    final days = period.inDays;
+    if (days > 0 && days % 365 == 0) return 'P${days ~/ 365}Y';
+    if (days > 0 && days % 31 == 0) return 'P${days ~/ 31}M';
+    return 'P${days}D';
+  }
+
   StorePurchase _map(PurchaseOutcome outcome) {
     final pending = outcome.status == PurchaseStatus.pending;
     return StorePurchase(
@@ -116,7 +139,8 @@ class PurchaseSubscriptionStore implements SubscriptionStorePort {
       expiresAt: pending
           ? null
           : outcome.expiresAt ??
-                outcome.purchasedAt + billingPeriod.inMilliseconds,
+                outcome.purchasedAt +
+                    _periodOf(outcome.productId).inMilliseconds,
       pendingFinish: outcome.pendingFinish,
       receipt: outcome.receipt,
     );
