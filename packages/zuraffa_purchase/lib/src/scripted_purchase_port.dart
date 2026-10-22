@@ -36,9 +36,26 @@ class ScriptedPurchasePort implements PurchasePort {
   /// The purchases the port replays on restore.
   final List<PurchaseOutcome> restored;
 
-  /// The transaction ids the port was asked to finish, in order.
+  /// The purchase intents the port was asked to purchase, in order.
+  ///
+  /// The twin double on the store seam ([RecordingStoreApi]) records its
+  /// requests; this one records its intents, so the adapter's mapping
+  /// (`appAccountUserId → appAccountId`, `oldPurchaseId → oldPurchaseId`)
+  /// can be asserted through the public double.
+  final List<PurchaseIntent> purchaseIntents = [];
+
+  /// The transaction ids the port finished, in order.
+  ///
+  /// Only successful finishes are recorded: a call that raises the scripted
+  /// [failure] did not finish anything.
   final List<String> finishedTransactionIds = [];
 
+  /// Creates a scripted port.
+  ///
+  /// The default [outcome] is a stub — its `purchasedAt` is the Unix epoch,
+  /// and the adapter derives the expiry from that stamp, so the default
+  /// outcome is already expired once it passes through the adapter. Pass a
+  /// real `purchasedAt` for a meaningful expiry.
   ScriptedPurchasePort({
     this.failure,
     this.catalog = const [],
@@ -46,6 +63,9 @@ class ScriptedPurchasePort implements PurchasePort {
       transactionId: 'tx-1',
       productId: 'pro.monthly',
       status: PurchaseStatus.purchased,
+      // The epoch — a stub value. The adapter derives the expiry from it
+      // (`purchasedAt + billingPeriod`), so the default outcome comes out
+      // already expired.
       purchasedAt: 0,
     ),
     this.restored = const [],
@@ -59,16 +79,18 @@ class ScriptedPurchasePort implements PurchasePort {
       ]);
 
   @override
-  Future<PurchaseOutcome> purchase(PurchaseIntent intent) async =>
-      _answer(outcome);
+  Future<PurchaseOutcome> purchase(PurchaseIntent intent) async {
+    purchaseIntents.add(intent);
+    return _answer(outcome);
+  }
 
   @override
   Future<List<PurchaseOutcome>> restore() async => _answer(restored);
 
   @override
   Future<void> finish(String transactionId) async {
-    finishedTransactionIds.add(transactionId);
     await _answer<void>(null);
+    finishedTransactionIds.add(transactionId);
   }
 
   Future<T> _answer<T>(T value) async {

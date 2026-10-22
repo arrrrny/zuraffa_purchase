@@ -5,6 +5,7 @@ import 'purchase_intent.dart';
 import 'purchase_outcome.dart';
 import 'purchase_port.dart';
 import 'purchase_status.dart';
+import 'port_code_vocabulary.dart';
 
 /// The subscription store adapter: a [SubscriptionStorePort] over the
 /// purchase port.
@@ -102,15 +103,7 @@ class PurchaseSubscriptionStore implements SubscriptionStorePort {
   /// `cancelled` keeps working. An unrecognised code is an unavailable
   /// store: an unknown failure is never a success.
   String _code(String code) =>
-      _knownCodes.contains(code) ? code : 'store_unavailable';
-
-  /// The purchase-domain codes the port's vocabulary carries verbatim.
-  static const _knownCodes = <String>{
-    'cancelled',
-    'product_unavailable',
-    'store_unavailable',
-    'pending',
-  };
+      portCodeVocabulary.contains(code) ? code : 'store_unavailable';
 
   StorePurchase _map(PurchaseOutcome outcome) {
     final pending = outcome.status == PurchaseStatus.pending;

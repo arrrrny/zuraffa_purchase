@@ -46,6 +46,23 @@ void main() {
       expect(outcome.status, PurchaseStatus.purchased);
     });
 
+    test('records the purchase intents it was asked to purchase', () async {
+      final port = ScriptedPurchasePort();
+
+      await port.purchase(
+        const PurchaseIntent(
+          productId: 'pro.monthly',
+          appAccountId: 'user-1',
+          oldPurchaseId: 'tx-0',
+        ),
+      );
+
+      expect(port.purchaseIntents, hasLength(1));
+      expect(port.purchaseIntents.single.productId, 'pro.monthly');
+      expect(port.purchaseIntents.single.appAccountId, 'user-1');
+      expect(port.purchaseIntents.single.oldPurchaseId, 'tx-0');
+    });
+
     test('replays the scripted purchases on restore', () async {
       final port = ScriptedPurchasePort(
         restored: const [
@@ -90,6 +107,8 @@ void main() {
       );
       await expectLater(port.restore(), throwsA(isA<PurchaseException>()));
       await expectLater(port.finish('tx-1'), throwsA(isA<PurchaseException>()));
+      // A finish that raised did not finish anything.
+      expect(port.finishedTransactionIds, isEmpty);
     });
   });
 }
