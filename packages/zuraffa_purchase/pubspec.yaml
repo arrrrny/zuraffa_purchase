@@ -3,7 +3,7 @@ name: zuraffa_purchase
 description: >-
   Purchase support for the Zuraffa ecosystem: a typed in-app purchase port behind a
   service, with the StoreKit / Play Billing adapters shipped as federated siblings.
-version: 0.1.0
+version: 0.1.1
 homepage: https://zuraffa.com
 
 environment:
