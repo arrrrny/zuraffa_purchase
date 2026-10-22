@@ -13,7 +13,6 @@
 // enumerates the contract's cases and stays BLOCKED (never RED) until
 // every case is satisfied.
 // zfa:tdd: contract:A3:hand — hand step completed before first red certification (issue #1411)
-// zfa:tdd: contract:A3:hand — hand step completed before first red certification (issue #1411)
 library;
 
 // IMPLEMENTED (spec 002-subscription-error-vocabulary): the seam is wired to the
