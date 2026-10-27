@@ -3,7 +3,7 @@ name: zuraffa_purchase_platform
 description: >-
   Shared store core for the zuraffa_purchase platform adapters: the StoreApi contract,
   the in_app_purchase-backed implementation, and the shared purchase/restore flow.
-version: 0.1.1
+version: 7.2.0
 homepage: https://zuraffa.com
 
 environment:
@@ -35,6 +35,7 @@ dependency_overrides:
   zuraffa_purchase:
     path: ../zuraffa_purchase
 
+  xml: 7.1.0
 repository: https://github.com/arrrrny/zuraffa_purchase
 issue_tracker: https://github.com/arrrrny/zuraffa_purchase/issues
 

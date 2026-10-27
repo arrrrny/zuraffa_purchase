@@ -49,3 +49,7 @@ waited on until it is not just API-visible but actually resolvable by pub.
 - Sibling `dependency_overrides` never need converting: pub strips them when publishing. `restore_dev_setup.sh` re-links the family for local development.
 - Sibling packages fail `dart pub publish --dry-run` until their hosted in-family dependencies exist on pub.dev — publish in order; `publish.sh` waits for each one and verifies resolvability, not just API presence.
 - pub.dev's new-package rate limit can block first publishes of a whole family at once — re-run `publish.sh` later; it is idempotent.
+
+---
+
+**Mono version policy:** every package in the zuraffa fleet shares one version number. Bump the whole fleet with `../zuraffa/scripts/update_fleet.sh <version>`. Whenever a version is updated, the install guide in this repo's README.md MUST be updated to that release version in the same change — no old version constraints may linger in README install snippets. Dependency constraints on `zuraffa` itself must move to `^<version>` in the same bump.

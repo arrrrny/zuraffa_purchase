@@ -3,14 +3,14 @@ name: zuraffa_purchase
 description: >-
   Purchase support for the Zuraffa ecosystem: a typed in-app purchase port behind a
   service, with the StoreKit / Play Billing adapters shipped as federated siblings.
-version: 0.1.1
+version: 7.2.0
 homepage: https://zuraffa.com
 
 environment:
   sdk: ^3.11.0
 
 dependencies:
-  zuraffa: ^7.1.0
+  zuraffa: ^7.2.0
   # The subscription seam this package adapts: `SubscriptionStorePort` is the
   # contract `PurchaseSubscriptionStore` implements, so a consuming app can hand
   # a real store straight to `SubscriptionService`. The dependency is one-way —
@@ -38,3 +38,8 @@ topics:
   - clean-architecture
   - zuraffa
 
+
+# Fleet-wide xml policy: pin the override to the latest xml so graphs that
+# still transitively pull the abandoned minio (xml 6.x) resolve cleanly.
+dependency_overrides:
+  xml: 7.1.0
