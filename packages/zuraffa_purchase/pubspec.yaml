@@ -16,7 +16,7 @@ dependencies:
   # a real store straight to `SubscriptionService`. The dependency is one-way —
   # `zuraffa_subscriptions` pulls in no purchase package, so the family stays
   # acyclic.
-  zuraffa_subscriptions: ^2.0.0
+  zuraffa_subscriptions: ^7.2.0
 
 dev_dependencies:
   lints: ^4.0.0
@@ -43,3 +43,5 @@ topics:
 # still transitively pull the abandoned minio (xml 6.x) resolve cleanly.
 dependency_overrides:
   xml: 7.1.0
+  zuraffa_subscriptions:
+    path: ../../../zuraffa_subscriptions/packages/zuraffa_subscriptions
