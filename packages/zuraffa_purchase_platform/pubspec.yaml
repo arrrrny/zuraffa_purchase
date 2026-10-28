@@ -36,6 +36,8 @@ dependency_overrides:
     path: ../zuraffa_purchase
 
   xml: 7.1.0
+  zuraffa_subscriptions:
+    path: ../../../zuraffa_subscriptions/packages/zuraffa_subscriptions
 repository: https://github.com/arrrrny/zuraffa_purchase
 issue_tracker: https://github.com/arrrrny/zuraffa_purchase/issues
 
