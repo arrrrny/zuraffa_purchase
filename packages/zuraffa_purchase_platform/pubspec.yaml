@@ -3,7 +3,7 @@ name: zuraffa_purchase_platform
 description: >-
   Shared store core for the zuraffa_purchase platform adapters: the StoreApi contract,
   the in_app_purchase-backed implementation, and the shared purchase/restore flow.
-version: 7.2.0
+version: 7.3.0
 homepage: https://zuraffa.com
 
 environment:
@@ -13,7 +13,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  zuraffa_purchase: ^7.2.0
+  zuraffa_purchase: ^7.3.0
   # The store plugin this family wraps: StoreKit on macOS/iOS (via
   # in_app_purchase_storekit), Play Billing on Android. The native
   # implementation is pinned by the adapter that owns it — the Apple
@@ -38,6 +38,8 @@ dependency_overrides:
   xml: 7.1.0
   zuraffa_subscriptions:
     path: ../../../zuraffa_subscriptions/packages/zuraffa_subscriptions
+  zuraffa:
+    path: ../../../zuraffa
 repository: https://github.com/arrrrny/zuraffa_purchase
 issue_tracker: https://github.com/arrrrny/zuraffa_purchase/issues
 
@@ -45,7 +47,7 @@ topics:
   - purchase
   - in-app-purchase
   - zuraffa
-  zuraffa_subscriptions:
-    path: ../../../zuraffa_subscriptions/packages/zuraffa_subscriptions
-  zuraffa_subscriptions:
-    path: ../../../zuraffa_subscriptions/packages/zuraffa_subscriptions
+
+# NOTE: dependency overrides live only in the dependency_overrides section
+# above — a fleet_pubspec_tool run once appended duplicates here inside the
+# topics list and broke every pub command (arrrrny/zuraffa_purchase#8).
