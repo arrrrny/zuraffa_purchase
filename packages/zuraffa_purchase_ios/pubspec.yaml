@@ -3,7 +3,7 @@ name: zuraffa_purchase_ios
 description: >-
   iOS adapter for zuraffa_purchase — the StoreKit store behind a typed port, reached
   through package:in_app_purchase.
-version: 7.3.0
+version: 7.3.2
 homepage: https://zuraffa.com
 
 environment:
@@ -13,9 +13,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  zuraffa: ^7.3.0
-  zuraffa_purchase: ^7.3.0
-  zuraffa_purchase_platform: ^7.3.0
+  zuraffa: ^7.3.2
+  zuraffa_purchase: ^7.3.2
+  zuraffa_purchase_platform: ^7.3.2
   # The store plugin this adapter speaks through.
   in_app_purchase: ^3.3.1
   # The native StoreKit implementation. Pinned past 0.4.13 so the app's
