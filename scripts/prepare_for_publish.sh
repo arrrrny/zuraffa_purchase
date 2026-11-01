@@ -87,7 +87,8 @@ for pkg in "zuraffa_purchase" "zuraffa_purchase_platform" "zuraffa_purchase_andr
 done
 
 # Path-dependency check: dependency_overrides entries are the dev-only
-# local-resolution seam (pub strips them on publish) and are expected; a
+# local-resolution seam (never committed: pub does not strip them from the
+# archive, it only ignores them in hosted packages) and are expected; a
 # path dep OUTSIDE the overrides section would leak into the release.
 echo -e "${BLUE}=== Path-dependency check (overrides excluded) ===${NC}"
 PATH_PROBLEMS=0

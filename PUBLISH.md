@@ -19,7 +19,7 @@
 - **Pre-publish**: `./scripts/prepare_for_publish.sh <version> [-f]` — creates the `publish-<version>` branch, bumps all package versions + in-family constraints, resolves the changelog (root CHANGELOG entry first, git-history generation as fallback), checks pub.dev status + stray path deps, commits. Asks for a commit message on a TTY; `-f` (or automation) takes the default
 - **Publish**: `./scripts/publish.sh` — per package in order: skips already-published, waits until every in-family dependency is on pub.dev AND pub-resolvable, then pub get → format → analyze → dry-run → publish; tags the release at the end (needs dart on PATH)
 - **Post-publish**: `./scripts/push_to_master.sh [-f]` — merges the publish branch to master, tags, pushes; `-f` auto-commits dirty trees and deletes the branch
-- **Restore dev**: `./scripts/restore_dev_setup.sh` — re-links the whole family via `dependency_overrides` (dev-only; pub strips overrides on publish)
+- **Restore dev**: `./scripts/restore_dev_setup.sh` — re-links the whole family via `dependency_overrides` (dev-only, never committed: pub does not strip overrides from the archive)
 - **Revert**: `./scripts/revert_publish_changes.sh` — abandons a publish: back to master, deletes the publish branch, restores dev setup (interactive)
 
 ## Workflow
@@ -46,7 +46,11 @@ waited on until it is not just API-visible but actually resolvable by pub.
 
 ## Notes
 
-- Sibling `dependency_overrides` never need converting: pub strips them when publishing. `restore_dev_setup.sh` re-links the family for local development.
+- Sibling `dependency_overrides` must never be committed: pub does not strip
+  them when publishing (the solver ignores overrides in hosted packages, but
+  they persist in the published tarball as polluted metadata).
+  `restore_dev_setup.sh` re-links the family for local development via a
+  gitignored `pubspec_overrides.yaml`.
 - Sibling packages fail `dart pub publish --dry-run` until their hosted in-family dependencies exist on pub.dev — publish in order; `publish.sh` waits for each one and verifies resolvability, not just API presence.
 - pub.dev's new-package rate limit can block first publishes of a whole family at once — re-run `publish.sh` later; it is idempotent.
 
