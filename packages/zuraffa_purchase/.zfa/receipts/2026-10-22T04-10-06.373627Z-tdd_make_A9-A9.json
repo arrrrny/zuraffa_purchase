@@ -1,0 +1,27 @@
+{
+  "schema": "proof.v1",
+  "command": "tdd make A9",
+  "target": "A9",
+  "repro": "zfa tdd make A9",
+  "at": "2026-10-22T04:10:06.373627Z",
+  "generator_version": "7.2.0",
+  "input": {
+    "sanctioned": true,
+    "hand_delta": true,
+    "transition": "skip",
+    "behavior": "A9",
+    "feature": "002-subscription-error-vocabulary"
+  },
+  "files": [
+    {
+      "path": "test/tdd/002-subscription-error-vocabulary/a9_test.dart",
+      "action": "update",
+      "sha256": "6fb6da28203527560b87b81045af8ec07ccb8eca1f0f84a66e65bd8d71224c6f",
+      "bytes": 1779,
+      "snapshot": "// GENERATED TEST — `zfa tdd gen A9` (spec 044-test-tdd-generation).\n//\n// behavior_id: A9\n// source_criterion: AC-9\n// kind: acceptance\n// description: the result carries code `store_unavailable` — an unknown failure is an unavailable store, never a success.\n//\n// This test asserts the observable behavior described above. It is\n// \"honest red\" on first execution: the paired subject at\n// `package:zuraffa_purchase/tdd/002-subscription-error-vocabulary/a9_subject.dart` is unimplemented, so the test fails through an\n// assertion (not an uncaught error, compile/load error, skip, or\n// placeholder). Replace the subject's\n// stub body with real implementation to make this test pass.\n// zfa:tdd: A9:hand — hand step completed before first red certification (issue #1411)\nlibrary;\n\nimport 'package:test/test.dart';\nimport 'package:zuraffa_subscriptions/zuraffa_subscriptions.dart' as subs;\nimport 'package:zuraffa_purchase/tdd/002-subscription-error-vocabulary/a9_subject.dart'\n    as subject;\n\nvoid main() {\n  group('A9 (AC-9)', () {\n    test(\n      'A9 — the result carries code `store_unavailable` — an unknown failure is an unavailable store, never a success.',\n      () async {\n        final result = (() {\n          try {\n            return subject.subject_a9();\n          } on UnimplementedError catch (error) {\n            return error;\n          }\n        })();\n        expect(result, isNot(isA<UnimplementedError>()));\n        final outcome = await (result as Future<Object?>);\n        expect(outcome, isA<subs.SubscriptionException>());\n        expect(\n          (outcome as subs.SubscriptionException).code,\n          'store_unavailable',\n          reason: 'an unknown failure is an unavailable store, never a success',\n        );\n      },\n    );\n  });\n}\n"
+    }
+  ],
+  "receipt_version": 1,
+  "min_core_version": "6.0.0",
+  "generated_against_core": "7.2.0"
+}

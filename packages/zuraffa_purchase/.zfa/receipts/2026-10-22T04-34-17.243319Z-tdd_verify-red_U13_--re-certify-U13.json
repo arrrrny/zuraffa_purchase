@@ -1,0 +1,26 @@
+{
+  "schema": "proof.v1",
+  "command": "tdd verify-red U13 --re-certify",
+  "target": "U13",
+  "repro": "zfa tdd verify-red U13 --re-certify",
+  "at": "2026-10-22T04:34:17.243319Z",
+  "generator_version": "7.2.0",
+  "input": {
+    "sanctioned": true,
+    "hand_delta": true,
+    "transition": "re-certify",
+    "behavior": "U13",
+    "feature": "001-purchase-store"
+  },
+  "files": [
+    {
+      "path": "test/tdd/001-purchase-store/u13_test.dart",
+      "action": "update",
+      "sha256": "d5db43888b4b59901a9ce52a275621ae2e0608cd9aa335b89d9d8c50a0c1000d",
+      "bytes": 2189
+    }
+  ],
+  "receipt_version": 1,
+  "min_core_version": "6.0.0",
+  "generated_against_core": "7.2.0"
+}

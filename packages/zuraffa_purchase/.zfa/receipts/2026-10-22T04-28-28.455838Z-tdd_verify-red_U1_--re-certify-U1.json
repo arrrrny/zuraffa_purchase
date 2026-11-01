@@ -1,0 +1,27 @@
+{
+  "schema": "proof.v1",
+  "command": "tdd verify-red U1 --re-certify",
+  "target": "U1",
+  "repro": "zfa tdd verify-red U1 --re-certify",
+  "at": "2026-10-22T04:28:28.455838Z",
+  "generator_version": "7.2.0",
+  "input": {
+    "sanctioned": true,
+    "hand_delta": true,
+    "transition": "re-certify",
+    "behavior": "U1",
+    "feature": "001-purchase-store"
+  },
+  "files": [
+    {
+      "path": "test/tdd/001-purchase-store/u1_test.dart",
+      "action": "update",
+      "sha256": "fbf3fab4334b4b0e1a79ac7fb4787e0bbf99ab6c98666ebac6ff07d925621344",
+      "bytes": 1519,
+      "snapshot": "// GENERATED TEST — `zfa tdd gen U1` (spec 044-test-tdd-generation).\n//\n// behavior_id: U1\n// source_criterion: FR-001, PurchaseService.products\n// kind: unit\n// description: `PurchaseService.products(List<String> productIds)` MUST return the\n//\n// This test asserts the observable behavior described above. It is\n// \"honest red\" on first execution: the paired subject at\n// `package:zuraffa_purchase/tdd/001-purchase-store/u1_subject.dart` is unimplemented, so the test fails through an\n// assertion (not an uncaught error, compile/load error, skip, or\n// placeholder). Replace the subject's\n// stub body with real implementation to make this test pass.\nlibrary;\n\nimport 'package:test/test.dart';\nimport 'package:zuraffa_purchase/zuraffa_purchase.dart';\nimport 'package:zuraffa_purchase/tdd/001-purchase-store/u1_subject.dart'\n    as subject;\n\nvoid main() {\n  group('U1 (FR-001, PurchaseService.products)', () {\n    test(\n      'U1 — `PurchaseService.products(List<String> productIds)` MUST return the',\n      () async {\n        final result = (() {\n          try {\n            return subject.subject_u1(const [\n              'boost.one',\n              'ghost.product',\n              'pro.monthly',\n            ]);\n          } on UnimplementedError catch (error) {\n            return error;\n          }\n        })();\n        expect(result, isNot(isA<UnimplementedError>()));\n        await expectLater(\n          result,\n          completion(everyElement(isA<CatalogProduct>())),\n        );\n      },\n    );\n  });\n}\n"
+    }
+  ],
+  "receipt_version": 1,
+  "min_core_version": "6.0.0",
+  "generated_against_core": "7.2.0"
+}

@@ -1,0 +1,27 @@
+{
+  "schema": "proof.v1",
+  "command": "tdd make U6",
+  "target": "U6",
+  "repro": "zfa tdd make U6",
+  "at": "2026-10-22T04:09:13.403604Z",
+  "generator_version": "7.2.0",
+  "input": {
+    "sanctioned": true,
+    "hand_delta": true,
+    "transition": "skip",
+    "behavior": "U6",
+    "feature": "002-subscription-error-vocabulary"
+  },
+  "files": [
+    {
+      "path": "test/tdd/002-subscription-error-vocabulary/u6_test.dart",
+      "action": "update",
+      "sha256": "a9b0d3baf0f475ed126280c934ff0e0495fbbc6ad5f7f53cbe233265cff9d609",
+      "bytes": 1673,
+      "snapshot": "// GENERATED TEST — `zfa tdd gen U6` (spec 044-test-tdd-generation).\n//\n// behavior_id: U6\n// source_criterion: FR-006, PurchaseSubscriptionStore.purchase\n// kind: unit\n// description: A purchase-domain failure in an unrecognised code MUST surface as\n//\n// This test asserts the observable behavior described above. It is\n// \"honest red\" on first execution: the paired subject at\n// `package:zuraffa_purchase/tdd/002-subscription-error-vocabulary/u6_subject.dart` is unimplemented, so the test fails through an\n// assertion (not an uncaught error, compile/load error, skip, or\n// placeholder). Replace the subject's\n// stub body with real implementation to make this test pass.\nlibrary;\n\nimport 'package:test/test.dart';\nimport 'package:zuraffa_subscriptions/zuraffa_subscriptions.dart' as subs;\nimport 'package:zuraffa_purchase/tdd/002-subscription-error-vocabulary/u6_subject.dart'\n    as subject;\n\nvoid main() {\n  group('U6 (FR-006, PurchaseSubscriptionStore.purchase)', () {\n    test(\n      'U6 — A purchase-domain failure in an unrecognised code MUST surface as',\n      () async {\n        final error = await subject.subject_u6(\n          const subs.PurchaseRequest(productId: 'pro.monthly'),\n        );\n        expect(error, isA<subs.SubscriptionException>());\n        final failure = error! as subs.SubscriptionException;\n        expect(\n          failure.code,\n          'store_unavailable',\n          reason: 'an unknown failure is an unavailable store, never a success',\n        );\n        expect(\n          failure.message,\n          'the store answered 418',\n          reason: 'the original detail survives the boundary',\n        );\n      },\n    );\n  });\n}\n"
+    }
+  ],
+  "receipt_version": 1,
+  "min_core_version": "6.0.0",
+  "generated_against_core": "7.2.0"
+}

@@ -1,0 +1,30 @@
+{
+  "schema": "proof.v1",
+  "command": "tdd gen",
+  "target": "A7",
+  "repro": "zfa tdd gen",
+  "at": "2026-10-22T03:37:32.390643Z",
+  "generator_version": "7.2.0",
+  "input": {
+    "feature": "002-subscription-error-vocabulary"
+  },
+  "files": [
+    {
+      "path": "test/tdd/002-subscription-error-vocabulary/a7_test.dart",
+      "action": "create",
+      "sha256": "1055d42e5c539ddd35105b38b41df11e7c370c13cdd6917bd4a6260b805280fe",
+      "bytes": 1641,
+      "snapshot": "// GENERATED TEST — `zfa tdd gen A7` (spec 044-test-tdd-generation).\n//\n// behavior_id: A7\n// source_criterion: AC-7\n// kind: acceptance\n// description: the result carries code `store_unavailable`.\n//\n// This test asserts the observable behavior described above. It is\n// \"honest red\" on first execution: the paired subject at\n// `package:zuraffa_purchase/tdd/002-subscription-error-vocabulary/a7_subject.dart` is unimplemented, so the test fails through an\n// assertion (not an uncaught error, compile/load error, skip, or\n// placeholder). Replace the subject's\n// stub body with real implementation to make this test pass.\nlibrary;\n\nimport 'package:test/test.dart';\nimport 'package:zuraffa_purchase/tdd/002-subscription-error-vocabulary/a7_subject.dart' as subject;\n\nvoid main() {\n  group('A7 (AC-7)', () {\n    test('A7 — the result carries code `store_unavailable`.', () {\n      final Object? result = (() {\n        try {\n          subject.subject_a7();\n          return null;\n        } on UnimplementedError catch (error) {\n          return error;\n        }\n      })();\n      // zfa:tdd: acceptance-guard (issue #1512): the acceptance lane's\n      // assertion set is the UnimplementedError guard ONLY. The acceptance\n      // subject is a parameterless `void` scenario runner and the declared\n      // outcome is asserted through the composition lane (`zfa tdd compose\n      // <id> --feature <f>`), not in this test — so this is the\n      // fallback-routed gap, NOT the traced hand-delta seam, and the\n      // vacuous-guard marker is deliberately absent.\n      expect(result, isNot(isA<UnimplementedError>()));\n    });\n  });\n}\n"
+    },
+    {
+      "path": "lib/tdd/002-subscription-error-vocabulary/a7_subject.dart",
+      "action": "create",
+      "sha256": "e9cd0e567fe6a454546918454ef1e03dbd3cd8f3792559c4a659729df201e8bf",
+      "bytes": 1129,
+      "snapshot": "// GENERATED STUB — `zfa tdd gen A7` (spec 044-test-tdd-generation).\n//\n// behavior_id: A7\n// source_criterion: AC-7\n// description: the result carries code `store_unavailable`.\n//\n// This is a MINIMAL COMPILABLE acceptance-scenario stub. It compiles\n// cleanly (FR-011) but does NOT satisfy the behavior described above —\n// the paired test will fail on first execution with an assertion-level\n// failure (honest red). The acceptance subject intentionally does NOT\n// reference any entity/use case/repository (FR-004): it stands alone.\n// Replace this stub body with real implementation to make the test pass.\n//\n// The subject name is derived from the behavior id (`subject_a1`) and is\n// deliberately snake_cased — the generator KNOWS the name it emits, so\n// the lint its shape provably trips is suppressed here rather than\n// renaming the contract surface (issue #1035).\n// ignore_for_file: non_constant_identifier_names\nlibrary;\n\n/// Scenario runner for behavior A7.\n///\n/// Throws [UnimplementedError] until the real implementation lands.\nvoid subject_a7() => throw UnimplementedError('subject_a7 not implemented');\n"
+    }
+  ],
+  "receipt_version": 1,
+  "min_core_version": "6.0.0",
+  "generated_against_core": "7.2.0"
+}

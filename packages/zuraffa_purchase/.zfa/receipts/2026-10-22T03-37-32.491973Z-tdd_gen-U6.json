@@ -1,0 +1,30 @@
+{
+  "schema": "proof.v1",
+  "command": "tdd gen",
+  "target": "U6",
+  "repro": "zfa tdd gen",
+  "at": "2026-10-22T03:37:32.491973Z",
+  "generator_version": "7.2.0",
+  "input": {
+    "feature": "002-subscription-error-vocabulary"
+  },
+  "files": [
+    {
+      "path": "test/tdd/002-subscription-error-vocabulary/u6_test.dart",
+      "action": "create",
+      "sha256": "71bd90cffe98c330d37f2721cd72d38d3902bc74032831af090e232430b7899a",
+      "bytes": 1778,
+      "snapshot": "// GENERATED TEST — `zfa tdd gen U6` (spec 044-test-tdd-generation).\n//\n// behavior_id: U6\n// source_criterion: FR-006, PurchaseSubscriptionStore._translate\n// kind: unit\n// description: An unrecognised purchase-domain code MUST surface as\n//\n// This test asserts the observable behavior described above. It is\n// \"honest red\" on first execution: the paired subject at\n// `package:zuraffa_purchase/tdd/002-subscription-error-vocabulary/u6_subject.dart` is unimplemented, so the test fails through an\n// assertion (not an uncaught error, compile/load error, skip, or\n// placeholder). Replace the subject's\n// stub body with real implementation to make this test pass.\nlibrary;\n\nimport 'package:test/test.dart';\nimport 'package:zuraffa_purchase/tdd/002-subscription-error-vocabulary/u6_subject.dart' as subject;\n\nvoid main() {\n  group('U6 (FR-006, PurchaseSubscriptionStore._translate)', () {\n    test('U6 — An unrecognised purchase-domain code MUST surface as', () {\n      Object? _arg0() => throw UnimplementedError('provide a representative argument for subject_u6 (declared param 0: PurchaseException)');\n          final result = (() {\n        try {\n          return subject.subject_u6(_arg0());\n        } on UnimplementedError catch (error) {\n          return error;\n        }\n      })();\n      // zfa:tdd: vacuous-guard (issue #1259): the assertion set below is the\n      // UnimplementedError guard ONLY — a green here proves nothing about\n      // the behavior (a dummy `return 0;` flips it green with zero\n      // declared-contract code). Replace this guard with an assertion on\n      // the observable outcome named by the behavior description, remove\n      // this marker, and re-run make.\n      expect(result, isNot(isA<UnimplementedError>()));\n    });\n  });\n}\n"
+    },
+    {
+      "path": "lib/tdd/002-subscription-error-vocabulary/u6_subject.dart",
+      "action": "create",
+      "sha256": "36b2852c01d66058737da1d979401abbdad073a9f22e7de4a757c0a9957608ee",
+      "bytes": 1797,
+      "snapshot": "// GENERATED STUB — `zfa tdd gen U6` (spec 044-test-tdd-generation\n// + issue #1259 contract derivation).\n//\n// behavior_id: U6\n// source_criterion: FR-006, PurchaseSubscriptionStore._translate\n// description: An unrecognised purchase-domain code MUST surface as\n//\n// CONTRACT-DERIVED SUBJECT (issue #1259): the signature below is\n// derived from the spec's declared Layer Contract:\n//\n//     _translate(PurchaseException) -> SubscriptionException\n//\n// The declared request and result types are preserved above. A\n// declared type whose entity does not exist yet renders as `Object?`\n// so the stub compiles cleanly (FR-011) — the degradation is\n// unconditional ONLY for entities that do not exist on disk; replace\n// it with the declared type once the entity lands. This is a MINIMAL\n// COMPILABLE STUB: it does NOT satisfy the behavior — the paired test\n// fails on first execution (honest red). Replace this stub body with\n// the real implementation of the declared contract to make the test\n// pass.\n// Declared parameters: purchaseexception: PurchaseException (non-existent entity types render as Object? until implemented)\n//\n// The subject name is derived from the behavior id and is deliberately\n// snake_cased — the generator KNOWS the name it emits, so the lint its\n// shape provably trips is suppressed here rather than renaming the\n// contract surface (issue #1035).\n// ignore_for_file: non_constant_identifier_names\nlibrary;\n\n/// Subject for behavior U6 — declared contract:\n/// `_translate(PurchaseException) -> SubscriptionException`.\n///\n/// Throws [UnimplementedError] until the real implementation lands.\nObject? subject_u6(Object? purchaseexception) => throw UnimplementedError('subject_u6 not implemented: _translate(PurchaseException) -> SubscriptionException');\n"
+    }
+  ],
+  "receipt_version": 1,
+  "min_core_version": "6.0.0",
+  "generated_against_core": "7.2.0"
+}

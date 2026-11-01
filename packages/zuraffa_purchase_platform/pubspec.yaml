@@ -30,11 +30,6 @@ dev_dependencies:
   in_app_purchase_platform_interface: ^1.4.1
 
 dependency_overrides:
-  # Local development only — resolve the app-facing package to this
-  # checkout; stripped on publish.
-  zuraffa_purchase:
-    path: ../zuraffa_purchase
-
   xml: 7.1.0
 repository: https://github.com/arrrrny/zuraffa_purchase
 issue_tracker: https://github.com/arrrrny/zuraffa_purchase/issues

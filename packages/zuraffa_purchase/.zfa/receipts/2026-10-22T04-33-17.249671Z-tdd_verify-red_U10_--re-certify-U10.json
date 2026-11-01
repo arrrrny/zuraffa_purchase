@@ -1,0 +1,27 @@
+{
+  "schema": "proof.v1",
+  "command": "tdd verify-red U10 --re-certify",
+  "target": "U10",
+  "repro": "zfa tdd verify-red U10 --re-certify",
+  "at": "2026-10-22T04:33:17.249671Z",
+  "generator_version": "7.2.0",
+  "input": {
+    "sanctioned": true,
+    "hand_delta": true,
+    "transition": "re-certify",
+    "behavior": "U10",
+    "feature": "001-purchase-store"
+  },
+  "files": [
+    {
+      "path": "test/tdd/001-purchase-store/u10_test.dart",
+      "action": "update",
+      "sha256": "82bb70dcb812f11e6f28f6150d91601f818cf177158b360809574db0233dbb5a",
+      "bytes": 1461,
+      "snapshot": "// GENERATED TEST — `zfa tdd gen U10` (spec 044-test-tdd-generation).\n//\n// behavior_id: U10\n// source_criterion: FR-010, PurchaseSubscriptionStore.restore\n// kind: unit\n// description: `PurchaseSubscriptionStore.restore()` MUST return one store purchase\n//\n// This test asserts the observable behavior described above. It is\n// \"honest red\" on first execution: the paired subject at\n// `package:zuraffa_purchase/tdd/001-purchase-store/u10_subject.dart` is unimplemented, so the test fails through an\n// assertion (not an uncaught error, compile/load error, skip, or\n// placeholder). Replace the subject's\n// stub body with real implementation to make this test pass.\nlibrary;\n\nimport 'package:test/test.dart';\nimport 'package:zuraffa_subscriptions/zuraffa_subscriptions.dart' as subs;\nimport 'package:zuraffa_purchase/tdd/001-purchase-store/u10_subject.dart'\n    as subject;\n\nvoid main() {\n  group('U10 (FR-010, PurchaseSubscriptionStore.restore)', () {\n    test(\n      'U10 — `PurchaseSubscriptionStore.restore()` MUST return one store purchase',\n      () async {\n        final purchases = await subject.subject_u10();\n        expect(purchases, hasLength(2));\n        expect(purchases.map((purchase) => purchase.transactionId).toList(), [\n          'tx-1',\n          'tx-2',\n        ]);\n        expect(\n          purchases.map((purchase) => purchase.state).toList(),\n          everyElement(subs.PurchaseState.restored),\n        );\n      },\n    );\n  });\n}\n"
+    }
+  ],
+  "receipt_version": 1,
+  "min_core_version": "6.0.0",
+  "generated_against_core": "7.2.0"
+}

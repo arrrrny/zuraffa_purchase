@@ -1,0 +1,27 @@
+{
+  "schema": "proof.v1",
+  "command": "tdd verify-red U2 --re-certify",
+  "target": "U2",
+  "repro": "zfa tdd verify-red U2 --re-certify",
+  "at": "2026-10-22T04:31:06.699634Z",
+  "generator_version": "7.2.0",
+  "input": {
+    "sanctioned": true,
+    "hand_delta": true,
+    "transition": "re-certify",
+    "behavior": "U2",
+    "feature": "001-purchase-store"
+  },
+  "files": [
+    {
+      "path": "test/tdd/001-purchase-store/u2_test.dart",
+      "action": "update",
+      "sha256": "ed148319094702f0c2605b0ebc10b974a95a5991e4d1a5c59159a2f9352c7bd2",
+      "bytes": 1468,
+      "snapshot": "// GENERATED TEST — `zfa tdd gen U2` (spec 044-test-tdd-generation).\n//\n// behavior_id: U2\n// source_criterion: FR-002, PurchaseService.products\n// kind: unit\n// description: A store that reports itself unavailable MUST surface as a typed\n//\n// This test asserts the observable behavior described above. It is\n// \"honest red\" on first execution: the paired subject at\n// `package:zuraffa_purchase/tdd/001-purchase-store/u2_subject.dart` is unimplemented, so the test fails through an\n// assertion (not an uncaught error, compile/load error, skip, or\n// placeholder). Replace the subject's\n// stub body with real implementation to make this test pass.\nlibrary;\n\nimport 'package:test/test.dart';\nimport 'package:zuraffa_purchase/tdd/001-purchase-store/u2_subject.dart'\n    as subject;\n\nvoid main() {\n  group('U2 (FR-002, PurchaseService.products)', () {\n    test(\n      'U2 — A store that reports itself unavailable MUST surface as a typed',\n      () async {\n        final error = await subject.subject_u2(const ['pro.monthly']);\n        expect(\n          error,\n          isNotNull,\n          reason:\n              'a store that reports itself unavailable surfaces as a '\n              'typed failure, not an empty catalog',\n        );\n        expect(error!.code, 'store_unavailable');\n        expect(\n          error.recoverable,\n          isFalse,\n          reason: 'a store that reports itself unavailable is not recoverable',\n        );\n      },\n    );\n  });\n}\n"
+    }
+  ],
+  "receipt_version": 1,
+  "min_core_version": "6.0.0",
+  "generated_against_core": "7.2.0"
+}

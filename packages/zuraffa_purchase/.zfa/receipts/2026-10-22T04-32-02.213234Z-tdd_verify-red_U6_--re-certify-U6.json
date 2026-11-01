@@ -1,0 +1,27 @@
+{
+  "schema": "proof.v1",
+  "command": "tdd verify-red U6 --re-certify",
+  "target": "U6",
+  "repro": "zfa tdd verify-red U6 --re-certify",
+  "at": "2026-10-22T04:32:02.213234Z",
+  "generator_version": "7.2.0",
+  "input": {
+    "sanctioned": true,
+    "hand_delta": true,
+    "transition": "re-certify",
+    "behavior": "U6",
+    "feature": "001-purchase-store"
+  },
+  "files": [
+    {
+      "path": "test/tdd/001-purchase-store/u6_test.dart",
+      "action": "update",
+      "sha256": "416853f95d37cbe1137dfa8b696eaef4c8d9d59a8eb6c08b9cde59a7f14001c9",
+      "bytes": 1288,
+      "snapshot": "// GENERATED TEST — `zfa tdd gen U6` (spec 044-test-tdd-generation).\n//\n// behavior_id: U6\n// source_criterion: FR-006, PurchaseService.finish\n// kind: unit\n// description: `PurchaseService.finish(String transactionId)` MUST ask the store to\n//\n// This test asserts the observable behavior described above. It is\n// \"honest red\" on first execution: the paired subject at\n// `package:zuraffa_purchase/tdd/001-purchase-store/u6_subject.dart` is unimplemented, so the test fails through an\n// assertion (not an uncaught error, compile/load error, skip, or\n// placeholder). Replace the subject's\n// stub body with real implementation to make this test pass.\nlibrary;\n\nimport 'package:test/test.dart';\nimport 'package:zuraffa_purchase/tdd/001-purchase-store/u6_subject.dart'\n    as subject;\n\nvoid main() {\n  group('U6 (FR-006, PurchaseService.finish)', () {\n    test(\n      'U6 — `PurchaseService.finish(String transactionId)` MUST ask the store to',\n      () async {\n        final completed = await subject.subject_u6('tx-1');\n        expect(\n          completed,\n          ['tx-1', 'tx-unknown'],\n          reason:\n              'the store is asked to complete exactly the id it is given, '\n              'and an unknown id completes without raising',\n        );\n      },\n    );\n  });\n}\n"
+    }
+  ],
+  "receipt_version": 1,
+  "min_core_version": "6.0.0",
+  "generated_against_core": "7.2.0"
+}

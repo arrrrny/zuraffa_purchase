@@ -1,0 +1,34 @@
+{
+  "schema": "proof.v1",
+  "command": "tdd make A11",
+  "target": "A11",
+  "repro": "zfa tdd make A11",
+  "at": "2026-10-22T04:04:46.220846Z",
+  "generator_version": "7.2.0",
+  "input": {
+    "sanctioned": true,
+    "hand_delta": true,
+    "transition": "skip",
+    "behavior": "A11",
+    "feature": "002-subscription-error-vocabulary"
+  },
+  "files": [
+    {
+      "path": "test/tdd/002-subscription-error-vocabulary/a11_test.dart",
+      "action": "update",
+      "sha256": "e1c6745f67fe976a71f51d3567ef600f0cb4ca8947a5273758435b3ea710eb39",
+      "bytes": 1540,
+      "snapshot": "// GENERATED TEST — `zfa tdd gen A11` (spec 044-test-tdd-generation).\n//\n// behavior_id: A11\n// source_criterion: AC-11\n// kind: acceptance\n// description: that failure propagates unchanged.\n//\n// This test asserts the observable behavior described above. It is\n// \"honest red\" on first execution: the paired subject at\n// `package:zuraffa_purchase/tdd/002-subscription-error-vocabulary/a11_subject.dart` is unimplemented, so the test fails through an\n// assertion (not an uncaught error, compile/load error, skip, or\n// placeholder). Replace the subject's\n// stub body with real implementation to make this test pass.\n// zfa:tdd: A11:hand — hand step completed before first red certification (issue #1411)\nlibrary;\n\nimport 'package:test/test.dart';\nimport 'package:zuraffa_subscriptions/zuraffa_subscriptions.dart' as subs;\nimport 'package:zuraffa_purchase/tdd/002-subscription-error-vocabulary/a11_subject.dart'\n    as subject;\n\nvoid main() {\n  group('A11 (AC-11)', () {\n    test('A11 — that failure propagates unchanged.', () async {\n      final Object? result = (() {\n        try {\n          return subject.subject_a11();\n        } on UnimplementedError catch (error) {\n          return error;\n        }\n      })();\n      expect(result, isNot(isA<UnimplementedError>()));\n      final outcome = await (result as Object?);\n      expect(\n        outcome,\n        isA<FormatException>(),\n        reason: 'only PurchaseException is translated',\n      );\n      expect(outcome, isNot(isA<subs.SubscriptionException>()));\n    });\n  });\n}\n"
+    },
+    {
+      "path": "lib/tdd/002-subscription-error-vocabulary/a11_subject.dart",
+      "action": "update",
+      "sha256": "38af3d69c08c1288c49ec62ee8692395e03d439f38923d094386fc5f01e321a1",
+      "bytes": 3656,
+      "snapshot": "// GENERATED IMPLEMENTATION — `zfa tdd compose A11` (issue\n// #642; spec 052-acceptance-make-composition: the acceptance subject is\n// composed against the feature's green / entity-wired unit subjects by a\n// generation-pipeline step, never by a wrapper or by hand).\n//\n// behavior_id: A11\n// source_criterion: AC-11\n// composed against: U1 (/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/u1_subject.dart), U2 (/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/u2_subject.dart), U3 (/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/u3_subject.dart), U4 (/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/u4_subject.dart), U5 (/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/u5_subject.dart), U6 (/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/u6_subject.dart), U7 (/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/u7_subject.dart)\n// description: that failure propagates unchanged.\n//\n// This replaces the `zfa tdd gen` stub with the minimal composed\n// implementation (spec 047 FR-005): the feature's unit subjects are the\n// implementation anchors. An anchor marked [entity-wired] carries only\n// the `zfa tdd wire` wiring so far (issue #923) — the composed scenario's\n// real green transition lands when those unit subjects are filled with\n// business logic in later cycles. Extend the body with real behavior in\n// later cycles — the paired test file is immutable (044 ownership).\n//\n// The subject name is derived from the behavior id (`subject_a11`) and is\n// deliberately snake_cased — the generator KNOWS the name it emits, so\n// the lint its shape provably trips is suppressed here rather than\n// renaming the contract surface (issue #1035).\n// ignore_for_file: non_constant_identifier_names\n// zfa:tdd: A11:hand — hand step completed before first red certification (issue #1411)\nlibrary;\n\nimport 'package:zuraffa_subscriptions/zuraffa_subscriptions.dart' as subs;\n\nimport 'package:zuraffa_purchase/tdd/002-subscription-error-vocabulary/u1_subject.dart'\n    as anchor0;\nimport 'package:zuraffa_purchase/tdd/002-subscription-error-vocabulary/u2_subject.dart'\n    as anchor1;\nimport 'package:zuraffa_purchase/tdd/002-subscription-error-vocabulary/u3_subject.dart'\n    as anchor2;\nimport 'package:zuraffa_purchase/tdd/002-subscription-error-vocabulary/u4_subject.dart'\n    as anchor3;\nimport 'package:zuraffa_purchase/tdd/002-subscription-error-vocabulary/u5_subject.dart'\n    as anchor4;\nimport 'package:zuraffa_purchase/tdd/002-subscription-error-vocabulary/u6_subject.dart'\n    as anchor5;\nimport 'package:zuraffa_purchase/tdd/002-subscription-error-vocabulary/u7_subject.dart'\n    as anchor6;\n\n/// Subject for behavior A11, composed against the\n/// feature's unit subject anchors by the generation pipeline.\nFuture<Object?> subject_a11() async {\n  // Composition anchor: references the feature's green / entity-wired unit\n  // subjects this behavior builds on.\n  // ignore: unused_local_variable\n  final composedUnitAnchors = <Function>[\n    anchor0.subject_u1,\n    anchor1.subject_u2,\n    anchor2.subject_u3,\n    anchor3.subject_u4,\n    anchor4.subject_u5,\n    anchor5.subject_u6,\n    anchor6.subject_u7,\n  ];\n\n  return anchor6.subject_u7(\n    const subs.PurchaseRequest(productId: 'pro.monthly'),\n  );\n}\n"
+    }
+  ],
+  "receipt_version": 1,
+  "min_core_version": "6.0.0",
+  "generated_against_core": "7.2.0"
+}

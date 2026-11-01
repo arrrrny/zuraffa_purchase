@@ -1,0 +1,34 @@
+{
+  "schema": "proof.v1",
+  "command": "tdd verify-red A5 --re-certify",
+  "target": "A5",
+  "repro": "zfa tdd verify-red A5 --re-certify",
+  "at": "2026-10-22T04:14:13.541206Z",
+  "generator_version": "7.2.0",
+  "input": {
+    "sanctioned": true,
+    "hand_delta": true,
+    "transition": "re-certify",
+    "behavior": "A5",
+    "feature": "002-subscription-error-vocabulary"
+  },
+  "files": [
+    {
+      "path": "test/tdd/002-subscription-error-vocabulary/a5_test.dart",
+      "action": "update",
+      "sha256": "cb05d9281d658e307c9fe088f8b051075c773bbcbd73c3382be53ee76034264b",
+      "bytes": 1302,
+      "snapshot": "// GENERATED TEST — `zfa tdd gen A5` (spec 044-test-tdd-generation).\n//\n// behavior_id: A5\n// source_criterion: AC-5\n// kind: acceptance\n// description: the result carries code `cancelled`.\n//\n// This test asserts the observable behavior described above. It is\n// \"honest red\" on first execution: the paired subject at\n// `package:zuraffa_purchase/tdd/002-subscription-error-vocabulary/a5_subject.dart` is unimplemented, so the test fails through an\n// assertion (not an uncaught error, compile/load error, skip, or\n// placeholder). Replace the subject's\n// stub body with real implementation to make this test pass.\n// zfa:tdd: A5:hand — hand step completed before first red certification (issue #1411)\nlibrary;\n\nimport 'package:test/test.dart';\nimport 'package:zuraffa_purchase/tdd/002-subscription-error-vocabulary/a5_subject.dart'\n    as subject;\n\nvoid main() {\n  group('A5 (AC-5)', () {\n    test('A5 — the result carries code `cancelled`.', () async {\n      final result = (() {\n        try {\n          return subject.subject_a5();\n        } on UnimplementedError catch (error) {\n          return error;\n        }\n      })();\n      expect(result, isNot(isA<UnimplementedError>()));\n      final outcome = await (result as Future<Object?>);\n      expect(outcome, 'cancelled');\n    });\n  });\n}\n"
+    },
+    {
+      "path": "lib/tdd/002-subscription-error-vocabulary/a5_subject.dart",
+      "action": "update",
+      "sha256": "02c6d50af1d8101cceb938f910e45e3f540dd66b384dc02b984487cda2a98fcd",
+      "bytes": 3603,
+      "snapshot": "// GENERATED IMPLEMENTATION — `zfa tdd compose A5` (issue\n// #642; spec 052-acceptance-make-composition: the acceptance subject is\n// composed against the feature's green / entity-wired unit subjects by a\n// generation-pipeline step, never by a wrapper or by hand).\n//\n// behavior_id: A5\n// source_criterion: AC-5\n// composed against: U1 (/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/u1_subject.dart), U2 (/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/u2_subject.dart), U3 (/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/u3_subject.dart), U4 (/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/u4_subject.dart), U5 (/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/u5_subject.dart), U6 (/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/u6_subject.dart), U7 (/Users/arrrrny/Developer/zuraffa_purchase/packages/zuraffa_purchase/lib/tdd/002-subscription-error-vocabulary/u7_subject.dart)\n// description: the result carries code `cancelled`.\n//\n// This replaces the `zfa tdd gen` stub with the minimal composed\n// implementation (spec 047 FR-005): the feature's unit subjects are the\n// implementation anchors. An anchor marked [entity-wired] carries only\n// the `zfa tdd wire` wiring so far (issue #923) — the composed scenario's\n// real green transition lands when those unit subjects are filled with\n// business logic in later cycles. Extend the body with real behavior in\n// later cycles — the paired test file is immutable (044 ownership).\n//\n// The subject name is derived from the behavior id (`subject_a5`) and is\n// deliberately snake_cased — the generator KNOWS the name it emits, so\n// the lint its shape provably trips is suppressed here rather than\n// renaming the contract surface (issue #1035).\n// ignore_for_file: non_constant_identifier_names\n// zfa:tdd: A5:hand — hand step completed before first red certification (issue #1411)\nlibrary;\n\nimport 'package:zuraffa_purchase/tdd/002-subscription-error-vocabulary/u1_subject.dart'\n    as anchor0;\nimport 'package:zuraffa_purchase/tdd/002-subscription-error-vocabulary/u2_subject.dart'\n    as anchor1;\nimport 'package:zuraffa_purchase/tdd/002-subscription-error-vocabulary/u3_subject.dart'\n    as anchor2;\nimport 'package:zuraffa_purchase/tdd/002-subscription-error-vocabulary/u4_subject.dart'\n    as anchor3;\nimport 'package:zuraffa_purchase/tdd/002-subscription-error-vocabulary/u5_subject.dart'\n    as anchor4;\nimport 'package:zuraffa_purchase/tdd/002-subscription-error-vocabulary/u6_subject.dart'\n    as anchor5;\nimport 'package:zuraffa_purchase/tdd/002-subscription-error-vocabulary/u7_subject.dart'\n    as anchor6;\n\n/// Subject for behavior A5, composed against the\n/// feature's unit subject anchors by the generation pipeline.\nFuture<Object?> subject_a5() async {\n  // Composition anchor: references the feature's green / entity-wired unit\n  // subjects this behavior builds on.\n  // ignore: unused_local_variable\n  final composedUnitAnchors = <Function>[\n    anchor0.subject_u1,\n    anchor1.subject_u2,\n    anchor2.subject_u3,\n    anchor3.subject_u4,\n    anchor4.subject_u5,\n    anchor5.subject_u6,\n    anchor6.subject_u7,\n  ];\n\n  final translated = await anchor4.subject_u5();\n  return translated.firstWhere((pair) => pair.from == 'cancelled').to;\n}\n"
+    }
+  ],
+  "receipt_version": 1,
+  "min_core_version": "6.0.0",
+  "generated_against_core": "7.2.0"
+}

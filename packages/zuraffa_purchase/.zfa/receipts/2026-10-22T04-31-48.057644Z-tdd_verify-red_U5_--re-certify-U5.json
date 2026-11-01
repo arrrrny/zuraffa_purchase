@@ -1,0 +1,27 @@
+{
+  "schema": "proof.v1",
+  "command": "tdd verify-red U5 --re-certify",
+  "target": "U5",
+  "repro": "zfa tdd verify-red U5 --re-certify",
+  "at": "2026-10-22T04:31:48.057644Z",
+  "generator_version": "7.2.0",
+  "input": {
+    "sanctioned": true,
+    "hand_delta": true,
+    "transition": "re-certify",
+    "behavior": "U5",
+    "feature": "001-purchase-store"
+  },
+  "files": [
+    {
+      "path": "test/tdd/001-purchase-store/u5_test.dart",
+      "action": "update",
+      "sha256": "a80f81f5ef93b1bc8ce76c10e72f5b4d961d6148bc1e9794df64832995324118",
+      "bytes": 1403,
+      "snapshot": "// GENERATED TEST — `zfa tdd gen U5` (spec 044-test-tdd-generation).\n//\n// behavior_id: U5\n// source_criterion: FR-005, PurchaseService.restore\n// kind: unit\n// description: `PurchaseService.restore()` MUST return every transaction the store\n//\n// This test asserts the observable behavior described above. It is\n// \"honest red\" on first execution: the paired subject at\n// `package:zuraffa_purchase/tdd/001-purchase-store/u5_subject.dart` is unimplemented, so the test fails through an\n// assertion (not an uncaught error, compile/load error, skip, or\n// placeholder). Replace the subject's\n// stub body with real implementation to make this test pass.\nlibrary;\n\nimport 'package:test/test.dart';\nimport 'package:zuraffa_purchase/zuraffa_purchase.dart';\nimport 'package:zuraffa_purchase/tdd/001-purchase-store/u5_subject.dart'\n    as subject;\n\nvoid main() {\n  group('U5 (FR-005, PurchaseService.restore)', () {\n    test(\n      'U5 — `PurchaseService.restore()` MUST return every transaction the store',\n      () async {\n        final outcomes = await subject.subject_u5();\n        expect(outcomes, hasLength(2));\n        expect(outcomes.map((outcome) => outcome.transactionId).toList(), [\n          'tx-1',\n          'tx-2',\n        ]);\n        expect(\n          outcomes.map((outcome) => outcome.status).toList(),\n          everyElement(PurchaseStatus.restored),\n        );\n      },\n    );\n  });\n}\n"
+    }
+  ],
+  "receipt_version": 1,
+  "min_core_version": "6.0.0",
+  "generated_against_core": "7.2.0"
+}

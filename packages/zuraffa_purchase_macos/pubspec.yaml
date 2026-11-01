@@ -29,13 +29,6 @@ dev_dependencies:
   lints: ^4.0.0
 
 dependency_overrides:
-  # Local development only — resolve the in-family siblings to this
-  # checkout; stripped on publish.
-  zuraffa_purchase:
-    path: ../zuraffa_purchase
-  zuraffa_purchase_platform:
-    path: ../zuraffa_purchase_platform
-
   xml: 7.1.0
 repository: https://github.com/arrrrny/zuraffa_purchase
 issue_tracker: https://github.com/arrrrny/zuraffa_purchase/issues

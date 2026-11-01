@@ -1,0 +1,27 @@
+{
+  "schema": "proof.v1",
+  "command": "tdd make U2",
+  "target": "U2",
+  "repro": "zfa tdd make U2",
+  "at": "2026-10-22T04:08:46.512613Z",
+  "generator_version": "7.2.0",
+  "input": {
+    "sanctioned": true,
+    "hand_delta": true,
+    "transition": "skip",
+    "behavior": "U2",
+    "feature": "002-subscription-error-vocabulary"
+  },
+  "files": [
+    {
+      "path": "test/tdd/002-subscription-error-vocabulary/u2_test.dart",
+      "action": "update",
+      "sha256": "d42c95d069bd986a4f23019a05b839471d2a95bfe95628e319adc12c8332a02b",
+      "bytes": 1609,
+      "snapshot": "// GENERATED TEST — `zfa tdd gen U2` (spec 044-test-tdd-generation).\n//\n// behavior_id: U2\n// source_criterion: FR-002, PurchaseSubscriptionStore.purchase\n// kind: unit\n// description: `PurchaseSubscriptionStore.purchase(PurchaseRequest request)` MUST\n//\n// This test asserts the observable behavior described above. It is\n// \"honest red\" on first execution: the paired subject at\n// `package:zuraffa_purchase/tdd/002-subscription-error-vocabulary/u2_subject.dart` is unimplemented, so the test fails through an\n// assertion (not an uncaught error, compile/load error, skip, or\n// placeholder). Replace the subject's\n// stub body with real implementation to make this test pass.\nlibrary;\n\nimport 'package:test/test.dart';\nimport 'package:zuraffa_subscriptions/zuraffa_subscriptions.dart' as subs;\nimport 'package:zuraffa_purchase/tdd/002-subscription-error-vocabulary/u2_subject.dart'\n    as subject;\n\nvoid main() {\n  group('U2 (FR-002, PurchaseSubscriptionStore.purchase)', () {\n    test(\n      'U2 — `PurchaseSubscriptionStore.purchase(PurchaseRequest request)` MUST',\n      () async {\n        final error = await subject.subject_u2(\n          const subs.PurchaseRequest(productId: 'pro.monthly'),\n        );\n        expect(\n          error,\n          isA<subs.SubscriptionException>(),\n          reason:\n              'the port speaks SubscriptionException, never PurchaseException',\n        );\n        expect(\n          (error! as subs.SubscriptionException).code,\n          'cancelled',\n          reason: 'a cancelled purchase is a cancelled subscription failure',\n        );\n      },\n    );\n  });\n}\n"
+    }
+  ],
+  "receipt_version": 1,
+  "min_core_version": "6.0.0",
+  "generated_against_core": "7.2.0"
+}
