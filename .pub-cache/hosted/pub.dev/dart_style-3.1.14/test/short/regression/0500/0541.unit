@@ -1,4 +1,0 @@
->>>
-String A() native ;
-<<< 3.6
-String A() native;

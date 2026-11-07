@@ -1,5 +1,0 @@
-analyzer:
-  exclude:
-    - "**/*.g.dart"
-    - "**/*.zorphy.dart"
-    - "**/*.zorphy2.dart"
