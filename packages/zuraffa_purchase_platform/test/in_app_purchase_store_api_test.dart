@@ -126,28 +126,25 @@ void main() {
       expect(client.purchaseRequests.single.productId, 'pro.monthly');
     });
 
-    test(
-      'settles when the store reports the transaction while the purchase '
-      'is still starting (StoreKit 2)',
-      () async {
-        // StoreKit 2 delivers the purchased transaction while
-        // SK2Product.purchase is still in flight. The wait must be armed
-        // before startPurchase, or the broadcast queue drops the event and
-        // the purchase hangs until its timeout (the Pro→Max upgrade hang).
-        client.emitOnStart = [_transaction('tx-sk2')];
-        final store = InAppPurchaseStoreApi(
-          client: client,
-          purchaseTimeout: const Duration(seconds: 5),
-        );
+    test('settles when the store reports the transaction while the purchase '
+        'is still starting (StoreKit 2)', () async {
+      // StoreKit 2 delivers the purchased transaction while
+      // SK2Product.purchase is still in flight. The wait must be armed
+      // before startPurchase, or the broadcast queue drops the event and
+      // the purchase hangs until its timeout (the Pro→Max upgrade hang).
+      client.emitOnStart = [_transaction('tx-sk2')];
+      final store = InAppPurchaseStoreApi(
+        client: client,
+        purchaseTimeout: const Duration(seconds: 5),
+      );
 
-        final transaction = await store.purchase(
-          const StorePurchaseRequest(productId: 'pro.monthly'),
-        );
+      final transaction = await store.purchase(
+        const StorePurchaseRequest(productId: 'pro.monthly'),
+      );
 
-        expect(transaction.transactionId, 'tx-sk2');
-        expect(client.purchaseRequests.single.productId, 'pro.monthly');
-      },
-    );
+      expect(transaction.transactionId, 'tx-sk2');
+      expect(client.purchaseRequests.single.productId, 'pro.monthly');
+    });
 
     test('does not settle on a restored or a pending transaction', () async {
       final store = InAppPurchaseStoreApi(
