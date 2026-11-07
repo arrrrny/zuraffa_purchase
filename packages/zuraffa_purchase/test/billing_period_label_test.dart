@@ -17,9 +17,7 @@ PurchaseSubscriptionStore _store({
   Map<String, Duration> billingPeriods = const {},
   String? declaredPeriod,
 }) => PurchaseSubscriptionStore(
-  port: ScriptedPurchasePort(
-    catalog: [_product(period: declaredPeriod)],
-  ),
+  port: ScriptedPurchasePort(catalog: [_product(period: declaredPeriod)]),
   billingPeriod: billingPeriod,
   billingPeriods: billingPeriods,
 );
@@ -50,13 +48,16 @@ void main() {
       expect(products.single.period, 'P1M');
     });
 
-    test('the month label carries the multiplier — two months is P2M', () async {
-      final products = await _store(
-        billingPeriod: const Duration(days: 62),
-      ).fetchProducts(['pro.monthly']);
+    test(
+      'the month label carries the multiplier — two months is P2M',
+      () async {
+        final products = await _store(
+          billingPeriod: const Duration(days: 62),
+        ).fetchProducts(['pro.monthly']);
 
-      expect(products.single.period, 'P2M');
-    });
+        expect(products.single.period, 'P2M');
+      },
+    );
 
     test('a period that is neither a month nor a year stays in days', () async {
       final products = await _store(
