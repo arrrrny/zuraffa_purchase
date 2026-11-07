@@ -48,15 +48,24 @@ class InAppPurchaseStoreApi implements StoreApi {
 
   @override
   Future<StoreTransaction> purchase(StorePurchaseRequest request) async {
-    // The store accepts the request first, and the wait starts from the
-    // sequence the store had reached by then: a transaction the store
-    // replayed from an earlier session cannot settle this purchase.
-    await client.startPurchase(request);
+    // The wait is armed BEFORE the store accepts the request. StoreKit 2
+    // (in_app_purchase_storekit >= 0.4, the default) can report the
+    // transaction while the purchase call is still in flight; the queue is
+    // a broadcast stream, so an event that arrives before the waiter
+    // subscribes is dropped forever and the purchase hangs at the timeout.
+    // Arming first closes that window — the seq guard still excludes
+    // transactions replayed from earlier sessions, which were sequenced
+    // when the queue started listening at registration.
     final pending = _queue.waitForTerminal(
       productId: request.productId,
       timeout: purchaseTimeout,
-      fromSeq: _queue.seq,
     );
+    try {
+      await client.startPurchase(request);
+    } catch (_) {
+      pending.cancel();
+      rethrow;
+    }
     final transactions = await pending.future;
     if (transactions.isEmpty) {
       throw PurchaseException.timeout(

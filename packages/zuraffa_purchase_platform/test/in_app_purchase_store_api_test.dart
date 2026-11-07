@@ -14,6 +14,11 @@ class FakeStoreClient implements StoreClient {
   List<StoreTransaction> restored = const [];
   Object? startPurchaseError;
   Object? restoreError;
+
+  /// Transactions emitted while [startPurchase] is in flight — the
+  /// StoreKit 2 shape, where the store reports the purchase before the
+  /// purchase call returns.
+  List<StoreTransaction> emitOnStart = const [];
   final List<StorePurchaseRequest> purchaseRequests = [];
   final List<String> completed = [];
 
@@ -32,6 +37,8 @@ class FakeStoreClient implements StoreClient {
   @override
   Future<void> startPurchase(StorePurchaseRequest request) async {
     purchaseRequests.add(request);
+    final emitted = emitOnStart;
+    if (emitted.isNotEmpty) _controller.add(emitted);
     final error = startPurchaseError;
     if (error != null) throw error;
   }
@@ -111,8 +118,6 @@ void main() {
       final pending = store.purchase(
         const StorePurchaseRequest(productId: 'pro.monthly'),
       );
-      // The store accepts the request before the wait is armed, so the
-      // transaction has to be emitted after that step has happened.
       await Future<void>.delayed(Duration.zero);
       client.emit([_transaction('tx-1')]);
 
@@ -120,6 +125,29 @@ void main() {
       expect(transaction.transactionId, 'tx-1');
       expect(client.purchaseRequests.single.productId, 'pro.monthly');
     });
+
+    test(
+      'settles when the store reports the transaction while the purchase '
+      'is still starting (StoreKit 2)',
+      () async {
+        // StoreKit 2 delivers the purchased transaction while
+        // SK2Product.purchase is still in flight. The wait must be armed
+        // before startPurchase, or the broadcast queue drops the event and
+        // the purchase hangs until its timeout (the Pro→Max upgrade hang).
+        client.emitOnStart = [_transaction('tx-sk2')];
+        final store = InAppPurchaseStoreApi(
+          client: client,
+          purchaseTimeout: const Duration(seconds: 5),
+        );
+
+        final transaction = await store.purchase(
+          const StorePurchaseRequest(productId: 'pro.monthly'),
+        );
+
+        expect(transaction.transactionId, 'tx-sk2');
+        expect(client.purchaseRequests.single.productId, 'pro.monthly');
+      },
+    );
 
     test('does not settle on a restored or a pending transaction', () async {
       final store = InAppPurchaseStoreApi(
