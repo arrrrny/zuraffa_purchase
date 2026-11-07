@@ -1,0 +1,285 @@
+import 'dart:async';
+
+import 'package:meta/meta.dart';
+
+import '../core/cancel_token.dart';
+import '../core/failure.dart';
+import '../core/failure_reporter_registry.dart';
+import '../core/hook.dart';
+import '../core/hook_registry.dart';
+import '../core/loggable.dart';
+import '../core/trace_observer.dart';
+import '../core/result.dart';
+
+/// A UseCase for streaming/reactive operations.
+///
+/// Use [StreamUseCase] when you need to emit multiple values over time,
+/// such as real-time updates, pagination, or long-running operations
+/// with progress updates.
+///
+/// For single-shot operations, use [UseCase] instead.
+///
+/// ## Key Features
+/// - Emits [Result<Type, AppFailure>] for each value
+/// - Built-in cancellation support via [CancelToken]
+/// - Automatic error wrapping and logging
+/// - Clean stream-based API
+///
+/// ## Example
+/// ```dart
+/// class WatchProductsUseCase extends StreamUseCase<List<Product>, String> {
+///   final ProductRepository _repository;
+///
+///   WatchProductsUseCase(this._repository);
+///
+///   @override
+///   Stream<List<Product>> execute(String category, CancelToken? cancelToken) {
+///     return _repository.watchProducts(category);
+///   }
+/// }
+///
+/// // Usage
+/// watchProductsUseCase('electronics').listen((result) {
+///   result.fold(
+///     (products) => updateList(products),
+///     (failure) => showError(failure),
+///   );
+/// });
+/// ```
+///
+/// ## Error Handling
+/// - Errors in the stream are wrapped in [AppFailure] and emitted as [Failure]
+/// - [CancelledException] is converted to [CancellationFailure]
+/// - The stream completes after emitting a failure
+abstract class StreamUseCase<T, Params> with Loggable {
+  StreamSubscription<T>? _subscription;
+  final List<StreamSubscription<dynamic>> _subscriptions = [];
+
+  /// Execute the use case with the given [params].
+  ///
+  /// Returns a [Stream] of [Result] values. Each value is either:
+  /// - [Success] containing the emitted value
+  /// - [Failure] containing an [AppFailure]
+  Stream<Result<T, AppFailure>> call(
+    Params params, {
+    CancelToken? cancelToken,
+  }) async* {
+    final startTime = DateTime.now();
+    final traceCtx = (
+      traceId: TraceObserver.instance.currentTraceId,
+      spanId: TraceObserver.instance.currentSpanId,
+    );
+    final hookMetadata = <String, dynamic>{};
+
+    // Check for cancellation before starting
+    if (cancelToken?.isCancelled ?? false) {
+      logger.info('$runtimeType cancelled before starting');
+      yield Result.failure(
+        CancellationFailure(
+          cancelToken?.cancelReason ?? 'Operation was cancelled',
+        ),
+      );
+      return;
+    }
+
+    HookRegistry.instance.dispatch(
+      HookContext(
+        useCaseName: '$runtimeType',
+        params: params,
+        timestamp: startTime,
+        traceId: traceCtx.traceId,
+        spanId: traceCtx.spanId,
+        metadata: hookMetadata,
+      ),
+      HookPhase.pre,
+    );
+
+    try {
+      final sourceStream = execute(params, cancelToken);
+
+      // Apply cancellation if token is provided
+      final stream = cancelToken != null
+          ? sourceStream.withCancellation(cancelToken)
+          : sourceStream;
+
+      await for (final value in stream) {
+        // Check for cancellation between values
+        if (cancelToken?.isCancelled ?? false) {
+          logger.info('$runtimeType cancelled during execution');
+          yield Result.failure(
+            CancellationFailure(
+              cancelToken?.cancelReason ?? 'Operation was cancelled',
+            ),
+          );
+          return;
+        }
+
+        yield Result.success(value);
+      }
+
+      logger.fine('$runtimeType stream completed successfully');
+
+      HookRegistry.instance.dispatch(
+        HookContext(
+          useCaseName: '$runtimeType',
+          params: params,
+          duration: DateTime.now().difference(startTime),
+          timestamp: startTime,
+          traceId: traceCtx.traceId,
+          spanId: traceCtx.spanId,
+          metadata: hookMetadata,
+        ),
+        HookPhase.success,
+      );
+    } on CancelledException catch (e) {
+      logger.info('$runtimeType was cancelled: ${e.message}');
+      yield Result.failure(CancellationFailure(e.message));
+    } on AppFailure catch (e) {
+      logger.warning('$runtimeType failed with AppFailure: $e');
+      FailureReporterRegistry.instance.reportFailure(
+        e,
+        stackTrace: e.stackTrace,
+        attributes: {'usecase': '$runtimeType'},
+      );
+
+      HookRegistry.instance.dispatch(
+        HookContext(
+          useCaseName: '$runtimeType',
+          params: params,
+          failure: e,
+          duration: DateTime.now().difference(startTime),
+          timestamp: startTime,
+          traceId: traceCtx.traceId,
+          spanId: traceCtx.spanId,
+          metadata: hookMetadata,
+        ),
+        HookPhase.failure,
+      );
+
+      yield Result.failure(e);
+    } catch (e, stackTrace) {
+      logger.severe('$runtimeType failed unexpectedly', e, stackTrace);
+      final failure = AppFailure.from(e, stackTrace);
+      FailureReporterRegistry.instance.reportFailure(
+        failure,
+        stackTrace: stackTrace,
+        attributes: {'usecase': '$runtimeType'},
+      );
+
+      HookRegistry.instance.dispatch(
+        HookContext(
+          useCaseName: '$runtimeType',
+          params: params,
+          failure: failure,
+          duration: DateTime.now().difference(startTime),
+          timestamp: startTime,
+          traceId: traceCtx.traceId,
+          spanId: traceCtx.spanId,
+          metadata: hookMetadata,
+        ),
+        HookPhase.failure,
+      );
+
+      yield Result.failure(failure);
+    }
+  }
+
+  /// Override this method to implement the streaming logic.
+  ///
+  /// - Throw [AppFailure] subclasses for expected/recoverable errors
+  /// - Any other exception will be wrapped in [UnknownFailure]
+  /// - Check `cancelToken?.isCancelled` for long gaps between emissions
+  ///
+  /// Each emitted value will be wrapped in [Success].
+  @protected
+  Stream<T> execute(Params params, CancelToken? cancelToken);
+
+  /// Listen to the use case with callback-based API.
+  ///
+  /// This is a convenience method that wraps [call] with callbacks.
+  /// Returns a [StreamSubscription] that can be cancelled.
+  ///
+  /// Example:
+  /// ```dart
+  /// final subscription = watchProductsUseCase.listen(
+  ///   'electronics',
+  ///   onData: (products) => updateList(products),
+  ///   onError: (failure) => showError(failure),
+  ///   onDone: () => print('Stream completed'),
+  /// );
+  ///
+  /// // Later, to cancel:
+  /// subscription.cancel();
+  /// ```
+  StreamSubscription<Result<T, AppFailure>> listen(
+    Params params, {
+    required void Function(T data) onData,
+    void Function(AppFailure failure)? onError,
+    void Function()? onDone,
+    CancelToken? cancelToken,
+  }) {
+    final subscription = call(params, cancelToken: cancelToken).listen((
+      result,
+    ) {
+      result.fold(
+        (value) => onData(value),
+        (failure) => onError?.call(failure),
+      );
+    }, onDone: onDone);
+
+    _subscriptions.add(subscription);
+    return subscription;
+  }
+
+  /// Dispose of all active subscriptions.
+  ///
+  /// Call this when the use case is no longer needed.
+  void dispose() {
+    _subscription?.cancel();
+    _subscription = null;
+
+    for (final subscription in _subscriptions) {
+      subscription.cancel();
+    }
+    _subscriptions.clear();
+
+    logger.info('$runtimeType disposed');
+  }
+}
+
+/// Extension methods for convenient StreamUseCase operations
+extension StreamUseCaseExtensions<T, Params> on StreamUseCase<T, Params> {
+  /// Get the first result from the stream.
+  ///
+  /// Useful when you only care about the first emission.
+  Future<Result<T, AppFailure>> first(
+    Params params, {
+    CancelToken? cancelToken,
+  }) async {
+    return call(params, cancelToken: cancelToken).first;
+  }
+
+  /// Collect all results into a list.
+  ///
+  /// Only includes successful results. Stops on first failure.
+  Future<Result<List<T>, AppFailure>> toList(
+    Params params, {
+    CancelToken? cancelToken,
+  }) async {
+    final results = <T>[];
+
+    await for (final result in call(params, cancelToken: cancelToken)) {
+      final failure = result.getFailureOrNull();
+      if (failure != null) {
+        return Result.failure(failure);
+      }
+
+      final value = result.getOrNull();
+      if (value != null) {
+        results.add(value);
+      }
+    }
+
+    return Result.success(results);
+  }
+}

@@ -1,0 +1,286 @@
+/// `classify` — pure eleven-way classification of a runner transcript
+/// (spec 046-tdd-verify-red, FR-004, FR-005, T004; decision order per
+/// research.md Decision 3).
+///
+/// Rule order (first match wins):
+///   1. process failed to start                     -> runner-error
+///   2. load signature (unreadable file/import)     -> load-error
+///   3. compile signature (CFE diagnostics)         -> compile-error
+///   4. executed-test count other than exactly 1    -> runner-error
+///      (load/compile already won above: signature beats count, U8)
+///   5. exit 0, skip markers only                   -> skipped
+///   6. exit 0                                      -> unexpected-green
+///   7. exit != 0 with assertion signature          -> assertion
+///   8. exit != 0 with channel-timeout signature    -> channel-timeout
+///      (issue #831: MissingPluginException / channel-scoped
+///      TimeoutException / PlatformException(channel-error) WITHOUT an
+///      assertion signature — the certified fake is missing or the
+///      scenario never answered; a named rejection, never a red)
+///   9. exit != 0 bare subject-stub UnimplementedError throw
+///      originating from `*_subject.dart` (no framework banner) ->
+///      assertion (issue #1813: gen's stub red for the await-outside-
+///      expect test shape)
+///  10. exit != 0 with widget/pump exception        -> runner-error
+///      (issue #830: exception in pump/build = runner tier)
+///  11. anything else                               -> runner-error
+///
+/// All parsing lives here (pure, unit-testable) — the same lesson
+/// `MutationVerifier` paid for: never scatter output-grammar regexes
+/// across call sites.
+library;
+
+import '../models/red_classification.dart';
+
+/// Classify one runner invocation into exactly one [RedClassification].
+RedClassification classify(RunRecord record) {
+  // 1. The executable never launched: infrastructure failure.
+  if (!record.startedProcess) {
+    return RedClassification.runnerError;
+  }
+
+  // 1b. The runner was killed by the per-command timeout (bug #742): the
+  //     target test never finished, so nothing about the behavior was
+  //     observed — infrastructure failure, never a certified red.
+  if (record.timedOut) {
+    return RedClassification.runnerError;
+  }
+
+  final output = record.output;
+
+  // 2. Load failure: the test file (or an import) could not be READ.
+  //    `dart test` reports both missing files and compile errors under a
+  //    "Failed to load" wrapper, so the discriminator is the inner
+  //    signature: a read-level marker means load, CFE diagnostics mean
+  //    compile.
+  if (_hasLoadSignature(output)) {
+    return RedClassification.loadError;
+  }
+
+  // 3. Compile failure: CFE diagnostics ("file:line:col: Error: ...",
+  //    "Compilation failed"), with or without the load wrapper.
+  if (_hasCompileSignature(output)) {
+    return RedClassification.compileError;
+  }
+
+  // 4. The runner must have executed EXACTLY the target test (FR-005).
+  //    A blended run (2+ results) or an empty run (0) is rejected; an
+  //    unparseable transcript cannot prove a single-test run either.
+  final count = record.testCount;
+  if (count == null || count != 1) {
+    // Issue #1778: a `--plain-name` filter that matches ZERO tests is a
+    // test-title drift, not a toolchain failure. The runner exits 79 with
+    // a "No tests ran." transcript; classify it distinctly so the
+    // operator sees the real cause instead of an opaque runner-error.
+    if (count == 0 &&
+        record.command.contains('--plain-name') &&
+        record.output.contains('No tests ran')) {
+      return RedClassification.testNameMismatch;
+    }
+    return RedClassification.runnerError;
+  }
+
+  // 5/6. Green side of the loop.
+  if (record.exitCode == 0) {
+    return _hasSkipMarkers(output)
+        ? RedClassification.skipped
+        : RedClassification.unexpectedGreen;
+  }
+
+  // 7/8. Red side: only an assertion signature makes the red honest.
+  //      Assertion first (bug #830 widget failure taxonomy, corrected by
+  //      the e2e capture in bug_830_widget_subject_kind_test.dart): real
+  //      flutter_test wraps EVERY test failure — assertion mismatches
+  //      included — in the "EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK"
+  //      banner and rethrows it as "The following TestFailure was thrown
+  //      running a test". An assertion mismatch that coexists with any
+  //      exception text therefore stays honest red: the assertion
+  //      demonstrably fired. What remains is the pump/build crash with NO
+  //      assertion signature — the WIDGETS/RENDERING framework banners, a
+  //      non-TestFailure throw dump, or a pumpAndSettle timeout — which
+  //      is a runner-tier failure, NEVER a certified red (issue #830:
+  //      exception in pump = compile/runner).
+  if (_hasAssertionSignature(output)) {
+    return RedClassification.assertion;
+  }
+  // 8. Channel-timeout (issue #831): a platform-channel call that never
+  //    resolved, AFTER the assertion check — a transcript whose
+  //    Expected/Actual block QUOTES channel text is still an honest red
+  //    (the assertion demonstrably fired). A PROCESS-level kill
+  //    (record.timedOut, bug #742) never reaches this branch: the
+  //    runner-error verdict above keeps infrastructure timeouts distinct
+  //    from in-test channel failures.
+  if (_hasChannelTimeoutSignature(output)) {
+    return RedClassification.channelTimeout;
+  }
+  // Issue #1813: a generated subject stub throws UnimplementedError and
+  // the paired test awaits it outside an `expect`, so the transcript is a
+  // bare throw dump with no Expected/Actual block. When that throw
+  // demonstrably originates from the subject's own file (`*_subject.dart`)
+  // and exactly one test ran, it is the honest red the stub was born to
+  // produce — not a runner-tier crash. Narrowly scoped to the subject file
+  // so the #830 widget-crash taxonomy (UnimplementedError escaping a
+  // pump) is untouched.
+  if (_isSubjectUnimplementedThrow(output)) {
+    return RedClassification.assertion;
+  }
+  if (_hasWidgetPumpException(output)) {
+    return RedClassification.runnerError;
+  }
+  return RedClassification.runnerError;
+}
+
+// ---------------------------------------------------------------------
+// Transcript grammar (dart test / flutter test share package:test's
+// reporter). Anchored to real captured output; see
+// test/plugins/tdd/red_classifier_test.dart for the fixtures.
+// ---------------------------------------------------------------------
+
+final RegExp _progressLine = RegExp(
+  r'^\d\d:\d\d \+(\d+)(?: -(\d+))?(?: ~(\d+))?:',
+  multiLine: true,
+);
+
+final RegExp _readFailure = RegExp(
+  r'Does not exist|Error when reading|No such file or directory',
+);
+
+final RegExp _cfeDiagnostic = RegExp(
+  r'\S+:\d+:\d+:?\s*Error:|Compilation failed|CompilationError',
+);
+
+// A real assertion report is indented under the failing `[E]` test line, so
+// both labels must sit at the start of an indented line. A bare `Expected:`/
+// `Actual:` printed to stdout (column 0) is not an assertion report, even
+// when an unrelated failure follows. The 4000-char bound keeps the two
+// labels within one failure block; larger dumps are missed by design.
+final RegExp _assertionSignature = RegExp(
+  r'^\s+Expected:[\s\S]{0,4000}?^\s+Actual:|'
+  r'^\s+Actual:[\s\S]{0,4000}?^\s+Expected:|'
+  r'TestFailure',
+  multiLine: true,
+);
+
+bool _hasLoadSignature(String output) {
+  if (!output.contains('Failed to load')) return false;
+  // Read-level markers dominate CFE diagnostics inside the wrapper.
+  if (_readFailure.hasMatch(output)) return true;
+  // "Failed to load" with no deeper diagnostic is still a load failure.
+  return !_cfeDiagnostic.hasMatch(output);
+}
+
+bool _hasCompileSignature(String output) => _cfeDiagnostic.hasMatch(output);
+
+bool _hasSkipMarkers(String output) =>
+    output.contains('All tests skipped') ||
+    output.contains('Skip:') ||
+    RegExp(r'^\d\d:\d\d \+\d+ ~\d+:', multiLine: true).hasMatch(output);
+
+bool _hasAssertionSignature(String output) =>
+    _assertionSignature.hasMatch(output);
+
+/// Widget pump/build exceptions (bug #830): the flutter framework's
+/// crash banners and dump phrasing, plus pumpAndSettle timeouts. A red
+/// whose transcript carries one of these WITHOUT an assertion signature
+/// crashed before/around the assertions, so the behavior was never
+/// honestly observed — runner-tier, never a certified red. The FLUTTER
+/// TEST FRAMEWORK banner is deliberately matched too: it appears on
+/// every flutter test failure, but only AFTER the assertion check has
+/// had its chance, so it only fires for assertion-less crashes. Pure-
+/// `dart test` transcripts never carry these signatures (the phrasing
+/// is flutter-framework-specific), so existing classifications are
+/// unchanged.
+
+/// Issue #1813: a throw dump naming the subject's own `UnimplementedError`,
+/// raised from the generated subject file (`*_subject.dart`). Scoped to that
+/// file path so a widget-lane `UnimplementedError` escaping a pump (which
+/// carries no subject-file stack frame) stays runner-error.
+bool _isSubjectUnimplementedThrow(String output) {
+  if (!output.contains('UnimplementedError')) return false;
+  // Exclude framework-caught crashes (issue #830 widget taxonomy): a
+  // transcript carrying an "EXCEPTION CAUGHT BY … LIBRARY" banner is a
+  // framework-wrapped pump/build crash, never the bare subject-stub
+  // throw — even if the subject file shows up in its stack trace.
+  if (RegExp(r'EXCEPTION CAUGHT BY').hasMatch(output)) {
+    return false;
+  }
+  // Anchor the subject match to a stack-frame shape so a stray mention
+  // of the subject file (e.g. inside an error message) cannot flip a
+  // crash into an honest red.
+  return RegExp(r'_subject\.dart \d+:\d+').hasMatch(output);
+}
+
+final RegExp _widgetPumpException = RegExp(
+  r'EXCEPTION CAUGHT BY (WIDGETS|RENDERING|FLUTTER TEST FRAMEWORK) LIBRARY|'
+  r'The following (?!TestFailure)\S+ was thrown|'
+  r'pumpAndSettle timed out',
+);
+
+bool _hasWidgetPumpException(String output) =>
+    _widgetPumpException.hasMatch(output);
+
+/// Platform-channel failures (issue #831): the call never resolved. The
+/// signatures are deliberately CHANNEL-SCOPED — a bare `TimeoutException`
+/// (pumpAndSettle, an arbitrary future) stays in the widget/runner
+/// taxonomy (issue #830), while `MissingPluginException` (no handler
+/// registered — the fake is not installed), a `TimeoutException` that
+/// names the channel, and `PlatformException(channel-error)` (the
+/// messenger refused the message) are the harness's named rejection.
+final RegExp _channelTimeoutSignature = RegExp(
+  r'MissingPluginException|'
+  r'TimeoutException[^\n]*channel[^\n]*|'
+  r'channel[^\n]*TimeoutException|'
+  r"PlatformException\(channel-error",
+);
+
+bool _hasChannelTimeoutSignature(String output) =>
+    _channelTimeoutSignature.hasMatch(output);
+
+// ---------------------------------------------------------------------
+// Failing-assertion identity (issue #959 / spec 071-inert-stub-red, U3)
+// ---------------------------------------------------------------------
+
+final RegExp _failingTestLine = RegExp(
+  r'^\d\d:\d\d \+\d+(?: -\d+)?: (.+) \[E\]$',
+  multiLine: true,
+);
+
+/// The failing authored assertion's identity for a red transcript: the
+/// description of the test whose `[E]` line certifies the red (the LAST
+/// one — the runner's final failure state). `null` when the transcript
+/// carries no parseable authored-assertion identity (load/compile
+/// "loading ..." lines, crash dumps, unparseable output) — the verdict
+/// then simply omits the evidence detail rather than fabricating a name.
+///
+/// Pure like [classify]: the same reporter grammar, one place.
+String? failingAssertionOf(String output) {
+  final matches = _failingTestLine.allMatches(output).toList();
+  for (final match in matches.reversed) {
+    final name = match.group(1)?.trim() ?? '';
+    if (name.isEmpty) continue;
+    // "loading <file> [E]" belongs to the load/compile tier — it names a
+    // FILE, never an authored assertion.
+    if (name.startsWith('loading ')) continue;
+    return name;
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------------
+// Executed-test counting
+// ---------------------------------------------------------------------
+
+/// Parse the number of executed tests (passed + failed + skipped) from a
+/// runner transcript, using the LAST progress line's cumulative counters.
+///
+/// Returns 0 for an explicit "No tests ran." transcript and `null` when
+/// no progress line can be found at all (unparseable).
+int? parseExecutedTestCount(String output) {
+  if (output.contains('No tests ran.')) return 0;
+  final matches = _progressLine.allMatches(output).toList();
+  if (matches.isEmpty) return null;
+  final last = matches.last;
+  final passed = int.parse(last.group(1)!);
+  final failed = last.group(2) == null ? 0 : int.parse(last.group(2)!);
+  final skipped = last.group(3) == null ? 0 : int.parse(last.group(3)!);
+  return passed + failed + skipped;
+}

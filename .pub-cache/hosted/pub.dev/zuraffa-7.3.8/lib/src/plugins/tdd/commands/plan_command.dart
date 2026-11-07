@@ -1,0 +1,3440 @@
+/// `zfa tdd plan <feature>` — read `spec.md`, emit `tdd/test-list.md`.
+///
+/// Bug #846 (coverage gate): plan PROVES every FR/AC requirement
+/// statement maps to a behavior row (or to an explicit `(manual:
+/// owner)` declaration) before anything is written. A requirement that
+/// produces no behavior row = exit 2 with the offending spec line and a
+/// fix instruction — and NO artifacts (an incomplete plan never emits a
+/// test list that would silently claim completeness). On success the
+/// plan artifact carries the traceability matrix plus the spec-contract
+/// hash (`tdd/traceability.md`); verify/corpus re-check that hash and
+/// report drift (exit 3) when the spec is edited after planning.
+library;
+
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:args/command_runner.dart';
+import 'package:crypto/crypto.dart';
+import 'package:path/path.dart' as p;
+
+import '../models/lane.dart';
+import '../models/routing.dart';
+import '../services/declared_routing.dart';
+import '../services/finder_taxonomy.dart';
+import '../services/feature_path_resolver.dart';
+import '../services/artifact_registry.dart';
+import '../services/i18n_key_contract.dart';
+import '../services/explain_emitter.dart';
+import '../services/lane_split.dart';
+import '../services/routing_resolver.dart';
+import '../services/requirement_scan.dart';
+import '../services/skin_plan_author.dart';
+import '../services/spec_marker_emitter.dart';
+import '../services/spec_migrator.dart';
+import '../services/spec_parser.dart';
+import '../services/platform_layout_contract.dart';
+import '../services/platform_coverage_ledger.dart';
+import '../services/test_list_reader.dart';
+import '../services/unit_contract_shape.dart';
+import '../services/tdd_generation_receipt.dart';
+import '../services/ui_ledger_projection.dart';
+import '../services/verdict_emitter.dart';
+import '../models/verdict_envelope.dart';
+import '../tdd_plugin.dart';
+import '../services/skin_contract_emit.dart';
+import '../../../tdd/services/ui_ledger_builder.dart';
+import '../../../tdd/services/typed_ledger_row.dart';
+import '../../../tdd/services/typed_platform_ledger.dart';
+import '../services/typed_ledger_projection.dart';
+import '../services/widget_vocabulary_gate.dart';
+import '../../skin/vocabulary/ui_node_registry.dart';
+import '../../../skin/contract/adaptive_skin_contract.dart';
+import '../../../skin/contract/adaptive_skin_contract_parser.dart';
+import '../../../core/project/project_root.dart';
+import '../../../utils/framework_export_surface.dart';
+
+class PlanCommand extends Command<void> {
+  /// The kinds each lane plan renders a section for (issue #1432) — the
+  /// same partition the renderers in `lane_split.dart` apply. A routed
+  /// behavior whose kind is outside its destination's set refuses instead
+  /// of silently dropping. `contract` is deliberately absent: that path is
+  /// open issue #1419.
+  static const Set<BehaviorKind> _engineLaneKinds = {
+    BehaviorKind.acceptance,
+    BehaviorKind.platform,
+    BehaviorKind.widget,
+    BehaviorKind.unit,
+    BehaviorKind.ffi,
+  };
+  static const Set<BehaviorKind> _skinLaneKinds = {
+    BehaviorKind.acceptance,
+    BehaviorKind.platform,
+    BehaviorKind.widget,
+    BehaviorKind.unit,
+  };
+
+  PlanCommand(this.plugin) {
+    argParser.addFlag(
+      'json',
+      help:
+          'Emit a versioned verdict.v1 JSON envelope as the final stdout '
+          'line (VISION §5, issue #964).',
+      negatable: false,
+    );
+    argParser.addFlag('explain', help: kExplainFlagHelp, negatable: false);
+    argParser.addFlag(
+      'strict-routing',
+      help:
+          'Refuse undeclared routing intent instead of falling back to the '
+          'legacy keyword classifiers. Undeclared behaviors exit 1 with the '
+          'spec line and the declaration to add (feature 071, issue #951). '
+          'Run a plain `zfa tdd plan` first (issue #1186): it emits the '
+          'classified `**Type**` markers into the spec, so the strict gate '
+          'passes on the re-run.',
+      negatable: false,
+    );
+    argParser.addOption(
+      'project',
+      aliases: const ['project-root'],
+      help:
+          'Project root containing specs/<feature>/spec.md. When omitted, the '
+          'current working directory is used. Tests pass the temp fixture '
+          'root here instead of mutating Directory.current.',
+    );
+    argParser.addFlag(
+      'migrate-spec',
+      help:
+          'Migrate the spec to the latest known template version (issue '
+          '#990): inject a missing **Template Version** marker, or refresh '
+          'a stale/unknown one in place, then continue planning. Without '
+          'this flag a missing/unknown marker stays contract drift (exit '
+          '3) and the spec is never touched.',
+      negatable: false,
+    );
+    argParser.addFlag(
+      'emit-markers',
+      help:
+          'Emit the classified `**Type**` lane markers back into the spec '
+          'after a successful plan (issue #1186): the legacy classifier '
+          'fallback becomes a one-time migration instead of a per-run '
+          'warning, and `--strict-routing` becomes usable on '
+          'speckit-authored specs. Pass `--no-emit-markers` to leave the '
+          'spec untouched.',
+      defaultsTo: true,
+      negatable: true,
+    );
+    argParser.addFlag(
+      'allow-unit-fallback',
+      help:
+          'Migration escape hatch (issue #1480): keep the legacy labeled '
+          'fallback for UNIT behaviors instead of refusing. By default the '
+          'plan refuses when any unit behavior would fallback-route — the '
+          'unit lane can never self-heal (a contract row name is authoring '
+          'intent no classifier can invent), so such a behavior dead-ends '
+          'at make (vacuous-green) minutes into `zfa tdd run`. The '
+          'acceptance lane keeps its one-time marker migration either way.',
+      negatable: false,
+    );
+  }
+
+  final TddPlugin plugin;
+
+  /// Issue #969: the envelope carrier the wrapper reads on exit.
+  final VerdictContext _verdict = VerdictContext();
+
+  @override
+  String get name => 'plan';
+
+  @override
+  String get description =>
+      'Read <feature>/spec.md and emit <feature>/tdd/test-list.md (one '
+      'behavior per criterion). <feature> is a plain specs/ feature name, '
+      'a specs/<feature> path, a .specify/bugs/<slug> bug directory, or '
+      'an absolute path (issue #1182).';
+
+  @override
+  String get invocation => 'zfa tdd plan <feature>';
+
+  @override
+  Future<void> run() =>
+      runWithVerdictEnvelope(this, _verdict, _run, featureFromRest: true);
+
+  Future<void> _run() async {
+    final rest = argResults?.rest ?? const <String>[];
+    if (rest.isEmpty) {
+      usageException('Feature name is required: zfa tdd plan <feature>');
+    }
+    final rawRef = rest.first;
+    // Prefer an explicit --project root so the command never depends on the
+    // process-global Directory.current. Falls back to CWD for real CLI use.
+    final projectFlag = argResults?['project'] as String?;
+    final repoRoot = projectFlag != null && projectFlag.isNotEmpty
+        ? p.absolute(projectFlag)
+        : ProjectRoot.find(anchorDir: 'specs');
+    // Issue #1182: route the feature reference through the single TDD
+    // feature resolver — a plain name keeps the legacy specs/ location, a
+    // `specs/<name>`, `.specify/bugs/<slug>` or absolute reference resolves
+    // to that directory directly (no symlink bridge needed). Artifacts
+    // land BESIDE the resolved spec, and the "spec not found" error names
+    // the resolved path.
+    final resolved = TddFeaturePaths.resolve(
+      projectRoot: repoRoot,
+      featureRef: rawRef,
+    );
+    final feature = resolved.name;
+    final featureDir = resolved.dir;
+    final specPath = p.join(featureDir, 'spec.md');
+    final specFile = File(specPath);
+    if (!await specFile.exists()) {
+      stderr.writeln('zfa tdd plan: spec not found at $specPath');
+      // Issue #1182: the envelope carries the RESOLVED path — a tool
+      // reading the verdict must see the path the command actually
+      // referenced, not a specs/-relative guess.
+      _verdict
+        ..outcome = VerdictOutcome.fail
+        ..exitClass = 'spec-not-found'
+        ..details['spec'] = specPath;
+      throw StateError('zfa tdd plan: spec not found');
+    }
+    var specMd = await specFile.readAsString();
+
+    // Issue #990: the migration path. `--migrate-spec` gives a
+    // non-conformant spec an escape hatch that changes ONE thing — the
+    // `**Template Version**` pin — and then lets the normal plan flow
+    // proceed (the gate below re-checks the migrated content, so a
+    // migration can never smuggle an unknown grammar past it). Without
+    // the flag the spec is never mutated: drift stays drift (exit 3).
+    if (argResults?['migrate-spec'] as bool? ?? false) {
+      final migration = const SpecMigrator().migrate(specMd);
+      if (migration.migrated) {
+        await specFile.writeAsString(migration.content);
+        final verb = migration.action == SpecMigrationAction.inserted
+            ? 'inserted'
+            : 'refreshed';
+        print(
+          'zfa tdd plan: migrated spec — $verb `**Template Version**: '
+          '`${SpecParser.latestTemplateVersion}`'
+          '${migration.previousVersion == null ? '' : ' (was: ${migration.previousVersion})'} '
+          '(spec: $specPath). Re-run `zfa tdd plan` without the flag any '
+          'time; the marker is persisted.',
+        );
+      }
+      specMd = migration.content;
+    }
+
+    // Bug #919: the Template Version marker is the treaty pin. Missing or
+    // unknown version = contract drift: exit 3 with a fix line, no
+    // artifacts, BEFORE any parsing — a spec whose grammar we cannot
+    // trust must not drive a plan (and must never hit the coverage gate,
+    // whose messages would mislead on an unpinned spec).
+    final templateVersion = const SpecParser().parseTemplateVersion(specMd);
+    if (templateVersion == null ||
+        !SpecParser.knownTemplateVersions.contains(templateVersion)) {
+      final drift = templateVersion == null
+          ? 'missing `**Template Version**` marker'
+          : 'template version `$templateVersion` is not a known zuraffa '
+                'template version (known: '
+                '${SpecParser.knownTemplateVersions.join(', ')})';
+      print(
+        'zfa tdd plan: contract drift — $drift (spec: $specPath). '
+        'No test list was written.',
+      );
+      print(
+        '  --> fix: run `zfa tdd plan --migrate-spec` to inject the latest '
+        'template version marker into this spec (issue #990), or author '
+        'the spec from the zuraffa spec template (zuraffa speckit '
+        'extension) so it pins a known template version; re-run '
+        '`zfa tdd plan`.',
+      );
+      _verdict
+        ..outcome = VerdictOutcome.fail
+        ..exitClass = 'contract-drift'
+        ..fix =
+            'author the spec from the zuraffa spec template so it pins '
+            'a known template version; re-run zfa tdd plan'
+        ..details['spec'] = specPath;
+      exitCode = 3;
+      return;
+    }
+
+    // Feature 1484 × issue #1480: the FR→behaviour derivation (and the
+    // manual routing it feeds) must respect the DECOUPLED mapping. An FR
+    // whose trace binds from the feature's contracts/*.md files is
+    // DECLARED, not defaulted, so it keeps deriving its unit row. The
+    // authoritative merge — multi-file refusal included — runs below the
+    // gate; here we only need the bound FR id set.
+    final contractTracedFrIds = <String>{
+      for (final source in DeclaredRouting.contractFiles(featureDir))
+        for (final entry in SpecParser.parseCriterionContractTraces(
+          source.md,
+        ).entries)
+          if (entry.value.isNotEmpty) entry.key,
+    };
+
+    final List<Behavior> behaviors;
+    try {
+      behaviors = const SpecParser().parse(
+        feature,
+        specMd,
+        contractTracedFrIds: contractTracedFrIds,
+      );
+    } on StateError catch (e) {
+      stderr.writeln('zfa tdd plan: $e');
+      throw StateError('zfa tdd plan: cannot derive behaviors');
+    }
+
+    // Feature 1484: the FR manual routing — parsed once, consulted by
+    // the coverage gate, the warning pass, and the traceability matrix.
+    // An FR declared `**Type**: manual` — or, by default, an FR with no
+    // `traces:` binding — routes to a manual declaration in
+    // tdd/traceability.md instead of a unit behaviour row, so the run
+    // loop never sees a row that cannot honestly pass make. Defaulted
+    // FRs warn with the two remedies; explicitly-declared ones stay
+    // silent (the author already declared the exemption). A defaulted FR
+    // the contracts mapping binds is neither (issue #1480 keeps it
+    // declared); an explicit `**Type**: manual` marker always wins.
+    final frRoutings = SpecParser.parseFrRoutings(specMd);
+    final manualFrRoutings = frRoutings
+        .where(
+          (r) =>
+              r.routesManual &&
+              (r.manualMarker || !contractTracedFrIds.contains(r.frId)),
+        )
+        .toList(growable: false);
+    for (final r in manualFrRoutings) {
+      if (r.manualMarker) continue;
+      print(
+        'zfa tdd plan: WARNING: ${r.frId} derives no unit behaviour — no '
+        'surviving `traces:` binding (a traces line whose tokens are all '
+        'signature-shaped counts as unbound) and no `**Type**: manual` '
+        'marker; recorded as a manual declaration in tdd/traceability.md.',
+      );
+      print(
+        '  --> fix: add a `traces:` line naming a declared contract row '
+        'to derive an automated unit behaviour, or add `**Type**: manual` '
+        'under the FR to declare the exemption explicitly.',
+      );
+    }
+    final manualFrIds = {for (final r in manualFrRoutings) r.frId};
+    final frManualTags = {
+      for (final r in manualFrRoutings)
+        r.frId: r.manualMarker
+            ? '**Type**: manual'
+            : 'defaulted: no `traces:` binding',
+    };
+    _verdict.details['fr_manual'] = manualFrIds.length;
+
+    // Bug #829: extract the spec's Key Entities so the loop can create
+    // and wire them (run phase 0 + the entity pipeline routing read
+    // this section back through TestListReader.readEntities).
+    // Issue #1486: cells that SHOW pair evidence but still parse to
+    // zero fields are collected — the vacuous-green seed must be named
+    // at plan time, not discovered 28 minutes into a run.
+    final keyEntityAnomalies = <SpecEntityFieldAnomaly>[];
+    final entities = const SpecParser().parseKeyEntities(
+      specMd,
+      anomalies: keyEntityAnomalies,
+    );
+    // Issue #1381: a declared-but-unparseable `## Key Entities` section
+    // used to vanish silently — the run-engine cert gate then saw zero
+    // CORE entities and passed trivially. Name the loss.
+    if (entities.isEmpty &&
+        RegExp(
+          r'^\s*##\s*key entities\s*$',
+          caseSensitive: false,
+          multiLine: true,
+        ).hasMatch(specMd)) {
+      print(
+        'zfa tdd plan: WARNING — the spec declares `## Key Entities` but '
+        'no entities were extracted (check the table header grammar: '
+        '`| Entity | Fields | Purpose |`). The engine cert gate will see '
+        'zero CORE entities (issue #1381).',
+      );
+    }
+    // Issue #1486: a per-row sibling of the #1381 warning — the section
+    // extracted entities, but one row's fields cell shows pair evidence
+    // (a backtick span or an `identifier:` shape) that parsing dropped,
+    // wholly or partially. The entity is created without those pairs;
+    // name the row and the cell instead of letting the run vacuous-green
+    // later.
+    for (final anomaly in keyEntityAnomalies) {
+      print(
+        'zfa tdd plan: WARNING — Key Entities row `${anomaly.entity}` '
+        '(spec line ${anomaly.line}) declares field pairs that parsing '
+        'dropped (cell: `${anomaly.cell}`) — fix the field grammar or the '
+        'entity will be created without them (issue #1486).',
+      );
+    }
+
+    // Bug #919: extract the zuraffa-1.0 template's declared dependencies
+    // and layer contracts into the plan artifact, so the mock-first make
+    // path (#909) and interface generation can consume them. The Layer
+    // Contracts also drive the contract:<id> rows (issue #1007) — derived
+    // after the prior test list is read, so ids reconcile by traces.
+    final dependencies = const SpecParser().parseDependencies(specMd);
+    final layerContracts = const SpecParser().parseLayerContracts(specMd);
+
+    // Issue #1141 (extending #965): the spec's i18n key contract is a
+    // DECLARED contract — a malformed `key:` token refuses the plan
+    // before any artifact is written (errors-are-an-API, the same
+    // refusal gen/view apply), with the row named and the fix line.
+    final I18nKeyTable i18nKeys;
+    try {
+      i18nKeys = I18nKeyTable.fromLayerContracts(layerContracts);
+    } on I18nKeyContractParseException catch (error) {
+      print('zfa tdd plan: i18n contract refused — ${error.message}');
+      print('   no artifacts were written.');
+      _verdict
+        ..outcome = VerdictOutcome.fail
+        ..exitClass = 'i18n-contract'
+        ..fix =
+            'fix the malformed `key:` token in the Presentation layer '
+            'contract, then re-run zfa tdd plan'
+        ..details['spec'] = specPath;
+      exitCode = 2;
+      return;
+    }
+
+    // Issue #1142 (extending #1004/#1102): the platform layout contract
+    // is a DECLARED contract — the Presentation table's
+    // `adaptive_layouts` bullet. A malformed slot name refuses the plan
+    // before any artifact is written (the same errors-are-an-API
+    // discipline the i18n contract applies above).
+    //
+    // EPIC 3 / issue #1134 lane 1: the ledger resolves the slots from
+    // BOTH declaration sources through PlatformLayoutContract.resolve —
+    // the Presentation bullet first, then (when no Presentation bullet
+    // declares slots) the `## Skin Contract` adaptive_slots, the SAME
+    // derivation `zfa tdd view` uses for the skeleton. A malformed
+    // contract is surfaced here only when it declares an unknown SLOT;
+    // the general contract-shape refusal fires later in
+    // _resolveSkinContract (before any artifact write).
+    List<String> layoutSlots = const [];
+    try {
+      AdaptiveSkinContract? skinContractForLayout;
+      try {
+        skinContractForLayout = parseAdaptiveSkinContract(specMd);
+      } on AdaptiveSkinContractParseException {
+        // Malformed contract shape: the layout derivation degrades to
+        // the Presentation declaration; _resolveSkinContract refuses
+        // the malformed contract (exit 2) before any artifact is
+        // written — never a silent partial plan.
+        skinContractForLayout = null;
+      }
+      layoutSlots =
+          PlatformLayoutContract.resolve(
+            contracts: layerContracts,
+            skinContract: skinContractForLayout,
+          )?.slots ??
+          const [];
+    } on PlatformLayoutContractException catch (error) {
+      print('zfa tdd plan: layout contract refused — ${error.message}');
+      print('   no artifacts were written.');
+      _verdict
+        ..outcome = VerdictOutcome.fail
+        ..exitClass = 'layout-contract'
+        ..fix =
+            'fix the malformed slot name in the `adaptive_layouts` '
+            'Presentation bullet (or the `## Skin Contract` '
+            'adaptive_slots), then re-run zfa tdd plan'
+        ..details['spec'] = specPath;
+      exitCode = 2;
+      return;
+    }
+
+    // EPIC 3 / issue #1134, lane 4 — the shadcn/ui vocabulary as a TDD
+    // gate: on a feature with widget behaviors, every Presentation
+    // component token (widget reference) is validated against the
+    // `zfa ui schema` vocabulary (NodeRegistry built-ins + project
+    // composites). An out-of-vocabulary token (grid/table — not
+    // implemented, the #1149 removal) refuses the plan BEFORE any
+    // artifact is written, naming the token and the fix. Method-
+    // signature tokens and `key:` tokens are not widget references —
+    // the library-dev Presentation contracts stay untouched.
+    if (behaviors.any((b) => b.kind == BehaviorKind.widget)) {
+      final widgetReferences = UiLedgerProjection.componentTokensOf(
+        layerContracts,
+      );
+      final vocabularyViolations = WidgetVocabularyGate.validate(
+        widgetReferences,
+        vocabulary: NodeRegistry.load(projectRoot: repoRoot).allNames,
+      );
+      if (vocabularyViolations.isNotEmpty) {
+        print(
+          'zfa tdd plan: widget vocabulary gate FAILED — '
+          '${vocabularyViolations.length} out-of-vocabulary widget '
+          'reference(s) (spec: $specPath). No test list was written; '
+          'the ui vocabulary (`zfa ui schema`) is the declared widget '
+          'set.',
+        );
+        for (final violation in vocabularyViolations) {
+          print('   - ${violation.message}');
+        }
+        _verdict
+          ..outcome = VerdictOutcome.fail
+          ..exitClass = 'widget-vocabulary-gate'
+          ..fix =
+              'declare `zfa ui schema` vocabulary names in the '
+              'Presentation component tokens, then re-run zfa tdd plan'
+          ..details['vocabularyViolations'] = vocabularyViolations.length;
+        exitCode = 2;
+        return;
+      }
+    }
+
+    // Coverage gate (bug #846): every FR/AC requirement statement must
+    // map to a behavior row or to a valid `(manual: owner)` declaration.
+    // Any gap = exit 2, no artifacts, offending line + fix instruction.
+    final scan = const RequirementScanner().scan(specMd);
+    final gaps = const CoverageGate().evaluate(
+      scan,
+      behaviors,
+      manualFrIds: manualFrIds,
+    );
+    if (gaps.isNotEmpty) {
+      print(
+        'zfa tdd plan: coverage gate FAILED — ${gaps.length} requirement '
+        'statement(s) produce no behavior row (spec: $specPath). No test '
+        'list was written; fix the spec and re-run `zfa tdd plan`.',
+      );
+      for (final gap in gaps) {
+        print(
+          '  ${gap.statement.id} (line ${gap.statement.lineNo}): '
+          '${gap.statement.line}',
+        );
+        print('    ${gap.fix}');
+      }
+      _verdict
+        ..outcome = VerdictOutcome.fail
+        ..exitClass = 'coverage-gate'
+        ..fix =
+            'map every requirement statement to a behavior row or a '
+            '(manual: owner) declaration, then re-run zfa tdd plan'
+        ..details['gaps'] = gaps.length;
+      // Issue #1125: the refusal's explain block — the per-gap fix lines
+      // the gate printed, and the honest no-artifacts receipt section.
+      _verdict.explain = TddExplain(
+        command: 'plan',
+        features: [feature],
+        lane: 'none — plan does not drive the engine/skin lanes',
+        fixHints: [for (final gap in gaps) gap.fix],
+        summary:
+            'Plan refused $feature at the coverage gate (bug #846): '
+            '${gaps.length} requirement statement(s) produce no '
+            'behavior row (spec: '
+            '${p.relative(specPath, from: repoRoot)}). No test list '
+            'was written — an incomplete plan never emits an artifact '
+            'that would silently claim completeness. Fix the named '
+            'statements and re-run `zfa tdd plan`.',
+      );
+      exitCode = 2;
+      return;
+    }
+
+    // Bug #919: undeclared-dependency lint. The template declares what a
+    // spec may reach for: a requirement statement referencing a known
+    // external dependency that the External Dependencies & Contracts
+    // table does not declare is a spec contract violation = exit 2,
+    // naming the dependency with a fix line, no artifacts.
+    final declaredDependencies = dependencies.map((d) => d.dependency).toSet();
+    final undeclared = <RequirementStatement, List<String>>{};
+    for (final statement in scan.statements) {
+      final found = SpecParser.knownExternalDependencies
+          .where(
+            (name) =>
+                RegExp('\\b${RegExp.escape(name)}\\b').hasMatch(statement.line),
+          )
+          .where((name) => !declaredDependencies.contains(name))
+          .toList();
+      if (found.isNotEmpty) undeclared[statement] = found;
+    }
+    if (undeclared.isNotEmpty) {
+      print(
+        'zfa tdd plan: undeclared dependencies — ${undeclared.length} '
+        'requirement statement(s) reference external dependencies not '
+        'declared in the External Dependencies & Contracts table (spec: '
+        '$specPath). No test list was written; declare each dependency '
+        'or remove the reference, then re-run `zfa tdd plan`.',
+      );
+      undeclared.forEach((statement, names) {
+        print(
+          '  ${statement.id} (line ${statement.lineNo}): '
+          '${statement.line}',
+        );
+        print(
+          '    --> fix: add ${names.join(', ')} to the External '
+          'Dependencies & Contracts table (or drop the reference).',
+        );
+      });
+      _verdict
+        ..outcome = VerdictOutcome.fail
+        ..exitClass = 'undeclared-dependency'
+        ..fix =
+            'add the referenced dependencies to the External '
+            'Dependencies & Contracts table (or drop the references), '
+            'then re-run zfa tdd plan'
+        ..details['undeclared'] = undeclared.length;
+      exitCode = 2;
+      return;
+    }
+
+    // Bug #993: entity/zuraffa-export clash gate. The spec's Key
+    // Entities become phase-0 `entity create` spawns at run time; a name
+    // that matches a zuraffa export (e.g. `AgentState`) is refused there
+    // by the #942 preflight and the run stops before any behavior is
+    // driven. Plan catches the clash HERE — before any artifact is
+    // written — with the same `--> fix:` rename contract the run-time
+    // preflight carries. The run-time detection itself is untouched:
+    // this gate reuses the SAME export surface (FrameworkExportSurface,
+    // fail-open), so it is an earlier net, never a weaker one — an
+    // unresolvable surface skips the gate silently and can never
+    // produce a false refusal.
+    final surface = FrameworkExportSurface.tryResolve(projectRoot: repoRoot);
+    if (surface != null && entities.isNotEmpty) {
+      final clashes = <(SpecEntity, String)>[];
+      for (final entity in entities) {
+        final source = surface.lookup(entity.name);
+        if (source != null) clashes.add((entity, source));
+      }
+      if (clashes.isNotEmpty) {
+        print(
+          'zfa tdd plan: entity/export clash — ${clashes.length} Key '
+          'Entity(ies) collide with zuraffa framework exports (spec: '
+          '$specPath). No test list was written; phase-0 `entity create` '
+          'would refuse these names at run time and stop the loop before '
+          'any behavior is driven.',
+        );
+        for (final (entity, source) in clashes) {
+          print(
+            '  ${entity.name} collides with the zuraffa export '
+            '"${entity.name}" ($source).',
+          );
+          print(
+            "    --> fix: rename the entity in the spec's Key Entities "
+            'section, e.g. `${entity.name}Entity` — pick a name that does '
+            'not match a zuraffa export; re-run `zfa tdd plan`.',
+          );
+        }
+        exitCode = 2;
+        return;
+      }
+    }
+
+    final outDir = Directory(p.join(featureDir, 'tdd'));
+    final outFile = File('${outDir.path}/test-list.md');
+    final existing = <String, Behavior>{};
+    if (await outFile.exists()) {
+      var raw = await outFile.readAsString();
+      // Issue #1000: a prior lane split carries its rows in the lane
+      // plans the meta-index points at — reconcile against those so
+      // re-planning a split feature keeps its id assignment.
+      final split = LaneSplitFiles.find(raw);
+      if (split != null) {
+        final combined = StringBuffer();
+        for (final name in [split.engine, split.skin]) {
+          final laneFile = File(p.join(outDir.path, name));
+          if (await laneFile.exists()) {
+            combined.writeln(await laneFile.readAsString());
+          }
+        }
+        raw = combined.toString();
+      }
+      for (final line in raw.split('\n')) {
+        // Issue #1310: positional cell parse — the traces cell is the
+        // second-to-last cell (the state cell is last) in both row
+        // dialects this read serves: the 4-column
+        // `| id | behavior | traces | state |` and the 5-column widget
+        // dialect `| id | behavior | kind | traces | state |`. The key
+        // is the cell's LEADING criterion token: the #1310 cell carries
+        // the full trace set (`FR-001, TodoRepository.create`) while
+        // the lookup below is by the behavior's sourceCriterion
+        // (`FR-001`). A criterion-only cell (every pre-#1310 list)
+        // keys identically, so old lists reconcile unchanged.
+        final m = RegExp(r'^\|\s*([AU]\d+)\s*\|(.+)\|\s*$').firstMatch(line);
+        if (m == null) continue;
+        // Issue #1401: escaped-pipe-aware split — the reconcile reader
+        // must parse the SAME dialect the writer emits (and run reads).
+        final cells = _splitRowUnescapingPipes(
+          m.group(2)!,
+        ).map((c) => c.trim()).toList();
+        if (cells.length < 3) continue; // id + traces + state minimum
+        final id = m.group(1)!;
+        final criterion = cells[cells.length - 2].split(',').first.trim();
+        if (criterion.isEmpty) continue;
+        existing[criterion] = Behavior(
+          id: id,
+          feature: feature,
+          kind: id.startsWith('A')
+              ? BehaviorKind.acceptance
+              : BehaviorKind.unit,
+          description: '',
+          sourceCriterion: criterion,
+          target: '',
+        );
+      }
+    }
+
+    // The rendered row may keep its historical test-list id, but spec
+    // declarations and marker emission remain keyed by the parser's current
+    // id. Preserve both through provenance resolution.
+    final reconciledEntries = <({Behavior behavior, String currentId})>[];
+    for (final b in behaviors) {
+      final prior = existing[b.sourceCriterion];
+      if (prior != null && prior.kind == b.kind) {
+        reconciledEntries.add((
+          behavior: Behavior(
+            id: prior.id,
+            feature: b.feature,
+            kind: b.kind,
+            description: b.description,
+            sourceCriterion: b.sourceCriterion,
+            target: b.target,
+          ),
+          currentId: b.id,
+        ));
+      } else {
+        reconciledEntries.add((behavior: b, currentId: b.id));
+      }
+    }
+    final reconciled = [for (final entry in reconciledEntries) entry.behavior];
+
+    // Issue #1805: refuse when a planned behavior's id already has a recorded
+    // artifacts.json entry whose source_criterion disagrees with the plan's.
+    try {
+      final reg = ArtifactRegistry(featureDir: featureDir);
+      final recs = await reg.loadAll();
+      final byId = <String, ArtifactRecord>{
+        for (final rec in recs) rec.behaviorId: rec,
+      };
+      for (final beh in reconciled) {
+        final prior = byId[beh.id];
+        // Issue #1388: only refuse on a true positional U-id remap — i.e.
+        // when the base FR token changes. A traces drift that keeps the same
+        // base token is a legitimate regeneration trigger, not a remap.
+        final priorBaseToken = prior?.sourceCriterion.split(',').first.trim();
+        final planBaseToken = beh.sourceCriterion.split(',').first.trim();
+        if (prior != null && priorBaseToken != planBaseToken) {
+          stderr.writeln(
+            'zfa tdd plan: behavior ${beh.id} criterion changed from '
+            'recorded artifacts.json entry',
+          );
+          stderr.writeln('  id: ${beh.id}');
+          stderr.writeln(
+            '  recorded criterion: ${prior.sourceCriterion} '
+            '(artifacts.json)',
+          );
+          stderr.writeln('  plan criterion: ${beh.sourceCriterion}');
+          stderr.writeln(
+            '   --> fix: reconcile the positional U-id mapping — '
+            'rotate the affected artifacts.json records and their '
+            'test/subject pairs to the new ids, then re-run '
+            '`zfa tdd plan $feature`.',
+          );
+          exitCode = 2;
+          return;
+        }
+      }
+    } on Exception {
+      // Fail open on an unreadable registry.
+    }
+
+    // Bug #835: hand-written ffi (native-boundary) rows survive
+    // re-planning. Plan derives only acceptance/unit behaviors from
+    // spec.md, so an ffi row would otherwise be silently re-homed as a
+    // plain unit row (or dropped) on the next plan run — the native
+    // boundary declaration is hand-authored and must be preserved
+    // verbatim. An ffi row whose traces match a spec-derived criterion
+    // WINS: the spec-derived behavior for that criterion is suppressed
+    // (the explicit native declaration is the more specific contract).
+    //
+    // Issue #1007: the same pass harvests the prior CONTRACT rows — their
+    // (id, state) pairs reconcile the freshly derived contract behaviors
+    // by traces so `contract:<id>` ids stay stable across re-plans and a
+    // BLOCKED/DONE contract row keeps its recorded state.
+    final preservedFfi = <BehaviorRow>[];
+    final priorContract = <String, (String, BehaviorState)>{};
+    try {
+      for (final row in await TestListReader(featureDir).read()) {
+        if (row.kind == BehaviorKind.ffi) preservedFfi.add(row);
+        if (row.kind == BehaviorKind.contract) {
+          priorContract[row.traces] = (row.id, row.state);
+        }
+      }
+    } on TestListReadException catch (e) {
+      stderr.writeln(
+        'zfa tdd plan: note: prior test list unreadable, ffi rows not '
+        'preserved (${e.message})',
+      );
+    }
+    final contractBehaviors = _reconcileContractBehaviors(
+      _deriveContractBehaviors(
+        feature,
+        layerContracts,
+        entities.map((e) => e.name).toSet(),
+      ),
+      priorContract,
+    );
+    final ffiCriteria = preservedFfi.map((r) => r.traces).toSet();
+    final expressibleEntries = reconciledEntries
+        .where((entry) => !ffiCriteria.contains(entry.behavior.sourceCriterion))
+        .toList();
+    final expressible = expressibleEntries
+        .map((entry) => entry.behavior)
+        .toList();
+
+    // Feature 071 (issue #951): per-behavior routing provenance — the
+    // resolver consults the parsed declarations; undeclared behaviors
+    // render their LABELED legacy fallback (migration window).
+    //
+    // Round-2 review fix 3a: declarations parse BEFORE any artifact is
+    // written — a malformed Function signature is a refusal naming the
+    // row (`--> fix:`), and a strict refusal must leave the feature
+    // directory untouched (traceability.md included).
+    final strict = argResults?['strict-routing'] as bool? ?? false;
+    final Map<String, ScenarioDeclaration> scenarioMarkers;
+    final SpecDeclarations declarations;
+    final Map<String, List<String>> frTraces;
+    final Set<String> unboundTraces;
+    try {
+      scenarioMarkers = SpecParser.parseScenarioTypeMarkers(specMd);
+      // Issue #1485: the declared rows include the feature's
+      // contracts/*.md rows (enumerated + merged below the gate) — the
+      // planning phase's structured contract documents feed the SAME
+      // routing resolver spec.md sections always fed. A contract-file
+      // row colliding with a spec.md row name WINS (the shared merge
+      // helper every command-side consumer builds).
+      final contractSources = DeclaredRouting.contractFiles(featureDir);
+      final declaredRows = SpecParser.declaredContractRows(
+        specMd,
+        contractFiles: contractSources,
+      );
+      // Issue #1480: the spec↔contract mapping is DECOUPLED from spec.md
+      // — FR traces may also live in the feature's contracts/*.md files
+      // (`- **FR-001**: traces: Row`); they merge into frTraces below.
+      // An FR traced from more than one contracts file refuses (never a
+      // silent win).
+      final criterionTraces = <String, List<String>>{};
+      final criterionSources = <String, String>{};
+      for (final source in contractSources) {
+        final fileTraces = SpecParser.parseCriterionContractTraces(source.md);
+        for (final entry in fileTraces.entries) {
+          if (criterionTraces.containsKey(entry.key)) {
+            throw StateError(
+              'FR "${entry.key}" is traced from more than one contracts '
+              'file (${criterionSources[entry.key]} and '
+              '${source.file}).\n'
+              '   --> fix: keep exactly one trace declaration per FR id.',
+            );
+          }
+          criterionTraces[entry.key] = entry.value;
+          criterionSources[entry.key] = source.file;
+        }
+      }
+      // Issue #1485: plan reports what it read — silence about ignored
+      // directories is what makes this expensive to diagnose.
+      final contractsDir = Directory(p.join(featureDir, 'contracts'));
+      if (contractsDir.existsSync()) {
+        final productive =
+            declaredRows.perFile.entries
+                .where((entry) => entry.value > 0)
+                .toList()
+              ..sort((a, b) => a.key.compareTo(b.key));
+        if (productive.isEmpty) {
+          print(
+            'zfa tdd plan: WARNING — '
+            '${TddFeaturePaths.displayDir(cwd: repoRoot, dir: contractsDir.path)} '
+            'exists but no declared rows were extracted (expected '
+            'operation/method tables or `name(Params) -> Return` signature '
+            'lists in *.md files) — traces cannot bind to contract-file '
+            'rows.',
+          );
+        } else {
+          for (final entry in productive) {
+            print(
+              'zfa tdd plan: declared rows: ${entry.value} from '
+              'contracts/${entry.key}',
+            );
+          }
+        }
+      }
+      frTraces = SpecParser.parseFrContractTraces(specMd);
+      // Issue #1480: merge the criterion-keyed traces into the unit-id
+      // keyed map the provenance walk consumes. An inline spec trace owns
+      // the behavior; the contracts file fills the GAP. A behavior traced
+      // from BOTH sources is a double declaration: refuse (errors-are-an-
+      // API — a silent first-win would hide which mapping the loop used).
+      for (final entry in expressibleEntries) {
+        final inline = frTraces[entry.currentId];
+        final criterion = criterionTraces[entry.behavior.sourceCriterion];
+        if (criterion == null || criterion.isEmpty) continue;
+        if (inline != null && inline.isNotEmpty) {
+          throw StateError(
+            'FR "${entry.behavior.sourceCriterion}" is traced from BOTH '
+            'spec.md (inline traces:) and '
+            '${criterionSources[entry.behavior.sourceCriterion]}.\n'
+            '   --> fix: keep exactly one trace declaration for '
+            '${entry.behavior.sourceCriterion} (issue #1480).',
+          );
+        }
+        frTraces[entry.currentId] = criterion;
+      }
+      // Review fix (issue #1480): persistence derives from the MERGED
+      // rows and RESOLVED traces — parsePersistenceDeclarations only sees
+      // spec.md, so an FR whose trace binds from a contracts file lost
+      // the #833 persistence marker (and the unit-fallback exemption
+      // with it) whenever the traced row is a declared storage row.
+      final persistenceDeclarations = <String, PersistenceDeclaration>{
+        ...SpecParser.parsePersistenceDeclarations(specMd),
+      };
+      for (final entry in expressibleEntries) {
+        if (persistenceDeclarations.containsKey(entry.currentId)) continue;
+        final viaStorage = (frTraces[entry.currentId] ?? const <String>[]).any(
+          (t) => declaredRows.rows[t]?.kind == ContractRowKind.storage,
+        );
+        if (viaStorage) {
+          persistenceDeclarations[entry.currentId] = PersistenceDeclaration(
+            behaviorId: entry.currentId,
+            fromTag: false,
+          );
+        }
+      }
+      declarations = SpecDeclarations(
+        scenarios: scenarioMarkers,
+        contractRows: declaredRows.rows,
+        persistence: persistenceDeclarations,
+        keyEntities: const SpecParser()
+            .parseKeyEntities(specMd)
+            .map((e) => e.name)
+            .toList(),
+      );
+      // Issue #1480: a criterion trace naming an FR the spec does not
+      // declare is a typo in the making — warn loudly (parity with the
+      // #1319 unbound-trace warning) instead of binding nothing silently.
+      //
+      // Review fix: the known set is the RECONCILED criteria — building
+      // it from expressibleEntries (post-FFI-exclusion) warned "no FR in
+      // the spec declares it" for an FFI-routed FR the spec DOES
+      // declare, while the merge loop's expressible-only iteration
+      // (correct: FFI rows keep their preservedFfi declared routing)
+      // silently dropped the trace.
+      final knownCriteria = {
+        for (final entry in reconciledEntries) entry.behavior.sourceCriterion,
+      };
+      for (final frId in criterionTraces.keys) {
+        if (!knownCriteria.contains(frId)) {
+          print(
+            'zfa tdd plan: WARNING: criterion trace in '
+            '${criterionSources[frId]} names $frId but no FR in the spec '
+            'declares it — check the FR id',
+          );
+        }
+      }
+      // Issue #1319: a `traces:` line inside an FR block that bound no
+      // contract row is the #1308 vacuous-green dead-end in the making
+      // — warn loudly instead of silently falling back to the legacy
+      // classifier.
+      unboundTraces = SpecParser.findUnboundFrTraces(specMd, frTraces);
+      for (final frId in unboundTraces) {
+        print(
+          'zfa tdd plan: WARNING: traces: line found in $frId but was not '
+          'bound to a contract row — check indentation',
+        );
+      }
+    } on StateError catch (e) {
+      print('zfa tdd plan: declaration refused — ${e.message}');
+      print('  no artifacts were written.');
+      _verdict
+        ..outcome = VerdictOutcome.fail
+        ..exitClass = 'declaration-refused'
+        ..fix =
+            'fix the malformed declaration named above, then re-run '
+            'zfa tdd plan'
+        ..details['reason'] = e.message;
+      exitCode = 2;
+      return;
+    }
+    final provenance = _provenanceLines(
+      expressibleEntries,
+      preservedFfi,
+      declarations,
+      frTraces,
+      scenarioMarkers,
+      unboundTraces: unboundTraces,
+      strict: strict,
+    );
+    // Issue #1310: the behavior's resolved contract-row names, keyed by
+    // the emitted row id. frTraces is keyed by the parser's current
+    // unit id; id reconciliation may have kept a historical row id, so
+    // the pairing rides expressibleEntries (behavior <-> currentId).
+    // The writers emit these names after the criterion id so the cell
+    // carries the full trace set the declared-signature resolution
+    // (DeclaredRouting.declaredSignatureFor, issue #1259) reads back.
+    //
+    // Issue #1320: the row names are METHOD-QUALIFIED before they reach
+    // either writer. A row-only trace token (`traces: RouteContentType`)
+    // resolves its method at plan time — a single-method row resolves
+    // directly, a multi-method row resolves by FR-prose verb match — so
+    // the cell carries `FR-001, RouteContentType.contentType` and the
+    // declared-signature path is reachable WITHOUT the undocumented
+    // hand-edit. A multi-method row whose prose matches nothing REFUSES
+    // (errors-are-an-API): the old shape silently let gen fall back to
+    // the row's first signature — the #920 wrong-signature class.
+    final contractTraces = <String, List<String>>{};
+    final ambiguousTraces = <String>[];
+    for (final entry in expressibleEntries) {
+      final tokens = frTraces[entry.currentId];
+      if (tokens == null || tokens.isEmpty) continue;
+      try {
+        contractTraces[entry.behavior.id] = _qualifiedTraces(
+          tokens: tokens,
+          description: entry.behavior.description,
+          criterion: entry.behavior.sourceCriterion,
+          behaviorId: entry.behavior.id,
+          contractRows: declarations.contractRows,
+        );
+      } on StateError catch (e) {
+        ambiguousTraces.add(e.message);
+      }
+    }
+    if (ambiguousTraces.isNotEmpty) {
+      for (final message in ambiguousTraces) {
+        print('zfa tdd plan: ambiguous declared trace — $message');
+      }
+      print('  no artifacts were written.');
+      _verdict
+        ..outcome = VerdictOutcome.fail
+        ..exitClass = 'ambiguous-declared-trace'
+        ..fix =
+            'qualify the trace token(s) with the method named above, then '
+            're-run zfa tdd plan'
+        ..details['reason'] = ambiguousTraces.join('\n');
+      exitCode = 2;
+      return;
+    }
+    var provenanceLines = provenance.lines;
+    // Bug #1481: the dead-end ids ride the provenance — recomputed
+    // alongside the lines when the marker migration re-derives them.
+    var deadEndIds = provenance.deadEnds;
+    // Strict gate (feature 071): a refusal writes no artifact.
+    if (strict && provenanceLines.containsKey('__refused__')) {
+      for (final line in provenanceLines.remove('__refused__')!) {
+        print(line);
+      }
+      _verdict
+        ..outcome = VerdictOutcome.fail
+        ..exitClass = 'routing-refused'
+        ..fix =
+            'declare the routing intent (Type marker / contract trace) '
+            'for every refused behavior, then re-run zfa tdd plan --strict-routing'
+        ..details['strict'] = true;
+      exitCode = 1;
+      return;
+    }
+
+    // Issue #1480: fail fast when any unit behavior would fallback-route.
+    // The unit lane can NEVER self-heal — a contract row name is authoring
+    // intent no classifier can invent (doc/BREAKING_CHANGES.md:62-73), and
+    // the #1186 marker migration is scenario-only — so a fallback-routed
+    // unit behavior is a GUARANTEED dead-end at make (vacuous-green)
+    // discovered only minutes into `zfa tdd run`. The author learns in
+    // seconds here instead. `--allow-unit-fallback` keeps the legacy
+    // labeled-fallback plan for the migration window.
+    final allowUnitFallback =
+        argResults?['allow-unit-fallback'] as bool? ?? false;
+    if (!strict && !allowUnitFallback) {
+      // Bug #833/#1298 contract: a behavior carrying a persistence
+      // declaration (`[persistent]` tag or a trace to a storage
+      // dependency row) takes the HARNESS-BACKED test path — its gen/make
+      // leg does not ride the plain subject-contract surface the #1480
+      // dead-end describes. Those keep the labeled-fallback lane (their
+      // provenance line still shows it); the gate refuses only the
+      // declaration-less unit fallbacks that can never self-heal.
+      final persistenceMarked = declarations.persistence.keys.toSet();
+      final unitFallbackIds =
+          provenance.fallbackKinds.entries
+              .where((e) => e.value == BehaviorKind.unit)
+              .map((e) => e.key)
+              .where((id) => !persistenceMarked.contains(id))
+              .toList()
+            ..sort(_unitIdOrder);
+      if (unitFallbackIds.isNotEmpty) {
+        final criterionById = {
+          for (final entry in expressibleEntries)
+            entry.currentId: entry.behavior.sourceCriterion,
+        };
+        print(
+          'zfa tdd plan: unit-fallback-refused — '
+          '${unitFallbackIds.length} unit behavior(s) would route through '
+          'the legacy classifier fallback (spec: $specPath).',
+        );
+        for (final id in unitFallbackIds) {
+          print(
+            '  route: $id -> unit lane [fallback: '
+            '${criterionById[id] ?? 'the FR'} carries no declared contract '
+            'trace]',
+          );
+        }
+        print(
+          'The unit lane can never self-heal: a contract row name is '
+          'authoring intent no classifier can invent, so each behavior '
+          'above dead-ends at make (vacuous-green) minutes into '
+          '`zfa tdd run` (issue #1480).',
+        );
+        print(
+          '  --> fix: add `traces: <Row>` under each FR above in spec.md, '
+          'or declare the rows and the FR mapping in '
+          '${p.relative(p.join(featureDir, 'contracts'))}/*.md (the '
+          'mapping may live beside the spec), then re-run `zfa tdd plan`. '
+          'To keep the legacy labeled fallback for this run, re-run with '
+          '`--allow-unit-fallback`.',
+        );
+        _verdict
+          ..outcome = VerdictOutcome.fail
+          ..exitClass = 'unit-fallback-refused'
+          ..fix =
+              'trace each FR above to a declared contract row (inline '
+              'traces: or contracts/*.md), then re-run zfa tdd plan; '
+              '--allow-unit-fallback keeps the legacy fallback for this '
+              'run'
+          ..details['unitFallbacks'] = unitFallbackIds.join(',');
+        exitCode = 1;
+        return;
+      }
+    }
+
+    // Issue #1000: lane resolution. A spec declaring `## Lanes` plans
+    // into the split files (04-ENGINE.md / 04-SKIN.md / 04-CONTRACT.md
+    // + the meta-index); the lane guards refuse BEFORE any artifact —
+    // an incomplete split never leaves a half-written lane plan.
+    final lanes = const SpecParser().parseLanes(specMd);
+    // Bug #1261: the SKIN lanes' golden declarations resolved to behavior
+    // ids — the set the plan marks onto the SKIN lane rows (the ` [golden]`
+    // tag gen reads). Non-SKIN lanes' golden declarations refuse below.
+    final goldenIds = <String>{
+      for (final lane in lanes)
+        if (Lane.parse(lane.lane) == Lane.skin) ...lane.goldenIds,
+    };
+    // Issue #1309: stale-split detection. A feature migrated by `zfa
+    // tdd split` carries `tdd/split-receipt.json`; when its spec
+    // declares NO `## Lanes`, the legacy single-file path below would
+    // rewrite only test-list.md (demoting the meta-index) and leave
+    // the lane plans stale — ghost behaviors (deleted FRs) run, new
+    // FRs are missed — while `zfa tdd split` refuses with "already
+    // split". The two commands' guidance deadlocked. When a receipt
+    // exists, plan keeps the split shape: the lane plans are
+    // REGENERATED from the current behavior set through the same kind
+    // heuristic the split applies, and a spec changed since the receipt
+    // was written (digest, or mtime for legacy receipts) is reported
+    // as a stale split before the regenerated files are written.
+    final receiptFile = File(p.join(outDir.path, LaneSplitFiles.receipt));
+    final splitReceiptExists = await receiptFile.exists();
+    final splitReceipt = splitReceiptExists
+        ? await _readSplitReceipt(receiptFile)
+        : null;
+    final splitStale =
+        splitReceiptExists &&
+        lanes.isEmpty &&
+        await _splitReceiptIsStale(
+          receipt: splitReceipt,
+          receiptFile: receiptFile,
+          specFile: specFile,
+          specMd: specMd,
+        );
+    final declaredBehaviorIds = <String>{
+      for (final entry in expressibleEntries)
+        if (scenarioMarkers.containsKey(entry.currentId)) entry.behavior.id,
+    };
+    final laneResult = lanes.isEmpty
+        ? (splitReceiptExists
+              ? _heuristicLaneResolution(
+                  expressible,
+                  preservedFfi,
+                  contractBehaviors,
+                )
+              : null)
+        : _resolveLanes(
+            lanes,
+            expressible,
+            preservedFfi,
+            goldenIds,
+            // Issue #1318: the guard's fix message distinguishes a
+            // CLASSIFIER-routed kind (a prose guess — the marker remedy
+            // leads) from a DECLARED kind (the author's word — the
+            // lane-move remedy stands). Match declarations by the parser's
+            // current ids, then pass the reconciled behavior ids consumed by
+            // the lane resolver.
+            declaredBehaviorIds: declaredBehaviorIds,
+            // Issue #1419: the derived contract behaviors count into the
+            // lane contract — CORE by default (spec 1007: a contract test
+            // is pure Dart, so it rides the engine), the declared lane
+            // wins, and a non-engine declaration refuses instead of
+            // dropping the row again.
+            contractBehaviors: contractBehaviors,
+          );
+    // Bug #1745: the engine plan's purity gate also covers the
+    // declarations no behavior row carries — the `### Key Entities`
+    // fields and the `## Layer Contracts` signatures render into
+    // 04-ENGINE.md verbatim, and a `**Presentation**` contract must not
+    // silently default to CORE.
+    final laneRefusals = <String>[
+      ...?laneResult?.refusals,
+      if (laneResult != null)
+        ..._enginePurityRefusals(
+          entities: entities,
+          layerContracts: layerContracts,
+          contractBehaviors: contractBehaviors,
+          declaredLaneIds: {for (final lane in lanes) ...lane.behaviorIds},
+        ),
+    ];
+    if (laneResult != null && laneRefusals.isNotEmpty) {
+      print(
+        'zfa tdd plan: lane contract FAILED — ${laneRefusals.length} '
+        'lane violation(s) (spec: $specPath). No test list was written; '
+        'fix the ## Lanes section and re-run `zfa tdd plan`.',
+      );
+      for (final refusal in laneRefusals) {
+        print('  $refusal');
+      }
+      exitCode = 2;
+      return;
+    }
+
+    // Issue #1004: the skin contract. A spec declaring the adaptive
+    // `## Skin Contract` section (yaml body) gets typed contract rows
+    // in 04-SKIN.md: the platform matrix, the state machine, the
+    // routes — plus the machine JSON contract. The parse is strict
+    // (an unknown key is contract drift, not future proofing) and a
+    // declaration without the lane split refuses: the contract rides
+    // the SKIN lane, and a legacy single-file plan has no skin file
+    // to referee against.
+    final adaptiveSkinContract = _resolveSkinContract(specMd, lanes, specPath);
+    if (identical(adaptiveSkinContract, _skinContractRefused)) {
+      return;
+    }
+
+    // Bug #1261: the visual-contract guidance. A SKIN lane with
+    // widget-kind behaviors but no adaptive_slots gets the slot
+    // PROPOSAL (the spec stays the source of truth — plan proposes,
+    // the author declares); a lane with neither slots nor goldens
+    // warns that the skin has no visual contract — the silent
+    // fall-through the bug closes, surfaced instead. Guidance only:
+    // the artifacts still write and the exit stays 0.
+    if (laneResult != null) {
+      _emitVisualContractGuidance(
+        lanes: lanes,
+        laneResult: laneResult,
+        expressible: expressible,
+      );
+    }
+
+    // Issue #1007: contract rows carry their own declared lane in the
+    // provenance artifact (they are spec-DECLARED through the Layer
+    // Contracts section, like the ffi lane's native-loop declaration).
+    // Issue #1319: the provenance NAMES the declared contract row —
+    // the synthesized `contract:A<n>` id is untraceable on its own, the
+    // declared interface name (the row the behavior was derived from)
+    // is what the author wrote and what they can find in the spec.
+    for (final b in contractBehaviors) {
+      final declaredRow = b.sourceCriterion.split('.').first;
+      provenanceLines.putIfAbsent(
+        b.id,
+        () => ['route: ${b.id} -> contract lane [declared: $declaredRow]'],
+      );
+    }
+
+    // Issue #1186: the one-time routing migration. Every behavior that
+    // routed via the labeled legacy fallback had its lane classified by
+    // the (accurate) description classifier — emitting the classified
+    // `**Type**` marker back into the spec turns the per-run fallback
+    // warning into a one-time migration, and makes `--strict-routing`
+    // usable on speckit-authored specs (whose templates never carried
+    // the markers). The emitted content stays in memory until every plan
+    // artifact has been written successfully, so an output failure never
+    // leaves spec.md migrated ahead of an incomplete plan. The operation is
+    // idempotent (a declared scenario is never re-declared) and is skipped
+    // entirely under `--no-emit-markers`.
+    final markerEmission = argResults?['emit-markers'] as bool? ?? true
+        ? const SpecMarkerEmitter().emit(specMd, provenance.fallbackKinds)
+        : null;
+
+    // Bug #1481: the routing verdict must reflect the spec state as of
+    // the END of this invocation. The emitter above is a one-shot
+    // MIGRATION: when it wrote markers, the provenance computed from the
+    // pre-emission parse is stale exactly when it reports — the fallback
+    // lines would tell the author to add markers THIS RUN just wrote.
+    // Re-derive the provenance from the migrated content so a single
+    // invocation is truthful (the repaired behaviors render
+    // `[declared: type marker, spec line N]`, matching what a second run
+    // would report). The re-derivation walks the expressible + preserved
+    // rows only, so the contract-lane lines recorded before this point
+    // are merged back; the re-parse runs BEFORE any artifact is written
+    // and refuses cleanly if the migrated content ever failed to parse.
+    if (markerEmission != null && markerEmission.migrated) {
+      try {
+        final postMarkers = SpecParser.parseScenarioTypeMarkers(
+          markerEmission.content,
+        );
+        final postProvenance = _provenanceLines(
+          expressibleEntries,
+          preservedFfi,
+          SpecDeclarations(
+            scenarios: postMarkers,
+            contractRows: declarations.contractRows,
+            persistence: declarations.persistence,
+          ),
+          frTraces,
+          postMarkers,
+          unboundTraces: unboundTraces,
+          strict: strict,
+        );
+        for (final entry in provenanceLines.entries) {
+          postProvenance.lines.putIfAbsent(entry.key, () => entry.value);
+        }
+        provenanceLines = postProvenance.lines;
+        deadEndIds = postProvenance.deadEnds;
+      } on StateError catch (e) {
+        print('zfa tdd plan: marker migration refused — ${e.message}');
+        print('  no artifacts were written.');
+        _verdict
+          ..outcome = VerdictOutcome.fail
+          ..exitClass = 'marker-migration-refused'
+          ..fix =
+              'fix the malformed declaration named above, then re-run '
+              'zfa tdd plan'
+          ..details['reason'] = e.message;
+        exitCode = 2;
+        return;
+      }
+    }
+
+    Future<void> persistMarkerEmission() async {
+      final emission = markerEmission;
+      if (emission == null || !emission.migrated) return;
+      await specFile.writeAsString(emission.content);
+      // Bug #1481: the mutation is announced, and the stale "Re-run
+      // `zfa tdd plan`" advice is retired — the routing verdicts printed
+      // by this invocation were re-derived from the migrated content, so
+      // ONE run is sufficient and truthful.
+      print(
+        'zfa tdd plan: wrote ${emission.emitted.length} `**Type**` '
+        'marker(s) into spec.md (one-time routing migration, issue '
+        '#1186) for ${emission.emitted.keys.join(', ')} (spec: '
+        '$specPath) — the route verdicts in this invocation already '
+        'reflect the migrated spec.',
+      );
+      _verdict.details['markers_emitted'] = emission.emitted.length;
+    }
+
+    await outDir.create(recursive: true);
+    // Issue #1164: a spec declaring `## Skin Contract:` also emits the
+    // model-generated `04-skin-contract.schema.json` beside the lane
+    // plan — generated FROM the typed model so the two cannot drift.
+    // A spec without the section writes nothing.
+    final emittedSchema = await emitSkinContractSchema(
+      specMarkdown: specMd,
+      outDir: outDir,
+    );
+    if (emittedSchema != null) {
+      print(
+        'zfa tdd plan: wrote File: ${p.absolute(emittedSchema)} '
+        '(skin contract schema — issue #1164)',
+      );
+    }
+    // The completeness proof (bug #846): behavior <-> FR/AC matrix with
+    // the spec-contract hash, re-checked by verify/corpus for drift.
+    // Written only AFTER the declarations parse and the strict gate
+    // pass (round-2 review fix 3a).
+    final matrix = const TraceabilityMatrix().render(
+      feature: feature,
+      scan: scan,
+      behaviors: reconciled,
+      frManualTags: frManualTags,
+    );
+    await File(p.join(outDir.path, 'traceability.md')).writeAsString(matrix);
+
+    if (laneResult != null) {
+      // Issue #1309: the stale-split report. Printed only when the plan
+      // actually proceeds to write artifacts (every gate has passed),
+      // so a refused plan never claims it refreshed anything.
+      if (splitStale) {
+        print(
+          'zfa tdd plan: stale lane split detected — spec.md changed '
+          'since ${p.relative(receiptFile.path, from: repoRoot)} was '
+          'written; regenerating the lane plans from the current '
+          'behavior set (issue #1309).',
+        );
+        _verdict.details['stale_split'] = true;
+      }
+      // Issue #1000: the lane split — engine plan + skin plan + the
+      // engine/skin contract, with the legacy filename demoted to the
+      // meta-index. TestListReader resolves the rows from the split
+      // files, so gen/make/run semantics are unchanged.
+      //
+      // Issue #1419: the derived contract behaviors ride the split —
+      // the legacy single-file path renders them (the contract loop);
+      // this path dropped them silently (exit 0, no refusal, no
+      // coverage-gate failure — the worst failure class for an
+      // honesty-first toolchain). They are engine-side by construction
+      // (`_resolveLanes` refuses every non-CORE declaration), so only
+      // the engine row list carries them.
+      final contractRows = _contractLaneRows(contractBehaviors, laneResult);
+      final engineRows = <LaneRow>[
+        for (final b in expressible)
+          ..._derivedLaneRows(
+            b,
+            laneResult,
+            declarations.persistence,
+            goldenIds,
+            contractTraces,
+          ),
+        ..._ffiLaneRows(preservedFfi, laneResult),
+        ...contractRows,
+        ...laneResult.handRows,
+      ].where((r) => r.lane.destinedForEngine).toList();
+      final skinRows = <LaneRow>[
+        for (final b in expressible)
+          ..._derivedLaneRows(
+            b,
+            laneResult,
+            declarations.persistence,
+            goldenIds,
+            contractTraces,
+          ),
+        ..._ffiLaneRows(preservedFfi, laneResult),
+        ...laneResult.handRows,
+      ].where((r) => r.lane.destinedForSkin).toList();
+      final adaptiveSlots = lanes
+          .expand((l) => l.adaptiveSlots)
+          .toSet()
+          .toList();
+
+      final engineProvenance = <String, List<String>>{};
+      final skinProvenance = <String, List<String>>{};
+      provenanceLines.forEach((id, lines) {
+        // Ffi rows and any unclassified id default engine-side (the
+        // native boundary + routing bookkeeping are engine-owned).
+        final lane = laneResult.classification[id] ?? Lane.core;
+        if (lane.destinedForEngine) engineProvenance[id] = lines;
+        if (lane.destinedForSkin) skinProvenance[id] = lines;
+      });
+
+      // Issue #1419: the engine plan's contract loop is written by the
+      // shared renderer (`renderEnginePlan`), not here — `zfa tdd split`
+      // calls the same renderer, and a caller-side copy let the two
+      // diverge on the rows this plan's route log already claims.
+      final engineMd = renderEnginePlan(
+        feature: feature,
+        rows: engineRows,
+        entities: entities,
+        dependencies: dependencies,
+        layerContracts: layerContracts,
+        provenance: engineProvenance,
+      );
+      final skinMd = renderSkinPlan(
+        feature: feature,
+        rows: skinRows,
+        adaptiveSlots: adaptiveSlots,
+        provenance: skinProvenance,
+        skinContract: adaptiveSkinContract,
+      );
+      final contractMd = renderContractPlan(
+        feature: feature,
+        adaptiveSlots: adaptiveSlots,
+        bothRows: engineRows.where((r) => r.lane == Lane.both).toList(),
+      );
+      final metaLanes = lanes.isNotEmpty
+          ? lanes
+          : [
+              // Issue #1309: a no-Lanes regeneration synthesizes the
+              // meta-index declarations from the derived rows — the
+              // same shape `zfa tdd split` writes when the spec
+              // declares no lanes (the heuristic split is CORE for the
+              // engine rows, SKIN for the skin rows, and the heuristic
+              // never yields BOTH).
+              LaneDeclaration(
+                lane: Lane.core.label,
+                behaviorIds: engineRows
+                    .where((r) => r.lane == Lane.core)
+                    .map((r) => r.id)
+                    .toList(),
+                flutterAllowed: 'false',
+              ),
+              LaneDeclaration(
+                lane: Lane.skin.label,
+                behaviorIds: skinRows
+                    .where((r) => r.lane == Lane.skin)
+                    .map((r) => r.id)
+                    .toList(),
+                flutterAllowed: 'true',
+              ),
+            ];
+      final metaMd = renderMetaIndex(
+        feature: feature,
+        lanes: metaLanes,
+        classification: laneResult.classification,
+      );
+      await File(
+        p.join(outDir.path, LaneSplitFiles.engine),
+      ).writeAsString(engineMd);
+      await File(
+        p.join(outDir.path, LaneSplitFiles.skin),
+      ).writeAsString(skinMd);
+      await File(
+        p.join(outDir.path, LaneSplitFiles.contract),
+      ).writeAsString(contractMd);
+      await outFile.writeAsString(metaMd);
+      for (final line in provenanceLines.values.expand((l) => l)) {
+        print('   $line');
+      }
+      // Bug #1481: the fatal-class tally rides the route lines in both
+      // render paths — the author learns the plan will dead-end without
+      // scanning every line.
+      _printDeadEndTally(deadEndIds);
+      stdout.writeln(
+        'zfa tdd plan: wrote ${p.join(outDir.path, LaneSplitFiles.engine)} '
+        '(${engineRows.where((r) => r.lane == Lane.core).length} CORE '
+        'behaviors), ${p.join(outDir.path, LaneSplitFiles.skin)} '
+        '(${skinRows.where((r) => r.lane == Lane.skin).length} SKIN '
+        'behaviors), ${p.join(outDir.path, LaneSplitFiles.contract)}; '
+        'test-list.md is the lane meta-index '
+        '(${laneResult.classification.length} behaviors, '
+        '${engineRows.where((r) => r.lane == Lane.both).length} BOTH).',
+      );
+      if (entities.isNotEmpty) {
+        stdout.writeln(
+          'zfa tdd plan: extracted ${entities.length} Key Entity('
+          'ies): ${entities.map((e) => e.name).join(', ')}.',
+        );
+      }
+      // Issue #1141: the UI surface ledger artifact — one row per
+      // declared surface, `t.<key>` key rows traced per row (both lanes'
+      // rows feed the single feature-wide derivation).
+      await _writeUiLedger(
+        outDir,
+        behaviors: [
+          for (final row in [...engineRows, ...skinRows])
+            LedgerBehaviorInput(id: row.id, description: row.description),
+        ],
+        componentTokens: UiLedgerProjection.componentTokensOf(layerContracts),
+        keys: i18nKeys,
+        layoutSlots: layoutSlots,
+      );
+      await persistMarkerEmission();
+      // Bug #1481 (finding 2): the dead-end count is machine-readable in
+      // BOTH render paths — lane-split and legacy single-file.
+      _verdict.details['dead_end_behaviors'] = deadEndIds.length;
+      // Issue #1309: refresh only after every generated artifact and
+      // marker emission succeeded. Hash and mtime come from the final
+      // on-disk spec, so marker migration cannot make the repaired
+      // receipt immediately stale. A malformed existing receipt is
+      // rebuilt with the current heuristic classification instead of
+      // demoting this run to the legacy single-file plan.
+      //
+      // Issue #1366: the receipt write is UNCONDITIONAL when lane plans
+      // are emitted — plan-emitted lane plans carry the migration record
+      // themselves (`source: zfa tdd plan`), so a committed tree can
+      // never ship lane plans without the receipt the one-shot guard
+      // keys on.
+      final finalSpecMd = await specFile.readAsString();
+      // The spec can vanish between the read and this stamp (a
+      // concurrent tdd reset): degrade to no mtime rather than crash
+      // after the lane plans are already written.
+      final String? specMtime = specFile.existsSync()
+          ? (await specFile.lastModified()).toUtc().toIso8601String()
+          : null;
+      // The ids the `## Lanes` section actually names (SKIN declarations
+      // sanitized to their strict W-id, the same normalization
+      // `_resolveLanes` applies), so the refreshed source map can never
+      // carry a key the classification does not.
+      final declaredLaneIds = <String>{
+        for (final lane in lanes)
+          for (final token in lane.behaviorIds)
+            if (Lane.parse(lane.lane) == Lane.skin)
+              SkinPlanAuthor.sanitizeDeclaredSkinToken(token)?.id ?? token
+            else
+              token,
+      };
+      final refreshed = splitReceiptExists
+          ? (splitReceipt == null
+                ? <String, dynamic>{
+                    'feature': feature,
+                    'source': 'tdd/test-list.md',
+                    'rows': laneResult.classification.length,
+                    'classification': {
+                      for (final entry in laneResult.classification.entries)
+                        entry.key: entry.value.label,
+                    },
+                  }
+                : <String, dynamic>{
+                    ...splitReceipt,
+                    // Issue #1883: a stale receipt (e.g. one left over
+                    // from a declared-contract rename) must not keep its
+                    // old behavior-id set — re-derive the classification
+                    // and row count from the current plan so run-engine
+                    // does not silently drop the re-issued behaviors.
+                    'rows': laneResult.classification.length,
+                    'classification': {
+                      for (final entry in laneResult.classification.entries)
+                        entry.key: entry.value.label,
+                    },
+                    // Issue #1883 (review): the split-time audit fields
+                    // are re-derived with the classification. Preserved
+                    // verbatim they would name the REMOVED ids beside a
+                    // fresh map (`classification_source` keyed by the old
+                    // set, `golden_ids` naming undeclared behaviors) —
+                    // the receipt is the audit record, so it must agree
+                    // with the lane plans this refresh just wrote.
+                    'classification_source': {
+                      for (final id in laneResult.classification.keys)
+                        id: declaredLaneIds.contains(id)
+                            ? 'declared'
+                            : 'heuristic',
+                    },
+                    'golden_ids': goldenIds.toList()..sort(),
+                    'adaptive_slots': adaptiveSlots,
+                    'files': [
+                      'tdd/${LaneSplitFiles.engine}',
+                      'tdd/${LaneSplitFiles.skin}',
+                      'tdd/${LaneSplitFiles.contract}',
+                      'tdd/test-list.md (meta-index)',
+                    ],
+                    'engine_flutter_references': flutterReferenceCount(
+                      engineMd,
+                    ),
+                  })
+          : <String, dynamic>{
+              'feature': feature,
+              'source': 'zfa tdd plan',
+              'rows': laneResult.classification.length,
+              'classification': {
+                for (final entry in laneResult.classification.entries)
+                  entry.key: entry.value.label,
+              },
+            };
+      refreshed
+        ..['spec_hash'] = sha256.convert(utf8.encode(finalSpecMd)).toString()
+        ..['spec_mtime'] = specMtime
+        ..['refreshed_at'] = DateTime.now().toUtc().toIso8601String()
+        ..['refreshed_by'] = 'zfa tdd plan'
+        ..['refreshed_rows'] = laneResult.classification.length;
+      await receiptFile.writeAsString(
+        const JsonEncoder.withIndent('  ').convert(refreshed),
+      );
+      // Issue #1125: the laned plan's explain block — the lane split is
+      // the artifact set here, the summary names exactly what was written.
+      _verdict.explain = TddExplain(
+        command: 'plan',
+        features: [feature],
+        lane: 'none — plan does not drive the engine/skin lanes',
+        summary:
+            'Plan parsed ${p.relative(specPath, from: repoRoot)} (template '
+            '$templateVersion), proved the coverage gate, and split the '
+            'plan into lanes: '
+            '${p.relative(p.join(outDir.path, LaneSplitFiles.engine), from: repoRoot)} '
+            '(${engineRows.where((r) => r.lane == Lane.core).length} CORE '
+            'behaviors), '
+            '${p.relative(p.join(outDir.path, LaneSplitFiles.skin), from: repoRoot)} '
+            '(${skinRows.where((r) => r.lane == Lane.skin).length} SKIN '
+            'behaviors), the engine/skin contract plan, and the '
+            'meta-index test-list.md '
+            '(${laneResult.classification.length} behaviors, '
+            '${engineRows.where((r) => r.lane == Lane.both).length} BOTH), '
+            'with the traceability matrix beside them. Next: '
+            '`zfa tdd run $feature` drives the engine lane first.',
+      );
+      return;
+    }
+
+    // SPEC 1489 (SC-4): the unit lane's hand-step forecast — how many
+    // unit behaviors will hand-step because their declared contract
+    // returns an entity that does not exist on disk yet. Resolved once,
+    // here, so the test list and the summary line carry the same
+    // numbers; best-effort (the shape's counter never throws past a
+    // per-behavior resolution failure).
+    final unitBehaviorIds = [
+      for (final b in expressible)
+        if (b.kind == BehaviorKind.unit) b.id,
+    ];
+    final seamForecast = await _entityReturnSeamForecast(
+      cwd: repoRoot,
+      featureName: feature,
+      featureDir: featureDir,
+      unitBehaviorIds: unitBehaviorIds,
+    );
+    await outFile.writeAsString(
+      _render(
+        feature,
+        expressible,
+        contractBehaviors,
+        entities,
+        dependencies,
+        layerContracts,
+        preservedFfi,
+        declarations.persistence,
+        provenanceLines,
+        contractTraces,
+        seamForecast,
+      ),
+    );
+    // Issue #1141: the UI surface ledger artifact (the legacy single-file
+    // plan path derives from the same row set the test list carries).
+    final ledgerFiles = await _writeUiLedger(
+      outDir,
+      behaviors: [
+        for (final b in [...expressible, ...contractBehaviors])
+          LedgerBehaviorInput(id: b.id, description: b.description),
+        for (final row in preservedFfi)
+          LedgerBehaviorInput(id: row.id, description: row.description),
+      ],
+      componentTokens: UiLedgerProjection.componentTokensOf(layerContracts),
+      keys: i18nKeys,
+      layoutSlots: layoutSlots,
+    );
+    // Issue #969 T003: the plan's artifacts become self-certifying —
+    // digest-bound receipts so the preflight gate can catch hand-edits.
+    await TddGenerationReceipts.writeBestEffort(
+      projectRoot: repoRoot,
+      command: 'tdd plan',
+      target: feature,
+      feature: feature,
+      files: {
+        outFile.path: 'update',
+        p.join(outDir.path, 'traceability.md'): 'update',
+        ...ledgerFiles,
+      },
+    );
+    await persistMarkerEmission();
+    for (final line in provenanceLines.values.expand((l) => l)) {
+      // print (not stdout.writeln): the observable-CLI convention the
+      // tdd command suites assert on (runCapturing intercepts print).
+      print('   $line');
+    }
+    // Bug #1481: the fatal-class tally (see the lane path above).
+    _printDeadEndTally(deadEndIds);
+
+    final aCount = expressible
+        .where((b) => b.kind == BehaviorKind.acceptance)
+        .length;
+    final uCount = expressible.where((b) => b.kind == BehaviorKind.unit).length;
+    final cCount = contractBehaviors.length;
+    final fCount = preservedFfi.length;
+    final total = expressible.length + cCount + fCount;
+    final laneList = [
+      '$aCount acceptance',
+      '$uCount unit',
+      if (cCount > 0) '$cCount contract',
+      if (fCount > 0) '$fCount ffi',
+    ].join(' + ');
+    stdout.writeln(
+      'zfa tdd plan: wrote $outFile with $laneList behaviors ($total total).',
+    );
+    // SPEC 1489 (SC-4): the forecast rides the summary — the exact
+    // seam-cost wording the test list carries.
+    final seamLine = UnitContractShape.entityReturnSeamCostLine(
+      seams: seamForecast.seams,
+      total: seamForecast.total,
+    );
+    if (seamLine != null) {
+      stdout.writeln('zfa tdd plan: $seamLine');
+    }
+    if (entities.isNotEmpty) {
+      stdout.writeln(
+        'zfa tdd plan: extracted ${entities.length} Key Entity('
+        'ies): ${entities.map((e) => e.name).join(', ')}.',
+      );
+    }
+    _verdict
+      ..details['acceptance'] = aCount
+      ..details['unit'] = uCount
+      ..details['ffi'] = fCount
+      ..details['behaviors'] = total
+      ..details['test_list'] = outFile.path
+      // Bug #1481: the dead-end count is machine-readable too — the
+      // tally line names the ids, the envelope carries the number.
+      ..details['dead_end_behaviors'] = deadEndIds.length;
+    // Issue #1125: the plan's explain block — the sections reuse the
+    // receipt record the verb just wrote (TddGenerationReceipts) and the
+    // artifacts the summary line names, never fresh facts.
+    _verdict.explain = TddExplain(
+      command: 'plan',
+      features: [feature],
+      lane: 'none — plan does not drive the engine/skin lanes',
+      receipts: [
+        '1 proof.v1 generation receipt for tdd plan (under '
+            '.zfa/receipts/, best effort)',
+      ],
+      summary:
+          'Plan parsed ${p.relative(specPath, from: repoRoot)} (template '
+          '$templateVersion), proved the coverage gate — every '
+          'requirement statement maps to a behavior row — and wrote '
+          '${p.relative(outFile.path, from: repoRoot)} with $laneList '
+          'behaviors ($total total) plus the traceability matrix '
+          '(tdd/traceability.md). Next: `zfa tdd run $feature` drives '
+          'the behaviors red → green.',
+    );
+  }
+
+  /// The unit lane's hand-step forecast (SPEC 1489 SC-4): resolves every
+  /// unit behavior's declared contract (the same machinery gen resolves)
+  /// and counts the entity-shaped returns whose entity does not exist on
+  /// disk yet. Best-effort: an unreadable/malformed declaration is
+  /// skipped (gen refuses those later, plan does not fail on them).
+  static Future<({int seams, int total})> _entityReturnSeamForecast({
+    required String cwd,
+    required String featureName,
+    required String featureDir,
+    required List<String> unitBehaviorIds,
+  }) {
+    final total = unitBehaviorIds.length;
+    return Future(() async {
+      final declared = <Signature?>[];
+      for (final id in unitBehaviorIds) {
+        try {
+          declared.add(
+            await DeclaredRouting.declaredSignatureFor(
+              cwd: cwd,
+              featureName: featureName,
+              featureDir: featureDir,
+              behaviorId: id,
+            ),
+          );
+        } on StateError {
+          declared.add(null); // malformed: gen refuses later, plan skips
+        }
+      }
+      final seams = await UnitContractShape.countEntityReturnSeamsResolved(
+        declared: declared,
+        cwd: cwd,
+      );
+      return (seams: seams, total: total);
+    });
+  }
+
+  String _render(
+    String feature,
+    List<Behavior> behaviors,
+    List<Behavior> contractBehaviors,
+    List<SpecEntity> entities,
+    List<SpecDependency> dependencies,
+    List<LayerContract> layerContracts,
+    List<BehaviorRow> preservedFfi,
+    Map<String, PersistenceDeclaration> persistenceDeclarations,
+    Map<String, List<String>> provenanceLines,
+    Map<String, List<String>> contractTraces,
+    ({int seams, int total})? seamForecast,
+  ) {
+    final acceptance = behaviors
+        .where((b) => b.kind == BehaviorKind.acceptance)
+        .toList();
+    // Bug #830: widget-kind acceptance scenarios (UI-observable prose)
+    // get their own outer-loop section so gen resolves their rows as
+    // widget kind and emits the testWidgets pair.
+    final widget = behaviors
+        .where((b) => b.kind == BehaviorKind.widget)
+        .toList();
+    final unit = behaviors.where((b) => b.kind == BehaviorKind.unit).toList();
+
+    final buf = StringBuffer()
+      ..writeln('# Test List: $feature')
+      ..writeln()
+      ..writeln('## Outer loop: acceptance behaviors')
+      ..writeln()
+      ..writeln('One per acceptance criterion in `spec.md`.')
+      ..writeln()
+      ..writeln('| id | behavior | traces | state |')
+      ..writeln('| -- | -------- | ------ | ----- |');
+    for (final b in acceptance) {
+      buf.writeln(
+        '| ${b.id} | ${_escapeCell(_marked(b, persistenceDeclarations))} | '
+        '${_escapeCell(_tracesCell(b, contractTraces))} | PENDING |',
+      );
+    }
+    buf
+      ..writeln()
+      ..writeln('## Outer loop: widget behaviors')
+      ..writeln()
+      ..writeln(
+        'UI acceptance scenarios (bug #830): asserted through a testWidgets '
+        'pair — a view-builder subject stub plus a widget test that pumps '
+        'the view and asserts the scenario.',
+      )
+      ..writeln()
+      ..writeln(
+        'The `kind` cell is the finder-kind taxonomy (issue #1140): the '
+        'scenario verbs\' predicted assertion classes — presence, absence, '
+        'route-outcome, enabled-state, sequence — or `none` when no finder '
+        'is derivable. `zfa tdd gen` selects the assertion template by it '
+        'and refuses a row whose kind column drifted from the scenario '
+        'prose; verify-red\'s kind gate (issue #959/#964) certifies on the '
+        'same vocabulary.',
+      )
+      ..writeln()
+      ..writeln('| id | behavior | kind | traces | state |')
+      ..writeln('| -- | -------- | ---- | ------ | ----- |');
+    for (final b in widget) {
+      // Issue #1140: the finder-kind column — the plan's prediction of
+      // the assertion classes gen will emit, derived from the same
+      // taxonomy the writer and the verify-red gate speak.
+      final kindCell = FinderTaxonomy.kindCellFor(b.description);
+      buf.writeln(
+        '| ${b.id} | ${_escapeCell(b.description)} | $kindCell | '
+        '${_escapeCell(_tracesCell(b, contractTraces))} | PENDING |',
+      );
+    }
+    buf
+      ..writeln()
+      ..writeln('## Inner loop: unit behaviors')
+      ..writeln()
+      ..writeln('One per functional requirement in `spec.md`.')
+      ..writeln()
+      ..writeln('| id | behavior | traces | state |')
+      ..writeln('| -- | -------- | ------ | ----- |');
+    for (final b in unit) {
+      buf.writeln(
+        '| ${b.id} | ${_escapeCell(_marked(b, persistenceDeclarations))} | '
+        '${_escapeCell(_tracesCell(b, contractTraces))} | PENDING |',
+      );
+    }
+    // SPEC 1489 (SC-4): the unit lane's hand-step forecast — the seam
+    // cost the run will otherwise discover one behavior at a time.
+    final seamLine = seamForecast == null
+        ? null
+        : UnitContractShape.entityReturnSeamCostLine(
+            seams: seamForecast.seams,
+            total: seamForecast.total,
+          );
+    if (seamLine != null) {
+      buf
+        ..writeln()
+        ..writeln(seamLine);
+    }
+    // Issue #1007: the CONTRACT lane — one row per declared entity
+    // method, controller method and usecase of the spec's Layer
+    // Contracts section. Gen's pair for these rows is a contract test
+    // scaffold + contract seam (NOT an implementation test), and a
+    // failing contract test is BLOCKED (never RED) — the row's state
+    // column carries BLOCKED until the implementation satisfies the
+    // declared contract.
+    //
+    // Issue #1419: the section is written by the SHARED helper the
+    // lane-split engine renderer calls — one writer, so the legacy
+    // single-file plan and `04-ENGINE.md` cannot drift apart.
+    if (contractBehaviors.isNotEmpty) {
+      buf.writeln();
+      renderContractLoopSection(buf, [
+        for (final b in contractBehaviors)
+          LaneRow(
+            id: b.id,
+            description: b.description,
+            traces: b.sourceCriterion,
+            state: b.state.name.toUpperCase(),
+            kind: b.kind,
+            lane: Lane.core,
+          ),
+      ]);
+    }
+    // Bug #829: the spec's Key Entities, extracted for the loop's
+    // entity orchestration (run phase 0 + the make entity pipeline).
+    // The reader skips this section when resolving behavior rows.
+    // Bug #919: a third `purpose` column when any entity declares one
+    // (the zuraffa-1.0 template's table form). Purpose-less sections keep
+    // the 2-column shape so every pre-919 artifact reads back identically.
+    if (entities.isNotEmpty) {
+      final hasPurpose = entities.any((e) => e.purpose.isNotEmpty);
+      buf
+        ..writeln()
+        ..writeln('## Key entities')
+        ..writeln();
+      if (hasPurpose) {
+        buf
+          ..writeln('| entity | fields | purpose |')
+          ..writeln('| ------ | ------ | ------- |');
+        for (final e in entities) {
+          // e.name is grammar-safe (_dartIdentifier) and field types are
+          // prose-join — both assumed pipe-free (the spec-side _fieldPair
+          // grammar does not capture pipes). If that assumption changes,
+          // wrap in _escapeCell like purpose above.
+          buf.writeln(
+            '| ${e.name} | '
+            '${e.fields.map((f) => '${f.name}: ${f.type}').join(', ')}'
+            ' | ${_escapeCell(e.purpose)} |',
+          );
+        }
+      } else {
+        buf
+          ..writeln('| entity | fields |')
+          ..writeln('| ------ | ------ |');
+        for (final e in entities) {
+          buf.writeln(
+            '| ${e.name} | '
+            '${e.fields.map((f) => '${f.name}: ${f.type}').join(', ')} |',
+          );
+        }
+      }
+    }
+    if (dependencies.isNotEmpty) {
+      buf
+        ..writeln()
+        ..writeln('## External dependencies')
+        ..writeln()
+        ..writeln('| dependency | type | contract | mock priority |')
+        ..writeln('| ---------- | ---- | -------- | ------------- |');
+      for (final d in dependencies) {
+        buf.writeln(
+          '| ${d.dependency} | ${d.type} | ${_escapeCell(d.contract)} '
+          '| ${d.mockPriority} |',
+        );
+      }
+    }
+    if (layerContracts.isNotEmpty) {
+      buf
+        ..writeln()
+        ..writeln('## Layer contracts')
+        ..writeln();
+      final byLayer = <String, List<LayerContract>>{};
+      for (final c in layerContracts) {
+        byLayer.putIfAbsent(c.layer, () => []).add(c);
+      }
+      for (final entry in byLayer.entries) {
+        buf
+          ..writeln('### ${entry.key}')
+          ..writeln();
+        for (final c in entry.value) {
+          // Bug #919 (fixed by #1141): every method stays BACKTICKED so
+          // TestListReader.readLayerContracts round-trips the contract —
+          // the reader's extraction is backtick-based, and the unbackticked
+          // rendering dropped the whole contract (components + key: tokens)
+          // on the plan → test-list leg of the loop.
+          buf.writeln(
+            '- `${c.interfaceName}`: '
+            '${c.methods.map((m) => '`$m`').join(', ')}',
+          );
+        }
+      }
+    }
+    if (preservedFfi.isNotEmpty) {
+      buf
+        ..writeln()
+        ..writeln('## Native loop: ffi behaviors')
+        ..writeln()
+        ..writeln(
+          'Native-boundary behaviors (bug #835) — preserved verbatim '
+          'from the prior test list; plan derives acceptance/unit '
+          'behaviors only, so these rows are hand-declared and survive '
+          're-planning. gen scaffolds the binding-contract harness + '
+          'golden fixture lane for them.',
+        )
+        ..writeln()
+        ..writeln('| id | behavior | traces | state |')
+        ..writeln('| -- | -------- | ------ | ----- |');
+      for (final row in preservedFfi) {
+        buf.writeln(
+          '| ${row.id} | ${_escapeCell(row.description)} | '
+          '${_escapeCell(row.traces)} | ${row.state.name.toUpperCase()} |',
+        );
+      }
+    }
+    // Feature 071: the durable provenance artifact.
+    if (provenanceLines.isNotEmpty) {
+      buf
+        ..writeln()
+        ..writeln('## Routing provenance')
+        ..writeln()
+        ..writeln(
+          'Per-behavior routing decisions (issue #951): what each '
+          'decision consulted — a declared marker/contract row, or the '
+          'labeled legacy fallback to migrate.',
+        )
+        ..writeln();
+      for (final lines in provenanceLines.values) {
+        for (final line in lines) {
+          buf.writeln(line);
+        }
+      }
+    }
+    buf.writeln();
+    return buf.toString();
+  }
+
+  /// Issue #1141: derive and write the UI surface ledger artifact pair
+  /// (`tdd/ui-ledger.md` + `tdd/ui-ledger.json`) — one row per declared
+  /// surface: text/route/affordance rows from the behavior scenarios and
+  /// the Presentation component tokens, `t.<key>` key rows whose provers
+  /// are the behaviors quoting the anchor. Planned provers are NOT-DONE
+  /// at plan time (state recomputes on read — a stored state is a cache,
+  /// never the truth). Issue #1142: when the Presentation contract
+  /// declares platform layout slots, the ledger additionally renders the
+  /// PER-PLATFORM coverage (surfaces × slots, plan-time evidence empty ⇒
+  /// every per-slot row NOT-DONE — visible, never omitted) and the
+  /// per-platform kind-coverage heatmap. Returns the written paths (for
+  /// the plan's digest-bound receipts).
+  ///
+  /// EPIC 3 / issue #1134, lane 3: the same derivation point writes the
+  /// TYPED ledger pair (`tdd/typed-ledger.md` + `tdd/typed-ledger.json`,
+  /// merging #963 and #966): every row is (surface, kind:
+  /// presence|absence|navigation|state|sequence, status:
+  /// traced|untraced) — kinds assigned from the scenario verbs at plan
+  /// time (the production wiring the typed-ledger library has been
+  /// waiting for). Platform slots additionally render the per-layout
+  /// kind-coverage heatmap (exit criterion 2) and per-slot typed rows.
+  /// The 075 artifacts keep their pinned shape — the typed pair is
+  /// additive (zero drift).
+  Future<Map<String, String>> _writeUiLedger(
+    Directory outDir, {
+    required List<LedgerBehaviorInput> behaviors,
+    required List<String> componentTokens,
+    required I18nKeyTable keys,
+    List<String> layoutSlots = const [],
+  }) async {
+    final rows = UiLedgerProjection.rows(
+      behaviors: behaviors,
+      keys: keys,
+      componentTokens: componentTokens,
+    );
+    final mdBody = UiLedgerBuilder.toMarkdown(rows);
+    final platformRows = layoutSlots.isEmpty
+        ? const <PlatformSurfaceRow>[]
+        : PlatformCoverageLedger.derive(aggregate: rows, slots: layoutSlots);
+    final md = layoutSlots.isEmpty
+        ? mdBody
+        : '$mdBody\n${PlatformCoverageLedger.toMarkdown(platformRows)}';
+    final json = layoutSlots.isEmpty
+        ? UiLedgerBuilder.toJson(rows)
+        : jsonEncode([
+            ...jsonDecode(UiLedgerBuilder.toJson(rows)) as List<dynamic>,
+            ...jsonDecode(PlatformCoverageLedger.toJson(platformRows))
+                as List<dynamic>,
+          ]);
+    final mdPath = p.join(outDir.path, 'ui-ledger.md');
+    final jsonPath = p.join(outDir.path, 'ui-ledger.json');
+    await File(mdPath).writeAsString(md);
+    await File(jsonPath).writeAsString(json);
+    final keyRows = rows.where((r) => r.kind == UiSurfaceKind.key).length;
+    final platformNote = layoutSlots.isEmpty
+        ? ''
+        : ', ${layoutSlots.length} platform slot(s) heatmap (issue #1142)';
+    print(
+      'zfa tdd plan: wrote $mdPath (${rows.length} row(s), '
+      '$keyRows key row(s)$platformNote) — the UI surface ledger '
+      '(issue #1141)',
+    );
+
+    // --- the typed ledger pair (issue #1134 lane 3, #963 + #966) ---
+    final typedPaths = await _writeTypedLedger(
+      outDir,
+      behaviors: behaviors,
+      componentTokens: componentTokens,
+      keys: keys,
+      layoutSlots: layoutSlots,
+    );
+    return {mdPath: 'update', jsonPath: 'update', ...typedPaths};
+  }
+
+  /// The typed ledger artifact pair (issue #1134 lane 3): derives the
+  /// declared typed rows ([TypedLedgerProjection] — kinds from the
+  /// scenario verbs, the #964 taxonomy composition), derives them
+  /// through [TypedLedgerBuilder] with EMPTY green evidence (plan-time:
+  /// every row untraced — visible, never omitted; state recomputes at
+  /// read time), and writes `tdd/typed-ledger.md` +
+  /// `tdd/typed-ledger.json`. The JSON carries the epic's status
+  /// vocabulary (`traced|untraced`) ALONGSIDE the library's pinned
+  /// `state` field. Platform layout slots append the per-layout typed
+  /// section + heatmap (exit criterion 2).
+  Future<Map<String, String>> _writeTypedLedger(
+    Directory outDir, {
+    required List<LedgerBehaviorInput> behaviors,
+    required List<String> componentTokens,
+    required I18nKeyTable keys,
+    List<String> layoutSlots = const [],
+  }) async {
+    final declared = TypedLedgerProjection.declaredRows(
+      behaviors: behaviors,
+      componentTokens: componentTokens,
+      keys: keys,
+    );
+    // Plan-time: no green evidence — every row untraced (the declared
+    // inventory; the verify cycle recomputes with real evidence).
+    final typed = TypedLedgerBuilder.derive(
+      declared: declared,
+      greenBehaviors: const {},
+    );
+    var md = TypedLedgerBuilder.toMarkdown(typed);
+    var json = _typedLedgerJsonWithStatus(typed);
+    if (layoutSlots.isNotEmpty) {
+      final platformTyped = TypedPlatformLedger.derive(
+        typedRows: typed,
+        slots: layoutSlots,
+      );
+      md = '$md\n${TypedPlatformLedger.toMarkdown(platformTyped, layoutSlots)}';
+      json = jsonEncode([
+        ...jsonDecode(json) as List<dynamic>,
+        ...jsonDecode(TypedPlatformLedger.toJson(platformTyped))
+            as List<dynamic>,
+      ]);
+    }
+    final mdPath = p.join(outDir.path, 'typed-ledger.md');
+    final jsonPath = p.join(outDir.path, 'typed-ledger.json');
+    await File(mdPath).writeAsString(md);
+    await File(jsonPath).writeAsString(json);
+    final kindSummary = LedgerRowKind.values
+        .where((k) => typed.any((r) => r.kind == k))
+        .map((k) => k.label)
+        .join(', ');
+    print(
+      'zfa tdd plan: wrote $mdPath (${typed.length} typed row(s), '
+      'kinds: $kindSummary${layoutSlots.isEmpty ? '' : ', ${layoutSlots.length} layout slot(s) heatmap'}) '
+      '— the typed UI coverage ledger (issue #1134, merging #963 + #966)',
+    );
+    return {mdPath: 'update', jsonPath: 'update'};
+  }
+
+  /// The typed ledger JSON with the epic's `status` vocabulary riding
+  /// each row (`traced|untraced` — issue #1134's row grammar)
+  /// alongside the library's pinned `state` field.
+  static String _typedLedgerJsonWithStatus(List<TypedLedgerRow> typed) {
+    final rows = (jsonDecode(TypedLedgerBuilder.toJson(typed)) as List)
+        .cast<Map<String, dynamic>>();
+    return jsonEncode([
+      for (final row in rows)
+        <String, Object>{
+          ...row,
+          'status': row['state'] == 'DONE' ? 'traced' : 'untraced',
+        },
+    ]);
+  }
+
+  /// Bug #1261: the visual-contract guidance, printed per SKIN lane
+  /// after the lane contract resolves. Widget-kind behaviors without
+  /// adaptive_slots get the slot PROPOSAL (plan proposes — the spec
+  /// stays the source of truth); a lane with neither slots nor goldens
+  /// additionally warns that the skin has no visual contract — the
+  /// silent generic-path fall-through issue #1261 closes. Guidance
+  /// never refuses: the plan artifacts still write, exit stays 0.
+  void _emitVisualContractGuidance({
+    required List<LaneDeclaration> lanes,
+    required _LaneResult laneResult,
+    required List<Behavior> expressible,
+  }) {
+    final widgetIds = <String>{
+      for (final b in expressible)
+        if (b.kind == BehaviorKind.widget) b.id,
+      for (final row in laneResult.handRows)
+        if (row.kind == BehaviorKind.widget) row.id,
+    };
+    for (final lane in lanes) {
+      if (Lane.parse(lane.lane) != Lane.skin) continue;
+      final widgetInLane = lane.behaviorIds
+          .map((t) => SkinPlanAuthor.sanitizeDeclaredSkinToken(t)?.id ?? t)
+          .where(widgetIds.contains)
+          .toList();
+      if (widgetInLane.isEmpty) continue;
+      if (lane.adaptiveSlots.isEmpty) {
+        print(
+          'zfa tdd plan: SKIN lane declares widget behaviors '
+          '(${widgetInLane.join(', ')}) without adaptive_slots — '
+          'proposing adaptive_slots: [mobile, ios, android, macos] '
+          '(declare them in the `## Lanes` SKIN row; the hand-skin '
+          'conformance cycle, spec 1005, engages when slots are '
+          'declared).',
+        );
+      }
+      if (lane.adaptiveSlots.isEmpty && lane.goldenIds.isEmpty) {
+        print(
+          'zfa tdd plan: WARNING — this skin has no visual contract: '
+          'the SKIN lane\'s widget behaviors '
+          '(${widgetInLane.join(', ')}) declare neither adaptive_slots '
+          'nor golden. Visual parity is unrepresentable and run-skin '
+          'falls through to the generic path. --> fix: declare '
+          '`adaptive_slots: [...]` or `golden: true` in the `## Lanes` '
+          'SKIN row.',
+        );
+      }
+    }
+  }
+
+  /// The refusal sentinel [_resolveSkinContract] returns when the
+  /// skin contract refused the plan (the command already printed the
+  /// fix lines and set the exit code — the caller just returns).
+  static const AdaptiveSkinContract _skinContractRefused = AdaptiveSkinContract(
+    adaptiveSlots: <String>[],
+    platformOverrides: <String, Map<String, String>>{},
+    states: <String>[],
+    routeNames: <String>[],
+  );
+
+  /// Issue #1004: resolves the spec's adaptive `## Skin Contract`
+  /// declaration. Returns the parsed contract (null when the spec
+  /// declares none — including the json-fenced skin-contract.v1 form,
+  /// issue #1164, which the schema emitter owns), or the
+  /// [_skinContractRefused] sentinel after printing a refusal (exit 2,
+  /// no artifacts — errors are an API, the fix line names the drift).
+  AdaptiveSkinContract? _resolveSkinContract(
+    String specMd,
+    List<LaneDeclaration> lanes,
+    String specPath,
+  ) {
+    final AdaptiveSkinContract? parsed;
+    try {
+      parsed = parseAdaptiveSkinContract(specMd);
+    } on AdaptiveSkinContractParseException catch (e) {
+      print('zfa tdd plan: skin contract refused — ${e.message}');
+      print('  (spec: $specPath). No test list was written.');
+      print(
+        '  --> fix: correct the `## Skin Contract` yaml section named '
+        'above, then re-run `zfa tdd plan`.',
+      );
+      _verdict
+        ..outcome = VerdictOutcome.fail
+        ..exitClass = 'skin-contract-refused'
+        ..fix =
+            'fix the `## Skin Contract` section named in the refusal, '
+            'then re-run zfa tdd plan'
+        ..details['reason'] = e.message;
+      exitCode = 2;
+      return _skinContractRefused;
+    }
+    if (parsed == null) return null;
+    final contract = parsed;
+
+    // The contract rides the SKIN lane: a declaration without the
+    // lane split has no skin plan to referee against.
+    if (lanes.isEmpty) {
+      print(
+        'zfa tdd plan: skin contract refused — the `## Skin Contract` '
+        'section declares a skin contract, but the spec declares no '
+        '`## Lanes` section (spec: $specPath). The contract rides the '
+        'SKIN lane: without the lane split there is no 04-SKIN.md to '
+        'referee. No test list was written.',
+      );
+      print(
+        '  --> fix: declare `## Lanes` (CORE/SKIN/BOTH) alongside the '
+        'Skin Contract, or drop the `## Skin Contract` section; re-run '
+        '`zfa tdd plan`.',
+      );
+      _verdict
+        ..outcome = VerdictOutcome.fail
+        ..exitClass = 'skin-contract-without-lanes'
+        ..fix =
+            'declare `## Lanes` alongside `## Skin Contract`, then '
+            're-run zfa tdd plan'
+        ..details['lanes'] = 0;
+      exitCode = 2;
+      return _skinContractRefused;
+    }
+
+    // The adaptive_slots cross-check (issue #1004): the contract's
+    // platform matrix and the SKIN lane's declared slots are the SAME
+    // declaration in two places — a disagreement is drift naming both
+    // sides, never a silent winner.
+    final laneSlots = lanes
+        .where((l) => l.lane.toUpperCase() == 'SKIN')
+        .expand((l) => l.adaptiveSlots)
+        .toSet();
+    if (laneSlots.isNotEmpty) {
+      final contractSlots = contract.adaptiveSlots.toSet();
+      final drift =
+          laneSlots.length != contractSlots.length ||
+          !laneSlots.containsAll(contractSlots);
+      if (drift) {
+        print(
+          'zfa tdd plan: skin contract refused — adaptive_slots drift: '
+          'the `## Skin Contract` declares '
+          '[${contract.adaptiveSlots.join(', ')}] but the SKIN lane '
+          'declares [${laneSlots.join(', ')}] (spec: $specPath). The '
+          'contract and the lane must declare the same platform '
+          'matrix. No test list was written.',
+        );
+        print(
+          '  --> fix: align `adaptive_slots` in `## Skin Contract` and '
+          'the SKIN lane\'s `adaptive_slots`; re-run `zfa tdd plan`.',
+        );
+        _verdict
+          ..outcome = VerdictOutcome.fail
+          ..exitClass = 'skin-contract-slot-drift'
+          ..fix =
+              'align adaptive_slots between `## Skin Contract` and the '
+              'SKIN lane, then re-run zfa tdd plan'
+          ..details['contract_slots'] = contract.adaptiveSlots.length
+          ..details['lane_slots'] = laneSlots.length;
+        exitCode = 2;
+        return _skinContractRefused;
+      }
+    }
+    return contract;
+  }
+
+  /// Feature 071 (issue #951): the per-behavior routing provenance —
+  /// the resolver consults the parsed declarations; undeclared
+  /// behaviors render their LABELED legacy fallback (migration window;
+  /// strict mode turns these into refusals).
+  ///
+  /// Issue #1480: numeric-aware unit-id ordering (`U2` before `U10`) for
+  /// the refusal's behavior list — a plain string sort reads wrong.
+  static int _unitIdOrder(String a, String b) {
+    final na = int.tryParse(a.replaceFirst(RegExp(r'^[^0-9]+'), ''));
+    final nb = int.tryParse(b.replaceFirst(RegExp(r'^[^0-9]+'), ''));
+    if (na != null && nb != null && na != nb) return na.compareTo(nb);
+    return a.compareTo(b);
+  }
+
+  /// Issue #1186: the fallback-routed behaviors' classified kinds also
+  /// come back (`fallbackKinds`, id → kind) so the plan can MIGRATE the
+  /// emittable ones (`**Type**` markers) into the spec post-derivation
+  /// — the one-time migration that makes the per-run fallback noise (and
+  /// the strict gate's refusal on speckit-authored specs) disappear.
+  ///
+  /// Bug #1481: the two fallback classes are reported separately —
+  /// `deadEnds` names every behavior whose fallback is the FATAL class
+  /// (a unit behavior with no declared contract trace: the classifier
+  /// cannot invent the row name, so `zfa tdd make` will dead-end on it),
+  /// distinct from the repairable scenario-classified fallbacks.
+  ///
+  /// SPEC 1537 (issue #1537): the fatal class SURVIVED feature #1484 — an
+  /// inline `traces:` line binding ONLY criterion-shaped tokens (`FR-001`,
+  /// the resolver's `_criterionToken` skip) survives the `traceTokens`
+  /// filter, binds non-empty (so #1484 keeps the unit row instead of
+  /// routing a manual declaration), and passes the resolver without
+  /// dangling: `kind == null` -> `RoutingUndeclared` -> `decision == unit`
+  /// -> `!repairable`. The #1480 gate hides the route on the default path,
+  /// but persistence-marked fallbacks are exempt and
+  /// `--allow-unit-fallback` skips the gate — both reach `deadEnds`. The
+  /// class is LIVE, pinned by the `#1537` group in
+  /// `plan_command_bug_1481_test.dart` (red against the deletion mutant,
+  /// green on HEAD) — do NOT delete it as dead code.
+  ({
+    Map<String, List<String>> lines,
+    Map<String, BehaviorKind> fallbackKinds,
+    List<String> deadEnds,
+  })
+  _provenanceLines(
+    List<({Behavior behavior, String currentId})> behaviors,
+    List<BehaviorRow> preservedFfi,
+    SpecDeclarations declarations,
+    Map<String, List<String>> frTraces,
+    Map<String, ScenarioDeclaration> scenarioMarkers, {
+    Set<String> unboundTraces = const {},
+    bool strict = false,
+  }) {
+    const resolver = RoutingResolver();
+    final lines = <String, List<String>>{};
+    final fallbackKinds = <String, BehaviorKind>{};
+    final deadEnds = <String>[];
+    String lane(BehaviorKind kind) => switch (kind) {
+      BehaviorKind.acceptance => 'acceptance lane',
+      BehaviorKind.widget => 'widget lane',
+      BehaviorKind.unit => 'unit lane',
+      BehaviorKind.ffi => 'ffi lane',
+      BehaviorKind.platform => 'platform lane',
+      BehaviorKind.theme => 'theme lane',
+      BehaviorKind.contract => 'contract lane',
+    };
+
+    void record(String id, List<String> entry) => lines[id] = entry;
+
+    for (final entry in behaviors) {
+      final b = entry.behavior;
+      final currentId = entry.currentId;
+      // Rung-3 kind for spec-parsed behaviors is DECLARED only via the
+      // `**Type**` marker — the parse-time sniffer kind is precisely the
+      // legacy fallback being labeled, so it is NOT passed as declared.
+      final result = resolver.resolve(
+        row: RoutingRow(
+          behaviorId: currentId,
+          kind: scenarioMarkers[currentId]?.declaredType,
+          traces: frTraces[currentId] ?? const [],
+        ),
+        declarations: declarations,
+        strict: strict,
+      );
+      final decision = b.kind;
+      if (result is RoutingDecision) {
+        final first = result.provenance.firstOrNull;
+        final extras = <String>[
+          if (result.surface == GenerationSurface.plainFunction)
+            'func surface'
+          else if (result.surface == GenerationSurface.entityPipeline &&
+              result.entityName != null)
+            'entity pipeline: ${result.entityName}'
+          else if (result.surface == GenerationSurface.viewGeneration)
+            'view generation',
+        ];
+        final detail = extras.isEmpty ? '' : ' (${extras.join(', ')})';
+        record(b.id, [
+          'route: ${b.id} -> ${lane(decision)}$detail '
+              '[declared: ${first?.detail ?? 'declaration'}'
+              '${first?.specLine == null ? '' : ', spec line ${first!.specLine}'}]',
+        ]);
+        continue;
+      }
+      if (result is RoutingFailure) {
+        if (strict) {
+          // Append: several behaviors may refuse; every refusal must
+          // survive (a shared fixed key would overwrite earlier ones —
+          // caught by the quickstart run, feature 071).
+          lines.putIfAbsent('__refused__', () => <String>[]).addAll([
+            'zfa tdd plan: ${result.code.name} for behavior '
+                '"${b.id}" (strict mode).',
+            ...result.message.split('\n'),
+          ]);
+          continue;
+        }
+        record(b.id, [
+          'route: ${b.id} -> refused [${result.code.name}: '
+              '${result.message.split('\n').first}]',
+        ]);
+        continue;
+      }
+      // RoutingUndeclared — the labeled legacy fallback.
+      // Bug #1481: the two fallback classes RENDER differently — a
+      // scenario-classified fallback is repairable (the classifier can
+      // derive the `**Type**` marker, and plan emits it this very run
+      // unless --no-emit-markers), while a unit fallback is a missing
+      // CONTRACT TRACE no classifier can invent: make will dead-end on
+      // it. Identical prefixes hid a transient self-healing condition
+      // behind a permanently fatal one.
+      //
+      // SPEC 1537: post-#1484 the unit-kind `RoutingUndeclared` source is
+      // the criterion-only trace binding (`traces: FR-001` — the tokens
+      // survive the filter and the resolver's criterion skip), NOT the
+      // retired no-binding default (that routes manual). Reachable via the
+      // persistence-marked exemption or `--allow-unit-fallback`; pinned
+      // live by the `#1537` group in `plan_command_bug_1481_test.dart`.
+      final repairable =
+          decision == BehaviorKind.acceptance ||
+          decision == BehaviorKind.widget;
+      final hint = repairable
+          ? 'add `**Type**: ${decision.name}` to the scenario'
+          : 'trace FR to a declared contract row';
+      if (!repairable) deadEnds.add(b.id);
+      fallbackKinds[currentId] = decision;
+      // Issue #1319: when the FR the behavior derives from carries a
+      // `traces:` line that bound nothing, the fallback is NOT silent —
+      // the author-facing warning rides the provenance record (stdout +
+      // the durable artifact) so the #1308 vacuous-green dead-end
+      // announces itself instead of hiding behind the legacy classifier.
+      final unboundTraceWarning = unboundTraces.contains(b.sourceCriterion)
+          ? 'WARNING: traces: line found in ${b.sourceCriterion} but was '
+                'not bound to a contract row — check indentation'
+          : null;
+      record(b.id, [
+        'route: ${b.id} -> ${lane(decision)} '
+            '[fallback: ${repairable ? 'repairable' : 'no declared trace — make will dead-end'} — '
+            '${repairable ? 'legacy description classifier matched, ' : ''}$hint]',
+        ?unboundTraceWarning,
+      ]);
+    }
+    for (final row in preservedFfi) {
+      record(row.id, [
+        'route: ${row.id} -> ffi lane '
+            '[declared: native loop section]',
+      ]);
+    }
+    return (lines: lines, fallbackKinds: fallbackKinds, deadEnds: deadEnds);
+  }
+
+  /// Bug #1481: the one-line dead-end tally — the author must not scan
+  /// every `route:` line to learn the plan will dead-end at the first
+  /// unit `make`. Prints nothing when every behavior carries a declared
+  /// trace (the common case after the marker migration has healed the
+  /// scenario lane).
+  ///
+  /// SPEC 1537: this tally is REACHABLE, not retired — a criterion-only
+  /// trace binding (`traces: FR-001`) still routes a unit behavior through
+  /// the fatal `!repairable` class when the #1480 gate exempts it
+  /// (persistence-marked) or is waived (`--allow-unit-fallback`). The
+  /// `#1537` group in `plan_command_bug_1481_test.dart` fails if this
+  /// line is deleted — the Option-A "dead code" claim was disproved.
+  void _printDeadEndTally(List<String> deadEndIds) {
+    if (deadEndIds.isEmpty) return;
+    final n = deadEndIds.length;
+    print(
+      'zfa tdd plan: $n behavior${n == 1 ? '' : 's'} will dead-end at '
+      'make — no declared contract trace (${deadEndIds.join(', ')}). '
+      'Trace each FR to a declared contract row.',
+    );
+  }
+
+  /// Bug #833: the plan MARKS the behavior persistence-kind — the
+  /// ` [persistence]` tag makes `zfa tdd gen` generate the
+  /// harness-backed test. Idempotent.
+  ///
+  /// Feature 071 (issue #951): the trigger is DECLARED — a `[persistent]`
+  /// FR tag or a trace to a `storage:` dependency row (FR-006). The
+  /// #833 keyword sniffing is retired entirely (spec AC2: storage
+  /// vocabulary without a declaration stays unmarked — the keyword
+  /// trigger was false-positive-prone by construction).
+  String _marked(
+    Behavior b,
+    Map<String, PersistenceDeclaration> persistenceDeclarations,
+  ) => persistenceDeclarations.containsKey(b.id)
+      ? PersistenceMarker.mark(b.description)
+      : b.description;
+
+  /// Issue #1007: derive one CONTRACT behavior per declared method of
+  /// the spec's Layer Contracts section — every entity method,
+  /// controller method and usecase the spec declares (plus any other
+  /// declared layer interface: a declared contract is a declared
+  /// contract, whatever its layer label).
+  ///
+  /// The row's description is the STRUCTURED contract carrier the
+  /// contract writers parse:
+  ///
+  ///     <Interface>.<method>(<params>) -> <Return> (<category>)
+  ///
+  /// and the traces column is the interface-qualified method name
+  /// (`User.validateEmail`) — unique per declared method, stable across
+  /// re-plans, and the reconciliation key for `contract:<id>` ids.
+  List<Behavior> _deriveContractBehaviors(
+    String feature,
+    List<LayerContract> layerContracts,
+    Set<String> entityNames,
+  ) {
+    final behaviors = <Behavior>[];
+    for (final contract in layerContracts) {
+      final category = _contractCategory(contract, entityNames);
+      for (final method in contract.methods) {
+        final methodName = _methodNameOf(method);
+        if (methodName.isEmpty) continue;
+        final traces = '${contract.interfaceName}.$methodName';
+        behaviors.add(
+          Behavior(
+            id: 'contract:A${behaviors.length + 1}',
+            feature: feature,
+            kind: BehaviorKind.contract,
+            description:
+                '${contract.interfaceName}.$method ($category contract)',
+            sourceCriterion: traces,
+            target: TestListReader.resolveDefaultTarget(
+              'contract:A${behaviors.length + 1}',
+            ),
+          ),
+        );
+      }
+    }
+    return behaviors;
+  }
+
+  /// The contract category for a declared layer interface: the layer
+  /// label classifies it (Entities/Entity, Presentation/Controller,
+  /// Domain/UseCase), with a declared Key Entity name winning for
+  /// interfaces declared under another label. Everything else is a
+  /// generic interface contract — still derived, still a contract row.
+  String _contractCategory(LayerContract contract, Set<String> entityNames) {
+    final layer = contract.layer.toLowerCase();
+    if (layer.contains('entit')) return 'entity method';
+    if (layer.contains('presentation') || layer.contains('controller')) {
+      return 'controller method';
+    }
+    if (layer.contains('domain') ||
+        layer.contains('usecase') ||
+        layer.contains('use case')) {
+      return 'usecase';
+    }
+    if (entityNames.contains(contract.interfaceName)) return 'entity method';
+    return 'interface method';
+  }
+
+  /// The method name of a declared signature (`validateEmail(String) ->
+  /// bool` -> `validateEmail`); empty when the declaration carries no
+  /// callable name.
+  static String _methodNameOf(String signature) {
+    final idx = signature.indexOf('(');
+    if (idx <= 0) return '';
+    return signature.substring(0, idx).trim();
+  }
+
+  /// Issue #1007: reconcile freshly derived contract behaviors against
+  /// the prior test list by TRACES — an unchanged spec keeps its
+  /// `contract:<id>` ids stable (and a BLOCKED/DONE row keeps its
+  /// recorded state), while new declarations take the next free id.
+  List<Behavior> _reconcileContractBehaviors(
+    List<Behavior> derived,
+    Map<String, (String, BehaviorState)> prior,
+  ) {
+    final taken = prior.values.map((v) => v.$1).toSet();
+    var counter = 1;
+    String nextId() {
+      while (taken.contains('contract:A$counter')) {
+        counter++;
+      }
+      final id = 'contract:A$counter';
+      taken.add(id);
+      counter++;
+      return id;
+    }
+
+    return [
+      for (final b in derived)
+        () {
+          final match = prior[b.sourceCriterion];
+          final id = match?.$1 ?? nextId();
+          return Behavior(
+            id: id,
+            feature: b.feature,
+            kind: b.kind,
+            description: b.description,
+            sourceCriterion: b.sourceCriterion,
+            target: TestListReader.resolveDefaultTarget(id),
+          )..state = match?.$2 ?? BehaviorState.pending;
+        }(),
+    ];
+  }
+
+  /// The lane resolution result (issue #1000): every behavior's lane,
+  /// the hand-declared lane rows (ids the declarations carry but the
+  /// spec prose does not derive), and the refusals (unknown lane names,
+  /// undeclared derived behaviors, noFlutter violations).
+  ///
+  /// The refusals are surfaced by the caller BEFORE any artifact is
+  /// written — an incomplete split never leaves a half-written lane
+  /// plan.
+  static const _flutterReference =
+      'package:fl'
+      'utter';
+
+  /// The Flutter TYPE names a CORE-lane declaration may not name (bug
+  /// #1745). The guard was the bare [_flutterReference] substring test
+  /// alone, so a CORE plan could declare `Widget`/`IconData` Key Entities
+  /// and Layer Contract signatures and plan cleanly — the types rendered
+  /// straight into `04-ENGINE.md`, the artifact whose own header says the
+  /// engine lane is pure Dart by construction.
+  static const _flutterTypeNames = [
+    'Widget',
+    'IconData',
+    'BuildContext',
+    'Color',
+    'TextStyle',
+  ];
+
+  /// The first Flutter type name [text] names, or null. Whole-word
+  /// matched: `IconData`/`TextStyle` are ordinary identifiers elsewhere
+  /// (a `TextStyleGuide` entity is not a Flutter type), and
+  /// `StatefulWidget` is a distinct type the author has to name to be
+  /// flagged.
+  static String? _flutterTypeIn(String text) {
+    for (final name in _flutterTypeNames) {
+      if (RegExp('\\b$name\\b').hasMatch(text)) return name;
+    }
+    return null;
+  }
+
+  /// Bug #1745: the engine-purity gate over the declarations the ENGINE
+  /// plan renders but no behavior row carries — the `## Layer Contracts`
+  /// signatures and the `### Key Entities` fields. Both land in
+  /// `04-ENGINE.md` verbatim, so both are the engine lane's purity
+  /// boundary.
+  ///
+  /// Two rules, each naming the offending declaration the way the
+  /// existing noFlutter guard does:
+  ///
+  /// 1. A Key Entity field or a Layer Contract signature naming a Flutter
+  ///    type refuses.
+  /// 2. A contract derived from the `**Presentation**` layer does NOT
+  ///    default to CORE. The presentation surface is the SKIN lane's, and
+  ///    the SKIN plan renders no contract section, so the silent default
+  ///    emitted a presentation artifact into the engine lane — inverting
+  ///    the dependency the split exists to create (the engine lane's green
+  ///    came to depend on a skin artifact that may not exist yet). The
+  ///    author's explicit CORE declaration in `## Lanes` is honored:
+  ///    declarations win, gaps refuse — never a silent default.
+  ///
+  /// Non-empty refuses the plan before any artifact is written.
+  List<String> _enginePurityRefusals({
+    required List<SpecEntity> entities,
+    required List<LayerContract> layerContracts,
+    required List<Behavior> contractBehaviors,
+    required Set<String> declaredLaneIds,
+  }) {
+    final refusals = <String>[];
+    for (final entity in entities) {
+      for (final field in entity.fields) {
+        final type = _flutterTypeIn(field.type);
+        if (type == null) continue;
+        refusals.add(
+          'noFlutter guard: entity "${entity.name}" declares the Flutter '
+          'type "$type" (field "${field.name}: ${field.type}") — the '
+          'engine plan (04-ENGINE.md) is pure Dart, and the Key Entities '
+          'table renders into it. --> fix: drop the Flutter type from the '
+          'entity fields (the widget surface belongs to the SKIN lane).',
+        );
+      }
+    }
+    final layerOfInterface = {
+      for (final contract in layerContracts)
+        contract.interfaceName: contract.layer,
+    };
+    final signatureOfMethod = {
+      for (final contract in layerContracts)
+        for (final method in contract.methods)
+          if (_methodNameOf(method).isNotEmpty)
+            '${contract.interfaceName}.${_methodNameOf(method)}': method,
+    };
+    for (final behavior in contractBehaviors) {
+      final iface = behavior.sourceCriterion.split('.').first;
+      final layer = layerOfInterface[iface] ?? '';
+      final signature = signatureOfMethod[behavior.sourceCriterion];
+      final type = _flutterTypeIn('$iface ${signature ?? ''}');
+      if (type != null) {
+        refusals.add(
+          'noFlutter guard: behavior "${behavior.id}" '
+          '(${behavior.sourceCriterion}) is derived from the '
+          '`## Layer Contracts` ${layer.isEmpty ? '' : '`$layer` '}'
+          'declaration "${signature ?? iface}" and declares the Flutter '
+          'type "$type" — the contract row renders into the engine plan '
+          '(04-ENGINE.md), which is pure Dart. --> fix: drop the Flutter '
+          'type from the declared contract signature.',
+        );
+        continue;
+      }
+      if (layer.toLowerCase().contains('presentation') &&
+          !declaredLaneIds.contains(behavior.id)) {
+        refusals.add(
+          'noFlutter guard: behavior "${behavior.id}" '
+          '(${behavior.sourceCriterion}) is derived from the '
+          '`**Presentation**` layer contract "$iface" — a Presentation '
+          'contract declares the SKIN surface, and the SKIN plan renders '
+          'no contract section, so defaulting it to the CORE lane emits a '
+          'presentation artifact into the engine lane (bug #1745). '
+          '--> fix: declare "${behavior.id}" in the CORE lane row of '
+          '`## Lanes` when the contract is pure Dart (the engine lane '
+          'renders it), or drop the `**Presentation**` declaration.',
+        );
+      }
+    }
+    return refusals;
+  }
+
+  _LaneResult _resolveLanes(
+    List<LaneDeclaration> lanes,
+    List<Behavior> expressible,
+    List<BehaviorRow> preservedFfi,
+    Set<String> goldenIds, {
+    Set<String> declaredBehaviorIds = const {},
+    List<Behavior> contractBehaviors = const [],
+  }) {
+    final classification = <String, Lane>{};
+    final annotations = <String, String>{};
+    final refusals = <String>[];
+    // The spec-derived behavior ids (plus preserved ffi rows and the
+    // ids derived as contract behaviors) — the ids the derivation
+    // algorithm produced. A SKIN declaration naming one of these is a
+    // ROUTING declaration (the example spec's `W1, A3..A7` form) and
+    // keeps the derived id's grammar; only the hand-declared W-slot
+    // tokens go through the strict author contract below.
+    final derivedIds = {
+      ...expressible.map((b) => b.id),
+      ...preservedFfi.map((r) => r.id),
+      // Issue #1419: ids already derived as contract behaviors are
+      // consulted BEFORE the hand-row fallthrough — a `contract:A<n>`
+      // declaration in `## Lanes` joins the derived behavior (the
+      // derived description, the `Interface.method` trace, the contract
+      // kind, and the reconciled BLOCKED-capable state) instead of
+      // clobbering it with the anonymous lane-reservation row.
+      ...contractBehaviors.map((b) => b.id),
+    };
+
+    // Unknown lane names: the grammar is CORE/SKIN/BOTH.
+    for (final lane in lanes) {
+      final parsed = Lane.parse(lane.lane);
+      if (parsed == null) {
+        refusals.add(
+          'lane "${lane.lane}" is not a known lane '
+          '(CORE, SKIN, BOTH).',
+        );
+        continue;
+      }
+      for (final token in lane.behaviorIds) {
+        // Issue #1405: the skin plan author emits ids STRICTLY matching
+        // `^W\d+$` — prose in the behavior column only, no truncated
+        // mid-sentence ids. A hand-declared SKIN token contaminated by
+        // leaked sentence prose (a sentence split mid-fragment at a
+        // comma leaves `W1 (renders the login screen pixel-perfect`)
+        // is sanitized: the strict W-id is emitted and the prose
+        // remainder rides the behavior column via the annotation map. A
+        // token with no W-behavior at all (`Sign In header and
+        // subtitle`) is refused by the plan validator — the malformed
+        // outer-loop table is never ingested, at plan time, never at
+        // gen/run time. Derived-behavior routing declarations and the
+        // CORE/BOTH lanes pass through untouched (the documented
+        // `A3 (acceptance: ...)` form is the derivation's own).
+        var id = token;
+        if (parsed == Lane.skin && !derivedIds.contains(token)) {
+          final sanitized = SkinPlanAuthor.sanitizeDeclaredSkinToken(token);
+          if (sanitized == null) {
+            refusals.addAll(SkinPlanAuthor.validateSkinPlanWIds([token]));
+            continue;
+          }
+          id = sanitized.id;
+          if (sanitized.prose.isNotEmpty) annotations[id] = sanitized.prose;
+        }
+        // A later declaration for the same id wins (the last word is
+        // the author's current intent).
+        classification[id] = parsed;
+        final note = lane.annotations[id];
+        if (note != null) annotations[id] = note;
+      }
+    }
+
+    // Undeclared derived behaviors: declarations win, gaps refuse —
+    // never a silent default.
+    final declaredHandIds = classification.keys.toSet();
+
+    // Bug #1261: the golden gate is a SKIN-lane, widget-only surface.
+    // Drift refuses at plan time — the same fail-fast the noFlutter
+    // guard applies to the engine boundary (declarations win, inert
+    // declarations are never silently carried).
+    final derivedKinds = {for (final b in expressible) b.id: b.kind};
+    final handGoldenIds = {
+      for (final g in goldenIds)
+        SkinPlanAuthor.sanitizeDeclaredSkinToken(g)?.id ?? g,
+    };
+    for (final lane in lanes) {
+      final parsed = Lane.parse(lane.lane);
+      if (parsed == null || lane.goldenIds.isEmpty) continue;
+      if (parsed != Lane.skin) {
+        refusals.add(
+          'lane ${parsed.label} declares golden: '
+          '[${lane.goldenIds.join(', ')}] — the golden gate is a SKIN '
+          'lane declaration (a golden hook in an engine-side test is '
+          'nonsense). --> fix: move the `golden:` declaration to the '
+          'SKIN lane row.',
+        );
+        continue;
+      }
+      final undeclared = lane.goldenIds
+          .where((id) => !lane.behaviorIds.contains(id))
+          .toList();
+      if (undeclared.isNotEmpty) {
+        refusals.add(
+          'golden drift: the SKIN lane declares golden: '
+          '[${undeclared.join(', ')}] but those ids are not in the '
+          'lane\'s `behaviors:` list. --> fix: name only behaviors the '
+          'SKIN lane declares, or use `golden: true`.',
+        );
+      }
+      for (final id in lane.goldenIds) {
+        // A hand-declared id (no derived kind) is widget-kind by
+        // construction (SKIN hand rows render the widget section).
+        final kind = derivedKinds[id];
+        if (kind != null && kind != BehaviorKind.widget) {
+          refusals.add(
+            'golden: "$id" is ${kind.name}-kind — the golden gate is '
+            'widget-only (bug #830: a golden hook in a plain-function '
+            'test is nonsense). --> fix: declare `golden:` only for '
+            'widget-kind behaviors (use the list form `golden: [W1, '
+            'W2]` when the lane mixes kinds).',
+          );
+        }
+      }
+    }
+
+    for (final b in expressible) {
+      final lane = classification[b.id];
+      if (lane == null) {
+        refusals.add(
+          'behavior "${b.id}" (${b.sourceCriterion}: '
+          '"${b.description}") is declared in NO lane — every '
+          'spec-derived behavior must appear in a `behaviors:` list.',
+        );
+        continue;
+      }
+      // Issue #1432: a kind no section of the destination lane plan
+      // renders would be dropped from the split artifacts while the route
+      // log claims its lane — the silent-drop class. Refuse (the gate
+      // below exits 2 writing no artifacts) instead. Home sets mirror the
+      // section filters in lane_split.dart's renderers; contract rows are
+      // not in this loop's behavior set — they are derived from `##
+      // Layer Contracts` and counted by the contract block below
+      // (issue #1419), CORE by default.
+      final engineWithoutHome =
+          lane.destinedForEngine && !_engineLaneKinds.contains(b.kind);
+      final skinWithoutHome =
+          lane.destinedForSkin && !_skinLaneKinds.contains(b.kind);
+      if (engineWithoutHome || skinWithoutHome) {
+        final destinations = [
+          if (engineWithoutHome) 'engine',
+          if (skinWithoutHome) 'skin',
+        ].join(' and ');
+        refusals.add(
+          'behavior "${b.id}" (${b.sourceCriterion}) is '
+          '${b.kind.name}-kind, which no section of the $destinations '
+          'lane plan renders — the row would be dropped from the split '
+          'plan while the route log claims it (issue #1432). '
+          '--> fix: declare a rendered **Type** for the scenario '
+          '(acceptance, widget, or unit) or move the behavior to a lane '
+          'that renders it.',
+        );
+        continue;
+      }
+      // noFlutter guard (issue #1000): a behavior destined for the
+      // ENGINE plan may not reference Flutter — its row text lands in
+      // 04-ENGINE.md, which is pure Dart by construction.
+      final rowText = '${b.description} ${b.sourceCriterion}';
+      if (lane.destinedForEngine && rowText.contains(_flutterReference)) {
+        refusals.add(
+          'noFlutter guard: behavior "${b.id}" (${b.sourceCriterion}) is '
+          'lane ${lane.label} but references $_flutterReference — the '
+          'engine lane is pure Dart. --> fix: move the behavior to the '
+          'SKIN lane or drop the Flutter reference.',
+        );
+      }
+      // A Flutter-only subject kind cannot be CORE: its gen pair
+      // (testWidgets + view builder) imports Flutter.
+      if (lane == Lane.core &&
+          (b.kind == BehaviorKind.widget || b.kind == BehaviorKind.theme)) {
+        // Issue #1318: a CLASSIFIER-routed kind is a prose guess, so the
+        // remedy LEADS with the marker (pre-#1318 it was buried as the
+        // third option). A DECLARED kind is the author's word — the
+        // marker remedy would second-guess an explicit declaration, so
+        // the lane-move remedy stands byte-for-byte.
+        final classifierRouted = !declaredBehaviorIds.contains(b.id);
+        refusals.add(
+          classifierRouted
+              ? 'noFlutter guard: behavior "${b.id}" '
+                    '(${b.sourceCriterion}) is routed ${b.kind.name}-kind '
+                    '(a Flutter-only subject whose gen pair imports '
+                    'Flutter) but declared CORE. --> fix: add **Type**: '
+                    'acceptance to the scenario (classifier guess, not a '
+                    'declaration).'
+              : 'noFlutter guard: behavior "${b.id}" '
+                    '(${b.sourceCriterion}) is routed ${b.kind.name}-kind '
+                    '(a Flutter-only subject whose gen pair imports '
+                    'Flutter) but declared CORE. --> fix: declare it SKIN '
+                    '(or BOTH), or add `**Type**: acceptance` to the '
+                    'scenario.',
+        );
+      }
+      // Issue #1864: an acceptance behavior declared in the CORE lane
+      // whose prose names a presentation verb (draws / renders /
+      // displays / shows / paints) or a widget-surface noun (field /
+      // placeholder / prompt / layout / screen / view / widget) is a
+      // mislane — the engine lane is pure Dart by construction. The
+      // noFlutter guard previously covered only the unit lane (widget /
+      // theme kind + Flutter identifiers); an explicit `**Type**:
+      // acceptance` marker bypassed the classifier and slipped through.
+      if (lane == Lane.core &&
+          b.kind == BehaviorKind.acceptance &&
+          SpecParser.isPresentationMislane(b.description)) {
+        refusals.add(
+          'noFlutter guard: behavior "${b.id}" '
+          '(${b.sourceCriterion}) is a mislane: an acceptance '
+          'behavior declared in the CORE lane whose assertion text '
+          'names a presentation verb or widget-surface noun '
+          '(${b.description}) — the engine lane is pure Dart. '
+          '--> fix: move the behavior to the SKIN lane, or reword '
+          'the scenario to a controller/provider outcome.',
+        );
+      }
+    }
+
+    // Ffi rows default engine-side (the native boundary is engine
+    // territory) unless a lane declares otherwise.
+    for (final row in preservedFfi) {
+      classification.putIfAbsent(row.id, () => Lane.core);
+    }
+
+    // Issue #1419: the derived contract behaviors count into the lane
+    // contract. CORE by default (spec 1007: a contract test is pure
+    // Dart, so it rides the engine); a CORE declaration in `## Lanes`
+    // joins the derived behavior. A non-engine declaration REFUSES —
+    // the SKIN plan renders no contract section, so honoring it would
+    // drop the row from the split artifacts again (the silent-drop
+    // class this fix closes). The engine purity guard applies too: the
+    // contract rows land in 04-ENGINE.md, which is pure Dart by
+    // construction.
+    for (final b in contractBehaviors) {
+      final declared = classification[b.id];
+      if (declared != null && declared != Lane.core) {
+        refusals.add(
+          'lane contract: behavior "${b.id}" (${b.sourceCriterion}) is '
+          'derived from the `## Layer Contracts` section — a contract '
+          'test is pure Dart and rides the ENGINE lane (spec 1007); '
+          'lane ${declared.label} renders no contract section, so the '
+          'row would be dropped from the split plan. '
+          '--> fix: move "${b.id}" to the CORE lane row (contract '
+          'behaviors are engine-side by default — dropping the '
+          'declaration works too).',
+        );
+        continue;
+      }
+      classification.putIfAbsent(b.id, () => Lane.core);
+      final rowText = '${b.description} ${b.sourceCriterion}';
+      if (rowText.contains(_flutterReference)) {
+        refusals.add(
+          'noFlutter guard: behavior "${b.id}" (${b.sourceCriterion}) is '
+          'derived from the `## Layer Contracts` section and rides the '
+          'ENGINE lane, but references $_flutterReference — the engine '
+          'lane is pure Dart. --> fix: drop the $_flutterReference '
+          'reference from the declared contract signature.',
+        );
+      }
+    }
+
+    // Hand rows: ids the declarations carry but neither the spec prose
+    // nor the prior list derives — the lane's own reservation (the
+    // `W1-W4` skin slots), described by the lane annotation when the
+    // author wrote one.
+    final handRows = <LaneRow>[];
+    for (final id in declaredHandIds.difference(derivedIds).toList()..sort()) {
+      final lane = classification[id]!;
+      final note = annotations[id];
+      handRows.add(
+        LaneRow(
+          id: id,
+          description: note == null || note.isEmpty
+              ? '${lane.label.toLowerCase()} behavior declared in '
+                    '`## Lanes`'
+              : note,
+          traces: 'LANE:${lane.label}',
+          state: 'PENDING',
+          // Hand rows take the lane's natural section: SKIN/BOTH hand
+          // rows are widget-kind skin slots; CORE hand rows are
+          // engine units; (a BOTH hand row renders under the widget
+          // section — the seam's skin half is the visible half).
+          kind: lane == Lane.core ? BehaviorKind.unit : BehaviorKind.widget,
+          lane: lane,
+          // Bug #1261: a SKIN lane's golden declaration rides the hand
+          // row too (hand SKIN rows are widget-kind by construction).
+          golden: handGoldenIds.contains(id) && lane != Lane.core,
+        ),
+      );
+      classification[id] = lane;
+    }
+
+    return _LaneResult(
+      classification: classification,
+      handRows: handRows,
+      refusals: refusals,
+    );
+  }
+
+  /// Issue #1309: the split receipt JSON at [receiptFile], or null when
+  /// the file carries no parseable JSON object. Callers track existence
+  /// independently so a corrupt receipt still selects split recovery.
+  static Future<Map<String, dynamic>?> _readSplitReceipt(
+    File receiptFile,
+  ) async {
+    try {
+      final decoded = jsonDecode(await receiptFile.readAsString());
+      return decoded is Map<String, dynamic> ? decoded : null;
+    } on FormatException catch (_) {
+      return null;
+    } on FileSystemException catch (_) {
+      return null;
+    }
+  }
+
+  /// Issue #1309: whether the spec changed since the split receipt was
+  /// written. The recorded `spec_hash` is authoritative (content, not
+  /// timestamps); a legacy receipt — written before #1309 added the
+  /// hash fields — falls back to the spec mtime vs the receipt's
+  /// `split_at` timestamp, then to the receipt file's own mtime. When
+  /// no signal is available the receipt is treated as fresh (fail
+  /// closed: the legacy path's meta-index demotion is exactly the
+  /// behavior this detection exists to prevent).
+  static Future<bool> _splitReceiptIsStale({
+    required Map<String, dynamic>? receipt,
+    required File receiptFile,
+    required File specFile,
+    required String specMd,
+  }) async {
+    final currentHash = sha256.convert(utf8.encode(specMd)).toString();
+    final receiptHash = receipt?['spec_hash'];
+    if (receiptHash is String && receiptHash.isNotEmpty) {
+      return receiptHash != currentHash;
+    }
+    final specModified = await specFile.exists()
+        ? await specFile.lastModified()
+        : null;
+    if (specModified == null) return false;
+    final splitAt = DateTime.tryParse('${receipt?['split_at'] ?? ''}');
+    if (splitAt != null) {
+      return specModified.isAfter(splitAt.toUtc());
+    }
+    try {
+      return specModified.isAfter((await receiptFile.lastModified()).toUtc());
+    } on FileSystemException {
+      return false;
+    }
+  }
+
+  /// Issue #1309: the split kind heuristic — the SAME rule
+  /// `SplitCommand._heuristic` applies — over the CURRENT spec
+  /// derivation: widget/theme rows are SKIN (their gen pair imports
+  /// Flutter), everything else CORE; the preserved ffi rows are
+  /// engine-side (the native boundary is engine territory) and the
+  /// derived contract behaviors are engine-side too (issue #1419 —
+  /// spec 1007: a contract test is pure Dart). No hand rows and no
+  /// refusals: with no `## Lanes` declarations there is nothing
+  /// hand-reserved and nothing to refuse.
+  _LaneResult _heuristicLaneResolution(
+    List<Behavior> expressible,
+    List<BehaviorRow> preservedFfi,
+    List<Behavior> contractBehaviors,
+  ) {
+    final classification = <String, Lane>{
+      for (final b in expressible)
+        b.id: b.kind == BehaviorKind.widget || b.kind == BehaviorKind.theme
+            ? Lane.skin
+            : Lane.core,
+      for (final row in preservedFfi) row.id: Lane.core,
+      // Issue #1419: the derived contract behaviors count into the
+      // heuristic classification too — the stale-split regeneration
+      // writes the same engine-side contract rows the Lanes path does.
+      for (final b in contractBehaviors) b.id: Lane.core,
+    };
+    // Issue #1864 (receipt path): the same presentation-mislane guard
+    // that _resolveLanes applies must also fire when a split receipt
+    // routes an explicitly acceptance-kind scenario to CORE via the
+    // kind heuristic — otherwise the guard is bypassed and the
+    // assertion slips into 04-ENGINE.md.
+    final refusals = <String>[];
+    for (final b in expressible) {
+      final lane = classification[b.id];
+      if (lane == Lane.core &&
+          b.kind == BehaviorKind.acceptance &&
+          SpecParser.isPresentationMislane(b.description)) {
+        refusals.add(
+          'noFlutter guard: behavior "${b.id}" '
+          '(${b.sourceCriterion}) is a mislane: an acceptance '
+          'behavior routed to the CORE lane (via the split-receipt '
+          'heuristic) whose assertion text names a presentation verb '
+          'or widget-surface noun (${b.description}) — the engine lane '
+          'is pure Dart. --> fix: move the behavior to the SKIN lane, '
+          'or reword the scenario to a controller/provider outcome.',
+        );
+      }
+    }
+    return _LaneResult(
+      classification: classification,
+      handRows: const [],
+      refusals: refusals,
+    );
+  }
+
+  /// Issue #1320: resolve each trace token to its method-qualified form
+  /// (`Row.method`) before the writers render the traces cell.
+  ///
+  /// - A token that already carries a method (`Row.method`) or names no
+  ///   declared row passes through verbatim — the gen-time resolver
+  ///   validates dangling method names with its own refusal.
+  /// - A row with exactly ONE declared signature resolves directly.
+  /// - A row with several signatures resolves by FR-prose verb match
+  ///   (the method name appears as a word in the behavior description —
+  ///   the same word-match the legacy classifier uses); several or zero
+  ///   prose matches throw [StateError] — the caller refuses the plan
+  ///   (errors-are-an-API, the #920 wrong-signature class).
+  /// - A row with no declared signatures (entity/field rows) passes
+  ///   through row-only: there is nothing to qualify and the declared
+  ///   surface rides the entity pipeline, not the signature path.
+  List<String> _qualifiedTraces({
+    required List<String> tokens,
+    required String description,
+    required String criterion,
+    required String behaviorId,
+    required Map<String, ContractRowDecl> contractRows,
+  }) {
+    final qualified = <String>[];
+    for (final token in tokens) {
+      if (token.contains('.') || !contractRows.containsKey(token)) {
+        qualified.add(token);
+        continue;
+      }
+      final row = contractRows[token]!;
+      final names = <String>[];
+      void addName(String name) {
+        if (!names.contains(name)) names.add(name);
+      }
+
+      for (final s in row.signatures) {
+        addName(s.name);
+      }
+      for (final raw in row.rawSignatures) {
+        try {
+          addName(Signature.parse(raw).name);
+        } on FormatException {
+          // A malformed signature refuses at gen (the resolver names the
+          // row and the offending text); plan keeps the raw token so the
+          // refusal lands where the signature is consumed.
+        }
+      }
+      if (names.length == 1) {
+        qualified.add('$token.${names.first}');
+        continue;
+      }
+      if (names.isEmpty) {
+        qualified.add(token);
+        continue;
+      }
+      final matches = [
+        for (final n in names)
+          if (RegExp('\\b${RegExp.escape(n)}\\b').hasMatch(description)) n,
+      ];
+      if (matches.length == 1) {
+        qualified.add('$token.${matches.first}');
+        continue;
+      }
+      final proseState = matches.isEmpty
+          ? 'the FR prose matches none of them'
+          : 'the FR prose matches several of them';
+      final suggested = matches.isEmpty ? '<method>' : matches.first;
+      throw StateError(
+        'behavior "$behaviorId" ($criterion) traces contract row '
+        '"$token" which declares ${names.length} methods '
+        '(${names.join(', ')}) — $proseState, so the declared signature '
+        'is ambiguous.\n'
+        '   --> fix: qualify the trace — traces: $token.$suggested — or '
+        'hand-edit the lane plan traces cell to "$criterion, '
+        '$token.$suggested", then re-run zfa tdd plan.',
+      );
+    }
+    return qualified;
+  }
+
+  /// Issue #1310: the full trace set for a behavior row's traces cell
+  /// — the criterion id first, then the behavior's resolved
+  /// contract-row names (`frTraces[currentId]`), comma-separated. A
+  /// token equal to the criterion id is dropped (no self-duplicates),
+  /// and a behavior with no resolved names keeps the criterion-only
+  /// cell — the pre-#1310 shape, the fallback path acceptance
+  /// criterion 4 pins. The shape is exactly what TestListReader reads
+  /// positionally and what RoutingResolver / make tokenize via
+  /// SpecParser.traceTokens (`FR-001, Formatter.format`).
+  String _tracesCell(Behavior b, Map<String, List<String>> contractTraces) {
+    final names = contractTraces[b.id] ?? const <String>[];
+    final extra = names.where((t) => t.trim() != b.sourceCriterion).toList();
+    if (extra.isEmpty) return b.sourceCriterion;
+    return '${b.sourceCriterion}, ${extra.join(', ')}';
+  }
+
+  /// Issue #1401: escape pipe characters so free-text FR/AC prose can
+  /// never change a table row's column count. GFM treats `\|` inside a
+  /// cell as a literal pipe, and the run-side row reader
+  /// (TestListReader) already splits on UNESCAPED pipes and unescapes —
+  /// so the escaped form round-trips and plan/run agree on the table
+  /// format for ALL spec prose. Backslashes are deliberately NOT
+  /// re-escaped: the readers' contract treats `\|` as the only
+  /// cell-level escape, and a lone `\` followed by any non-pipe
+  /// character survives both directions unchanged.
+  static String _escapeCell(String text) => text.replaceAll('|', r'\|');
+
+  /// Issue #1401: split a table row's cells on UNESCAPED pipes and
+  /// unescape `\|` back to a literal pipe — the exact contract the
+  /// run-side reader (TestListReader) applies. Plan's meta-index
+  /// reconcile used a naive `split('|')`, so a list plan wrote
+  /// containing escaped piped prose mis-split here even though run
+  /// parsed it fine: writer and this reader disagreed on the file plan
+  /// itself had produced (the worst of both — plan emitting a file its
+  /// own re-plan leg refuses).
+  static List<String> _splitRowUnescapingPipes(String line) {
+    final cells = <String>[];
+    final buf = StringBuffer();
+    for (var i = 0; i < line.length; i++) {
+      final ch = line[i];
+      if (ch == r'\' && i + 1 < line.length && line[i + 1] == '|') {
+        buf.write('|');
+        i++;
+      } else if (ch == '|') {
+        cells.add(buf.toString());
+        buf.clear();
+      } else {
+        buf.write(ch);
+      }
+    }
+    cells.add(buf.toString());
+    return cells;
+  }
+
+  /// The engine/skin plan row pair for a spec-derived behavior (issue
+  /// #1000): CORE rows carry the persistence mark exactly like the
+  /// legacy single-file plan; BOTH rows appear in both files (the
+  /// reader dedupes by id, engine copy first).
+  List<LaneRow> _derivedLaneRows(
+    Behavior b,
+    _LaneResult laneResult,
+    Map<String, PersistenceDeclaration> persistenceDeclarations,
+    Set<String> goldenIds,
+    Map<String, List<String>> contractTraces,
+  ) {
+    final lane = laneResult.classification[b.id];
+    if (lane == null) return const [];
+    return [
+      LaneRow(
+        id: b.id,
+        description: _marked(b, persistenceDeclarations),
+        // Issue #1310: the full trace set — criterion id + the resolved
+        // contract-row names — so the lane plan carries the same shape
+        // the test list does and the declared-signature path is
+        // reachable from the split files too.
+        traces: _tracesCell(b, contractTraces),
+        state: 'PENDING',
+        kind: b.kind,
+        lane: lane,
+        // Bug #1261: a SKIN lane's golden declaration marks the row —
+        // the ` [golden]` tag gen reads. The gate is widget-only; the
+        // non-widget drift already refused above.
+        golden: goldenIds.contains(b.id) && b.kind == BehaviorKind.widget,
+      ),
+    ];
+  }
+
+  /// The preserved ffi rows as lane rows (default CORE — the native
+  /// boundary is engine territory).
+  List<LaneRow> _ffiLaneRows(
+    List<BehaviorRow> preservedFfi,
+    _LaneResult laneResult,
+  ) => [
+    for (final row in preservedFfi)
+      LaneRow(
+        id: row.id,
+        description: row.description,
+        traces: row.traces,
+        state: row.state.name.toUpperCase(),
+        kind: row.kind,
+        lane: laneResult.classification[row.id] ?? Lane.core,
+      ),
+  ];
+
+  /// Issue #1419: the derived contract behaviors as lane rows — the
+  /// description, the `Interface.method` trace, the contract kind, and
+  /// the reconciled (BLOCKED-capable) state match the legacy
+  /// single-file path's contract-loop rows byte for byte. The lane is
+  /// the resolver's classification (CORE by default — the resolver
+  /// refuses non-engine declarations, so the rows are engine-destined).
+  List<LaneRow> _contractLaneRows(
+    List<Behavior> contractBehaviors,
+    _LaneResult laneResult,
+  ) => [
+    for (final b in contractBehaviors)
+      LaneRow(
+        id: b.id,
+        description: b.description,
+        traces: b.sourceCriterion,
+        state: b.state.name.toUpperCase(),
+        kind: b.kind,
+        lane: laneResult.classification[b.id] ?? Lane.core,
+      ),
+  ];
+}
+
+/// The plan-time lane resolution (issue #1000) — see
+/// [PlanCommand._resolveLanes].
+class _LaneResult {
+  const _LaneResult({
+    required this.classification,
+    required this.handRows,
+    required this.refusals,
+  });
+
+  /// Every behavior id -> its lane (derived + ffi + hand rows).
+  final Map<String, Lane> classification;
+
+  /// The hand-declared lane rows (ids the `## Lanes` section reserves
+  /// that the spec prose does not derive).
+  final List<LaneRow> handRows;
+
+  /// The lane contract violations (unknown lane, undeclared behavior,
+  /// noFlutter) — non-empty refuses the plan (exit 2, no artifacts).
+  final List<String> refusals;
+}

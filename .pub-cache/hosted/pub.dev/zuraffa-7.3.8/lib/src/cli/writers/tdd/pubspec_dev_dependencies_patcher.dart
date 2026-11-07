@@ -1,0 +1,278 @@
+/// `PubspecDevDependenciesPatcher` — merges the testing `dev_dependencies`
+/// into a generated project's `pubspec.yaml`.
+library;
+
+import 'dart:io';
+
+import 'package:yaml/yaml.dart';
+
+class PubspecDevDependenciesPatcher {
+  const PubspecDevDependenciesPatcher({
+    this.isFlutter,
+    this.includeMutationTest = false,
+  });
+
+  /// Issue #1370: null (the default) means DETECT — the pubspec carries
+  /// the answer (`dependencies.flutter: sdk: flutter`), so a caller that
+  /// forgets the flag can no longer stamp the wrong baseline onto a
+  /// project. An explicit value keeps the override semantics for callers
+  /// that know better.
+  final bool? isFlutter;
+
+  /// Issue #1653: whether the testing baseline includes `mutation_test`.
+  /// DEFAULT FALSE — `mutation_test` is an analyzer-versioned package with
+  /// a large transitive graph; injecting it unconditionally deferred a
+  /// multi-minute cold cost (dependency download/resolution plus first
+  /// analysis over the enlarged package config) into the first
+  /// analyze-class pass on every fresh project (the 8m32s zcalc probe).
+  /// It is now OPT-IN via `zfa tdd init --mutation` — mutation testing is
+  /// the `tdd verify` lane's tool, and a project mid-migration must not
+  /// pay for it in every analyze/fix/test compile when it never runs
+  /// verify. The static maps below KEEP the `mutation_test` entries: the
+  /// bug #755 pin contract (^1.8.0 matching the MutationVerifier) is
+  /// unchanged — only the default-injected set is filtered.
+  final bool includeMutationTest;
+
+  // Bug #716: the generated test templates (tdd behavior tests, package
+  // scaffold tests) import `package:test/test.dart`, which `flutter_test`
+  // does NOT provide — `flutter_test` wraps test_api/matcher, not the
+  // `test` runner package. Without an explicit `test` dependency, fresh
+  // Flutter projects could not compile their generated tests.
+  //
+  // Issue #1370 (supersedes the #716 reasoning above): NO published
+  // `test` version resolves in the Flutter consumer graph — zuraffa's
+  // graphql dependency pulls web_socket_channel ^3.0.1, which conflicts
+  // with every `test` release compatible with flutter_test's pins (the
+  // same #1189 conflict class, and #1189's own fix document). The gen
+  // side (issue #1351) emits `package:flutter_test/flutter_test.dart`
+  // imports on Flutter hosts — flutter_test re-exports the same
+  // group/test/expect API — so the baseline no longer prescribes plain
+  // `test` to Flutter projects.
+  //
+  // Bug #755: `mutation_test` was pinned at `^1.0.0`, but the toolchain's
+  // own MutationVerifier (lib/src/plugins/tdd/services/mutation_verifier
+  // .dart:235,255) parses v1.8.0+ reports — the generated baseline was
+  // internally inconsistent out of the box. Bumped to `^1.8.0` so the
+  // pin matches the verifier. `coverage` bumped to `^1.15.1` (current
+  // latest per pub.dev at merge time). `mocktail` dropped: generated
+  // test templates use zuraffa's native mocks (lib/src/mock/mock.dart,
+  // test_builder_entity.dart:6) and never import `package:mocktail`,
+  // so the dev dep was unused bloat.
+  static const Map<String, String> flutterDevDependencies = {
+    'flutter_test': 'sdk: flutter',
+    'build_runner': '^2.4.0',
+    'json_serializable': '^6.7.0',
+    'coverage': '^1.15.1',
+    'mutation_test': '^1.8.0',
+  };
+
+  static const Map<String, String> dartDevDependencies = {
+    'test': '^1.25.0',
+    'build_runner': '^2.4.0',
+    'json_serializable': '^6.7.0',
+    'coverage': '^1.15.1',
+    'mutation_test': '^1.8.0',
+  };
+
+  /// The injected set for [resolvedIsFlutter]: the canonical map filtered
+  /// by the #1653 opt-in — `mutation_test` rides only when
+  /// [includeMutationTest] is true. `coverage` stays unconditional (a
+  /// small pure-Dart dep the coverage lane consumes; the issue indicts
+  /// mutation_test's analyzer-versioned graph, not coverage).
+  Map<String, String> _wantedSet(bool resolvedIsFlutter) {
+    final base = resolvedIsFlutter
+        ? flutterDevDependencies
+        : dartDevDependencies;
+    if (includeMutationTest) return base;
+    return Map<String, String>.from(base)..remove('mutation_test');
+  }
+
+  String _renderEntry(String name, String value) {
+    if (value.contains(':') && !value.startsWith('"')) {
+      return '$name:\n  $value';
+    }
+    return '$name: $value';
+  }
+
+  String _indentEntry(String entry) {
+    return entry.split('\n').map((line) => '  $line').join('\n');
+  }
+
+  Future<List<String>> ensure(
+    String projectRoot, {
+    bool? isFlutterOverride,
+    bool dryRun = false,
+  }) async {
+    final file = File('$projectRoot/pubspec.yaml');
+
+    // In dry-run mode, report what would be added without touching disk.
+    // The pubspec.yaml may not exist (the project is being scaffolded and
+    // the dry-run is previewing what the TDD baseline writers would emit).
+    if (dryRun) {
+      if (!await file.exists()) {
+        return _wantedSet(
+          _resolveIsFlutter(isFlutterOverride ?? isFlutter, file),
+        ).keys.toList();
+      }
+      final raw = await file.readAsString();
+      final doc = loadYaml(raw);
+      final existing =
+          (doc is Map ? (doc['dev_dependencies'] as Map?) : null) ?? const {};
+      final wanted = _resolveIsFlutter(isFlutterOverride ?? isFlutter, file)
+          ? _wantedSet(true)
+          : _wantedSet(false);
+      final missing = wanted.keys
+          .where((pkg) => !existing.containsKey(pkg))
+          .toList();
+      if (missing.isNotEmpty) {
+        // Preview the SAME inline-mapping refusal the real pass throws
+        // below, instead of promising entries a real run would abort on
+        // (PR #1702 review).
+        _refuseInlineMapping(raw);
+      }
+      return missing;
+    }
+
+    if (!await file.exists()) {
+      throw StateError('pubspec.yaml not found at ${file.path}');
+    }
+    final raw = await file.readAsString();
+
+    dynamic doc;
+    try {
+      doc = loadYaml(raw);
+    } on YamlException catch (e) {
+      throw FormatException(
+        'pubspec.yaml at ${file.path} is not valid YAML: $e',
+      );
+    }
+    if (doc is! Map) {
+      throw FormatException(
+        'pubspec.yaml at ${file.path} did not parse to a Map',
+      );
+    }
+    final existing = (doc['dev_dependencies'] as Map?) ?? const {};
+
+    final wanted = _resolveIsFlutter(isFlutter, file)
+        ? _wantedSet(true)
+        : _wantedSet(false);
+    final missing = <String>[];
+    wanted.forEach((pkg, constraint) {
+      if (!existing.containsKey(pkg)) {
+        missing.add(_renderEntry(pkg, constraint));
+      }
+    });
+
+    if (missing.isEmpty || dryRun) {
+      return missing;
+    }
+
+    _refuseInlineMapping(raw);
+
+    final newContent = _patchTextually(raw, missing);
+    await file.writeAsString(newContent);
+    return missing;
+  }
+
+  /// The real pass — and, so the dry-run preview never promises what a
+  /// real run refuses, the dry-run too — refuses a non-empty inline flow
+  /// `dev_dependencies: {...}` mapping loudly instead of mangling it.
+  static void _refuseInlineMapping(String raw) {
+    if (RegExp(r'dev_dependencies:\s*\{[^\}]').hasMatch(raw)) {
+      throw UnsupportedError(
+        'Inline `dev_dependencies: {...}` mappings are not supported by '
+        'PubspecDevDependenciesPatcher; use a block-style `dev_dependencies:` '
+        'section instead.',
+      );
+    }
+  }
+
+  String _patchTextually(String raw, List<String> missing) {
+    final lines = raw.split('\n');
+    var devDepIdx = -1;
+    var endIdx = lines.length;
+    var inlineEmpty = false;
+
+    for (var i = 0; i < lines.length; i++) {
+      final line = lines[i];
+      final devDepMatch = RegExp(
+        r'^dev_dependencies:\s*(.*)$',
+      ).firstMatch(line);
+      if (devDepMatch != null) {
+        final rest = devDepMatch.group(1)!.trim();
+        if (rest.isEmpty || rest == '{}') {
+          devDepIdx = i;
+          inlineEmpty = rest == '{}';
+          continue;
+        }
+      }
+      if (devDepIdx >= 0 && !inlineEmpty) {
+        if (line.trim().isEmpty) {
+          continue;
+        }
+        final leadingMatch = RegExp(r'^(\s*)').firstMatch(line);
+        final leading = leadingMatch?.group(1) ?? '';
+        if (leading.length < 2 && !line.trimLeft().startsWith('#')) {
+          endIdx = i;
+          break;
+        }
+      }
+    }
+
+    final buf = StringBuffer();
+    if (devDepIdx < 0) {
+      buf
+        ..write(raw)
+        ..write(raw.endsWith('\n') ? '' : '\n')
+        ..writeln('dev_dependencies:');
+      for (final m in missing) {
+        buf.writeln(_indentEntry(m));
+      }
+      return buf.toString();
+    }
+
+    if (inlineEmpty) {
+      for (var i = 0; i < lines.length; i++) {
+        if (i == devDepIdx) {
+          buf.writeln('dev_dependencies:');
+          for (final m in missing) {
+            buf.writeln(_indentEntry(m));
+          }
+        } else {
+          buf.writeln(lines[i]);
+        }
+      }
+      return buf.toString();
+    }
+
+    for (var i = 0; i < lines.length; i++) {
+      if (i == endIdx) {
+        for (final m in missing) {
+          buf.writeln(_indentEntry(m));
+        }
+      }
+      buf.writeln(lines[i]);
+    }
+    if (endIdx >= lines.length) {
+      for (final m in missing) {
+        buf.writeln(_indentEntry(m));
+      }
+    }
+    return buf.toString();
+  }
+
+  /// Issue #1370: an explicit [flag] wins; otherwise detect from the
+  /// pubspec — a Flutter project declares `dependencies.flutter`.
+  static bool _resolveIsFlutter(bool? flag, File file) {
+    if (flag != null) return flag;
+    try {
+      final doc = loadYaml(file.readAsStringSync());
+      final dependencies =
+          (doc is Map ? (doc['dependencies'] as Map?) : null) ?? const {};
+      final flutter = dependencies['flutter'];
+      return flutter is Map && flutter['sdk'] != null;
+    } catch (_) {
+      return false;
+    }
+  }
+}

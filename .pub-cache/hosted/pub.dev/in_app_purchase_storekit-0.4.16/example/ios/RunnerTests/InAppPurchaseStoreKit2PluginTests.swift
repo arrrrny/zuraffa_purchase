@@ -1,0 +1,791 @@
+// Copyright 2013 The Flutter Authors
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+import StoreKitTest
+import XCTest
+
+@testable import in_app_purchase_storekit
+
+final class FakeIAP2Callback: InAppPurchase2CallbackAPIProtocol {
+
+  public var lastUpdate: [in_app_purchase_storekit.SK2TransactionMessage] = []
+  public var onUpdateExpectation: XCTestExpectation? {
+    didSet {
+      onUpdateExpectation?.assertForOverFulfill = false
+    }
+  }
+
+  func onTransactionsUpdated(
+    newTransactions newTransactionsArg: [in_app_purchase_storekit.SK2TransactionMessage],
+    completion: @escaping (Result<Void, in_app_purchase_storekit.PigeonError>) -> Void
+  ) {
+    lastUpdate = newTransactionsArg
+    // We should only write to a flutter channel from the main thread.
+    XCTAssertTrue(Thread.isMainThread)
+    onUpdateExpectation?.fulfill()
+    onUpdateExpectation = nil
+  }
+}
+
+@available(iOS 15.0, macOS 12.0, *)
+final class InAppPurchase2PluginTests: XCTestCase {
+  // StoreKit 2's storekitd awaits AMSEngagement over XPC on every purchase, which has an
+  // internal ~6-7.5s timeout when amsengagementd is cold-starting on a fresh simulator.
+  private let purchaseTimeout: TimeInterval = 60
+  private var session: SKTestSession!
+  private var plugin: InAppPurchasePlugin!
+  private var callback: FakeIAP2Callback!
+
+  override func setUp() async throws {
+    try await super.setUp()
+
+    session = try! SKTestSession(configurationFileNamed: "Configuration")
+    session.resetToDefaultState()
+    session.clearTransactions()
+    session.disableDialogs = true
+
+    callback = FakeIAP2Callback()
+    plugin = InAppPurchasePluginStub(receiptManager: FIAPReceiptManagerStub()) { request in
+      DefaultRequestHandler(requestHandler: FIAPRequestHandler(request: request))
+    }
+    plugin.transactionCallbackAPI = callback
+    try plugin.startListeningToTransactions()
+  }
+
+  override func tearDown() async throws {
+    try? plugin.stopListeningToTransactions()
+    plugin = nil
+    callback = nil
+    self.session.clearTransactions()
+    session.disableDialogs = false
+    session = nil
+    try await super.tearDown()
+  }
+
+  func testCanMakePayments() throws {
+    let result = try plugin.canMakePayments()
+    XCTAssertTrue(result)
+  }
+
+  func testGetProducts() async throws {
+    let expectation = self.expectation(description: "products successfully fetched")
+
+    var fetchedProductMsg: SK2ProductMessage?
+    plugin.products(identifiers: ["subscription_silver"]) { result in
+      switch result {
+      case .success(let productMessages):
+        fetchedProductMsg = productMessages.first
+        expectation.fulfill()
+      case .failure(let error):
+        XCTFail("Failed to fetch products: \(error.localizedDescription)")
+        expectation.fulfill()
+      }
+    }
+    await fulfillment(of: [expectation], timeout: purchaseTimeout)
+
+    let testProduct = try await Product.products(for: ["subscription_silver"]).first
+
+    let testProductMsg = testProduct?.convertToPigeon
+
+    XCTAssertNotNil(fetchedProductMsg)
+    XCTAssertEqual(testProductMsg, fetchedProductMsg)
+  }
+
+  func testGetTransactions() async throws {
+    let purchaseExpectation = self.expectation(description: "Purchase should succeed")
+    let purchaseUpdateExpectation = self.expectation(
+      description: "Purchase transaction update should be received")
+    let transactionExpectation = self.expectation(
+      description: "Getting transactions should succeed")
+
+    callback.onUpdateExpectation = purchaseUpdateExpectation
+    plugin.purchase(id: "consumable", options: nil) { result in
+      switch result {
+      case .success:
+        purchaseExpectation.fulfill()
+      case .failure(let error):
+        XCTFail("Purchase should NOT fail. Failed with \(error)")
+        purchaseExpectation.fulfill()
+        purchaseUpdateExpectation.fulfill()
+      }
+    }
+
+    await fulfillment(
+      of: [purchaseExpectation, purchaseUpdateExpectation], timeout: purchaseTimeout)
+
+    XCTAssert(callback.lastUpdate.count == 1)
+    XCTAssert(
+      callback.lastUpdate.first?.status != .restored,
+      "Ordinary purchase updates should not be marked as restoring")
+
+    plugin.transactions {
+      result in
+      switch result {
+      case .success(let transactions):
+        XCTAssert(transactions.count == 1)
+        XCTAssert(transactions.first?.status != .restored)
+        transactionExpectation.fulfill()
+      case .failure(let error):
+        XCTFail("Getting transactions should NOT fail. Failed with \(error)")
+        transactionExpectation.fulfill()
+      }
+    }
+    await fulfillment(of: [transactionExpectation], timeout: purchaseTimeout)
+  }
+
+  func testGetCurrentEntitlements() async throws {
+    let subscriptionExpectation = self.expectation(
+      description: "Subscription purchase should succeed")
+    let consumableExpectation = self.expectation(description: "Consumable purchase should succeed")
+    let entitlementsExpectation = self.expectation(
+      description: "Getting current entitlements should succeed")
+
+    plugin.purchase(id: "subscription_silver", options: nil) { result in
+      switch result {
+      case .success:
+        subscriptionExpectation.fulfill()
+      case .failure(let error):
+        XCTFail("Subscription purchase should NOT fail. Failed with \(error)")
+        subscriptionExpectation.fulfill()
+      }
+    }
+    await fulfillment(of: [subscriptionExpectation], timeout: purchaseTimeout)
+
+    plugin.purchase(id: "consumable", options: nil) { result in
+      switch result {
+      case .success:
+        consumableExpectation.fulfill()
+      case .failure(let error):
+        XCTFail("Consumable purchase should NOT fail. Failed with \(error)")
+        consumableExpectation.fulfill()
+      }
+    }
+    await fulfillment(of: [consumableExpectation], timeout: purchaseTimeout)
+
+    plugin.currentEntitlements { result in
+      switch result {
+      case .success(let transactions):
+        XCTAssertEqual(transactions.count, 1)
+        XCTAssertEqual(transactions.first?.productId, "subscription_silver")
+        XCTAssertNotNil(transactions.first?.receiptData)
+        XCTAssertEqual(transactions.first?.status, .purchased)
+        entitlementsExpectation.fulfill()
+      case .failure(let error):
+        XCTFail("Getting current entitlements should NOT fail. Failed with \(error)")
+        entitlementsExpectation.fulfill()
+      }
+    }
+    await fulfillment(of: [entitlementsExpectation], timeout: purchaseTimeout)
+  }
+
+  func testGetDiscountedProducts() async throws {
+    let expectation = self.expectation(description: "products successfully fetched")
+
+    var fetchedProductMsg: SK2ProductMessage?
+    plugin.products(identifiers: ["subscription_silver"]) { result in
+      switch result {
+      case .success(let productMessages):
+        fetchedProductMsg = productMessages.first
+        expectation.fulfill()
+      case .failure(let error):
+        XCTFail("Failed to fetch products: \(error.localizedDescription)")
+        expectation.fulfill()
+      }
+    }
+    await fulfillment(of: [expectation], timeout: purchaseTimeout)
+
+    let testProduct = try await Product.products(for: ["subscription_silver"]).first
+
+    let testProductMsg = testProduct?.convertToPigeon
+
+    XCTAssertNotNil(fetchedProductMsg)
+    XCTAssertEqual(testProductMsg, fetchedProductMsg)
+  }
+
+  func testGetInvalidProducts() async throws {
+    let expectation = self.expectation(description: "products successfully fetched")
+
+    var fetchedProductMsg: [SK2ProductMessage]?
+    plugin.products(identifiers: ["invalid_product"]) { result in
+      switch result {
+      case .success(let productMessages):
+        fetchedProductMsg = productMessages
+        expectation.fulfill()
+      case .failure:
+        XCTFail("Products should be successfully fetched")
+        expectation.fulfill()
+      }
+    }
+    await fulfillment(of: [expectation], timeout: purchaseTimeout)
+
+    XCTAssert(fetchedProductMsg?.count == 0)
+  }
+
+  func testGetTransactionJsonRepresentation() async throws {
+    let expectation = self.expectation(description: "Purchase request should succeed")
+
+    plugin.purchase(id: "consumable", options: nil) { result in
+      switch result {
+      case .success(_):
+        expectation.fulfill()
+      case .failure(let error):
+        XCTFail("Purchase should NOT fail. Failed with \(error)")
+        expectation.fulfill()
+      }
+    }
+
+    await fulfillment(of: [expectation], timeout: purchaseTimeout)
+
+    let transaction = await plugin.fetchTransaction(
+      by: UInt64(session.allTransactions()[0].originalTransactionIdentifier))
+
+    guard let transaction = transaction else {
+      XCTFail("Transaction does not exist.")
+      return
+    }
+
+    let jsonRepresentationString = String(decoding: transaction.jsonRepresentation, as: UTF8.self)
+
+    XCTAssert(jsonRepresentationString.localizedStandardContains("Type\":\"Consumable"))
+    XCTAssert(jsonRepresentationString.localizedStandardContains("storefront\":\"USA"))
+  }
+
+  func testSuccessfulPurchase() async throws {
+    let expectation = self.expectation(description: "Purchase request should succeed")
+    plugin.purchase(id: "consumable", options: nil) { result in
+      switch result {
+      case .success(let message):
+        XCTAssert(message == .success)
+        expectation.fulfill()
+      case .failure(let error):
+        XCTFail("Purchase should NOT fail. Failed with \(error)")
+        expectation.fulfill()
+      }
+    }
+    await fulfillment(of: [expectation], timeout: purchaseTimeout)
+  }
+
+  @available(iOS 17.0, macOS 14.0, *)
+  func testFailedProductUnavilablePurchase() async throws {
+    try await session.setSimulatedError(
+      .purchase(.productUnavailable), forAPI: .purchase)
+    let expectation = self.expectation(description: "Purchase request should succeed")
+    plugin.purchase(id: "consumable", options: nil) { result in
+      switch result {
+      case .success:
+        XCTFail("Purchase should NOT suceed.")
+        expectation.fulfill()
+      case .failure(let error):
+        XCTAssertEqual(error.localizedDescription, "Item Unavailable")
+        expectation.fulfill()
+      }
+    }
+    await fulfillment(of: [expectation], timeout: purchaseTimeout)
+    try await session.setSimulatedError(nil, forAPI: .purchase)
+  }
+
+  func testInvalidProductPurchase() async throws {
+    let expectation = self.expectation(description: "products request should fail")
+    plugin.purchase(id: "invalid_product", options: nil) { result in
+      switch result {
+      case .success:
+        XCTFail("Purchase should NOT suceed.")
+        expectation.fulfill()
+      case .failure(let error):
+        let pigeonError = error as! PigeonError
+
+        XCTAssertEqual(pigeonError.code, "storekit2_failed_to_fetch_product")
+        expectation.fulfill()
+      }
+    }
+    await fulfillment(of: [expectation], timeout: purchaseTimeout)
+  }
+
+  func testPurchaseUpgradeConsumableSuccess() async throws {
+    let expectation = self.expectation(description: "Purchase request should succeed")
+    plugin.purchase(id: "subscription_discounted", options: nil) { result in
+      switch result {
+      case .success:
+        expectation.fulfill()
+      case .failure(let error):
+        XCTFail("Purchase should NOT fail. Failed with \(error)")
+        expectation.fulfill()
+      }
+    }
+    await fulfillment(of: [expectation], timeout: purchaseTimeout)
+  }
+
+  func testDiscountedSubscriptionSuccess() async throws {
+    let expectation = self.expectation(description: "Purchase request should succeed")
+    plugin.purchase(id: "subscription_discounted", options: nil) { result in
+      switch result {
+      case .success:
+        expectation.fulfill()
+      case .failure(let error):
+        XCTFail("Purchase should NOT fail. Failed with \(error)")
+        expectation.fulfill()
+      }
+    }
+    await fulfillment(of: [expectation], timeout: purchaseTimeout)
+  }
+
+  func testDiscountedProductSuccess() async throws {
+    let expectation = self.expectation(description: "Purchase request should succeed")
+    plugin.purchase(id: "consumable_discounted", options: nil) { result in
+      switch result {
+      case .success:
+        expectation.fulfill()
+      case .failure(let error):
+        XCTFail("Purchase should NOT fail. Failed with \(error)")
+        expectation.fulfill()
+      }
+    }
+    await fulfillment(of: [expectation], timeout: purchaseTimeout)
+  }
+
+  func testPurchaseWithAppAccountToken() async throws {
+    let expectation = self.expectation(description: "Purchase with appAccountToken should succeed")
+
+    let appAccountToken = UUID().uuidString
+    let options = SK2ProductPurchaseOptionsMessage(
+      appAccountToken: appAccountToken, promotionalOffer: nil, winBackOfferId: nil)
+
+    plugin.purchase(id: "consumable", options: options) { result in
+      switch result {
+      case .success:
+        expectation.fulfill()
+      case .failure(let error):
+        XCTFail("Purchase should NOT fail. Failed with \(error)")
+        expectation.fulfill()
+      }
+    }
+
+    await fulfillment(of: [expectation], timeout: purchaseTimeout)
+  }
+
+  @available(iOS 17.4, macOS 14.4, *)
+  func testPurchaseWithPromotionalOffer() async throws {
+    let expectation = self.expectation(description: "Purchase with promotionalOffer should succeed")
+
+    let promotionalOffer = SK2SubscriptionOfferPurchaseMessage(
+      promotionalOfferId: "promo_123",
+      promotionalOfferSignature: SK2SubscriptionOfferSignatureMessage(
+        keyID: "key123",
+        nonce: UUID().uuidString,
+        timestamp: Int64(Date().timeIntervalSince1970),
+        signature: "dmFsaWRzaWduYXR1cmU="
+      )
+    )
+    let options = SK2ProductPurchaseOptionsMessage(
+      appAccountToken: nil, promotionalOffer: promotionalOffer, winBackOfferId: nil)
+
+    plugin.purchase(id: "consumable", options: options) { result in
+      switch result {
+      case .success:
+        expectation.fulfill()
+      case .failure(let error):
+        XCTFail("Purchase should NOT fail. Failed with \(error)")
+        expectation.fulfill()
+      }
+    }
+
+    await fulfillment(of: [expectation], timeout: purchaseTimeout)
+  }
+
+  @available(iOS 18.0, macOS 15.0, *)
+  func testPurchaseWithWinBackOffer() async throws {
+    let expectation = self.expectation(description: "Purchase with winBackOffer should succeed")
+
+    let options = SK2ProductPurchaseOptionsMessage(
+      appAccountToken: nil, promotionalOffer: nil,
+      winBackOfferId: "subscription_silver_winback_offer_1month")
+
+    plugin.purchase(id: "subscription_silver", options: options) { result in
+      switch result {
+      case .success:
+        expectation.fulfill()
+      case .failure(let error):
+        XCTFail("Purchase should NOT fail. Failed with \(error)")
+        expectation.fulfill()
+      }
+    }
+
+    await fulfillment(of: [expectation], timeout: purchaseTimeout)
+  }
+
+  func testPurchaseWithIntroductoryOfferEligibilityJWS() async throws {
+    let expectation = self.expectation(
+      description: "Purchase with an introductory offer eligibility JWS should complete")
+
+    // The plugin forwards this compact JWS to StoreKit verbatim, without
+    // parsing or validating it. The purchase is driven end to end to exercise
+    // that path; the callback is not asserted on a specific outcome because a
+    // locally generated JWS is not signed by App Store Connect.
+    let compactJWS = "eyJhbGciOiJFUzI1NiJ9.eyJhdWQiOiJ0ZXN0In0.c2ln"
+    let options = SK2ProductPurchaseOptionsMessage(
+      appAccountToken: nil, promotionalOffer: nil, winBackOfferId: nil,
+      introductoryOfferEligibilityCompactJWS: compactJWS)
+
+    plugin.purchase(id: "subscription_silver", options: options) { _ in
+      expectation.fulfill()
+    }
+
+    await fulfillment(of: [expectation], timeout: purchaseTimeout)
+  }
+
+  func testRestoreProductSuccess() async throws {
+    let purchaseExpectation = self.expectation(description: "Purchase request should succeed")
+    let purchaseUpdateExpectation = self.expectation(
+      description: "Purchase transaction update should be received")
+    let restoreExpectation = self.expectation(description: "Restore request should succeed")
+    let restoreUpdateExpectation = self.expectation(
+      description: "Restored transaction update should be received")
+
+    callback.onUpdateExpectation = purchaseUpdateExpectation
+    plugin.purchase(id: "subscription_silver", options: nil) { result in
+      switch result {
+      case .success:
+        purchaseExpectation.fulfill()
+      case .failure(let error):
+        XCTFail("Purchase should NOT fail. Failed with \(error)")
+        purchaseExpectation.fulfill()
+        purchaseUpdateExpectation.fulfill()
+      }
+    }
+    await fulfillment(
+      of: [purchaseExpectation, purchaseUpdateExpectation], timeout: purchaseTimeout)
+
+    XCTAssert(callback.lastUpdate.count == 1)
+    XCTAssert(callback.lastUpdate.first?.status != .restored)
+
+    callback.onUpdateExpectation = restoreUpdateExpectation
+    plugin.restorePurchases { result in
+      switch result {
+      case .success():
+        restoreExpectation.fulfill()
+      case .failure(let error):
+        XCTFail("Restore purchases should NOT fail. Failed with \(error)")
+        restoreExpectation.fulfill()
+        restoreUpdateExpectation.fulfill()
+      }
+    }
+    await fulfillment(
+      of: [restoreExpectation, restoreUpdateExpectation], timeout: purchaseTimeout)
+
+    XCTAssert(callback.lastUpdate.count == 1)
+    XCTAssert(callback.lastUpdate.first?.status == .restored)
+  }
+
+  func testRestoreMultipleProductsEmitsSingleBatchedUpdate() async throws {
+    // Purchase two subscriptions from different subscription groups so that
+    // both persist in `currentEntitlements` and restoring returns two
+    // transactions.
+    let firstPurchaseExpectation = self.expectation(description: "First purchase should succeed")
+    let firstUpdateExpectation = self.expectation(
+      description: "First purchase transaction update should be received")
+    callback.onUpdateExpectation = firstUpdateExpectation
+    plugin.purchase(id: "subscription_discounted", options: nil) { result in
+      switch result {
+      case .success:
+        firstPurchaseExpectation.fulfill()
+      case .failure(let error):
+        XCTFail("Purchase should NOT fail. Failed with \(error)")
+        firstPurchaseExpectation.fulfill()
+        firstUpdateExpectation.fulfill()
+      }
+    }
+    await fulfillment(
+      of: [firstPurchaseExpectation, firstUpdateExpectation], timeout: purchaseTimeout)
+
+    let secondPurchaseExpectation = self.expectation(description: "Second purchase should succeed")
+    let secondUpdateExpectation = self.expectation(
+      description: "Second purchase transaction update should be received")
+    callback.onUpdateExpectation = secondUpdateExpectation
+    plugin.purchase(id: "subscription_silver", options: nil) { result in
+      switch result {
+      case .success:
+        secondPurchaseExpectation.fulfill()
+      case .failure(let error):
+        XCTFail("Purchase should NOT fail. Failed with \(error)")
+        secondPurchaseExpectation.fulfill()
+        secondUpdateExpectation.fulfill()
+      }
+    }
+    await fulfillment(
+      of: [secondPurchaseExpectation, secondUpdateExpectation], timeout: purchaseTimeout)
+
+    let restoreExpectation = self.expectation(description: "Restore request should succeed")
+    let restoreUpdateExpectation = self.expectation(
+      description: "Restored transactions update should be received")
+    callback.onUpdateExpectation = restoreUpdateExpectation
+    plugin.restorePurchases { result in
+      switch result {
+      case .success():
+        restoreExpectation.fulfill()
+      case .failure(let error):
+        XCTFail("Restore purchases should NOT fail. Failed with \(error)")
+        restoreExpectation.fulfill()
+        restoreUpdateExpectation.fulfill()
+      }
+    }
+    await fulfillment(
+      of: [restoreExpectation, restoreUpdateExpectation], timeout: purchaseTimeout)
+
+    // Both restored transactions must arrive in a single `onTransactionsUpdated`
+    // callback.
+    XCTAssertEqual(callback.lastUpdate.count, 2)
+    XCTAssertTrue(callback.lastUpdate.allSatisfy { $0.status == .restored })
+    XCTAssertEqual(
+      Set(callback.lastUpdate.map { $0.productId }),
+      ["subscription_discounted", "subscription_silver"])
+  }
+
+  func testFinishTransaction() async throws {
+    let purchaseExpectation = self.expectation(description: "Purchase should succeed")
+    let finishExpectation = self.expectation(description: "Finishing purchase should succeed")
+
+    plugin.purchase(id: "consumable", options: nil) { result in
+      switch result {
+      case .success(_):
+        purchaseExpectation.fulfill()
+      case .failure(let error):
+        XCTFail("Purchase should NOT fail. Failed with \(error)")
+        purchaseExpectation.fulfill()
+      }
+    }
+
+    await fulfillment(of: [purchaseExpectation], timeout: purchaseTimeout)
+
+    // id should always be 0 as it is the first purchase
+    plugin.finish(id: 0) { result in
+      switch result {
+      case .success():
+        finishExpectation.fulfill()
+      case .failure(let error):
+        XCTFail("Finish purchases should NOT fail. Failed with \(error)")
+        finishExpectation.fulfill()
+      }
+    }
+
+    await fulfillment(of: [finishExpectation], timeout: purchaseTimeout)
+
+    for await result in Transaction.unfinished {
+      if case .verified(let transaction) = result {
+        XCTAssertNotEqual(transaction.id, 0, "The purchase should be finished.")
+      }
+    }
+  }
+
+  func testFinishTransactionSucceedsWhenAlreadyFinished() async throws {
+    let purchaseExpectation = self.expectation(description: "Purchase should succeed")
+    let finishExpectation = self.expectation(description: "Finishing purchase should succeed")
+    let secondFinishExpectation = self.expectation(
+      description: "Finishing an already finished purchase should succeed")
+
+    plugin.purchase(id: "consumable", options: nil) { result in
+      switch result {
+      case .success(_):
+        purchaseExpectation.fulfill()
+      case .failure(let error):
+        XCTFail("Purchase should NOT fail. Failed with \(error)")
+        purchaseExpectation.fulfill()
+      }
+    }
+
+    await fulfillment(of: [purchaseExpectation], timeout: purchaseTimeout)
+
+    plugin.finish(id: 0) { result in
+      switch result {
+      case .success():
+        finishExpectation.fulfill()
+      case .failure(let error):
+        XCTFail("Finish purchases should NOT fail. Failed with \(error)")
+        finishExpectation.fulfill()
+      }
+    }
+
+    await fulfillment(of: [finishExpectation], timeout: purchaseTimeout)
+
+    // A finished consumable is no longer in Transaction.all.
+    plugin.finish(id: 0) { result in
+      switch result {
+      case .success():
+        secondFinishExpectation.fulfill()
+      case .failure(let error):
+        XCTFail("Finish purchases should NOT fail. Failed with \(error)")
+        secondFinishExpectation.fulfill()
+      }
+    }
+
+    await fulfillment(of: [secondFinishExpectation], timeout: purchaseTimeout)
+  }
+
+  @available(iOS 18.0, macOS 15.0, *)
+  func testIsWinBackOfferEligibleEligible() async throws {
+    let purchaseExpectation = self.expectation(description: "Purchase should succeed")
+
+    plugin.purchase(id: "subscription_silver", options: nil) { result in
+      switch result {
+      case .success:
+        purchaseExpectation.fulfill()
+      case .failure(let error):
+        XCTFail("Purchase should NOT fail. Failed with \(error)")
+        purchaseExpectation.fulfill()
+      }
+    }
+    await fulfillment(of: [purchaseExpectation], timeout: purchaseTimeout)
+
+    try session.expireSubscription(productIdentifier: "subscription_silver")
+
+    let expectation = self.expectation(description: "Eligibility check should return true")
+
+    plugin.isWinBackOfferEligible(
+      productId: "subscription_silver",
+      offerId: "subscription_silver_winback_offer"
+    ) { result in
+      switch result {
+      case .success(let isEligible):
+        XCTAssertTrue(isEligible)
+        expectation.fulfill()
+      case .failure(let error):
+        XCTFail("Eligibility check failed: \(error.localizedDescription)")
+        expectation.fulfill()
+      }
+    }
+
+    await fulfillment(of: [expectation], timeout: purchaseTimeout)
+
+  }
+
+  @available(iOS 18.0, macOS 15.0, *)
+  func testIsWinBackOfferEligibleNotEligible() async throws {
+    let expectation = self.expectation(description: "Eligibility check should return false")
+
+    plugin.isWinBackOfferEligible(
+      productId: "subscription_silver",
+      offerId: "invalid_offer_id"
+    ) { result in
+      switch result {
+      case .success(let isEligible):
+        XCTAssertFalse(isEligible)
+        expectation.fulfill()
+      case .failure(let error):
+        XCTFail("Eligibility check failed: \(error.localizedDescription)")
+        expectation.fulfill()
+      }
+    }
+
+    await fulfillment(of: [expectation], timeout: purchaseTimeout)
+  }
+
+  @available(iOS 18.0, macOS 15.0, *)
+  func testIsWinBackOfferEligibleProductNotFound() async throws {
+    let expectation = self.expectation(description: "Should throw product not found error")
+
+    plugin.isWinBackOfferEligible(
+      productId: "invalid_product",
+      offerId: "winback_offer"
+    ) { result in
+      switch result {
+      case .success:
+        XCTFail("Should not succeed")
+        expectation.fulfill()
+      case .failure(let error as PigeonError):
+        XCTAssertEqual(error.code, "storekit2_failed_to_fetch_product")
+        expectation.fulfill()
+      case .failure(let error):
+        XCTFail("Unexpected error type: \(error)")
+        expectation.fulfill()
+      }
+    }
+
+    await fulfillment(of: [expectation], timeout: purchaseTimeout)
+  }
+
+  @available(iOS 18.0, macOS 15.0, *)
+  func testIsWinBackOfferEligibleNonSubscription() async throws {
+    let expectation = self.expectation(description: "Should throw non-subscription error")
+
+    plugin.isWinBackOfferEligible(
+      productId: "consumable",
+      offerId: "winback_offer"
+    ) { result in
+      switch result {
+      case .success:
+        XCTFail("Should not succeed")
+        expectation.fulfill()
+      case .failure(let error as PigeonError):
+        XCTAssertEqual(error.code, "storekit2_not_subscription")
+        expectation.fulfill()
+      case .failure(let error):
+        XCTFail("Unexpected error type: \(error)")
+        expectation.fulfill()
+      }
+    }
+
+    await fulfillment(of: [expectation], timeout: purchaseTimeout)
+  }
+
+  func testDuplicatePurchaseFails() async throws {
+    let firstPurchaseExpectation = self.expectation(description: "First purchase should succeed")
+    let secondPurchaseExpectation = self.expectation(description: "Second purchase should fail")
+
+    plugin.purchase(id: "consumable", options: nil) { result in
+      switch result {
+      case .success:
+        firstPurchaseExpectation.fulfill()
+      case .failure(let error):
+        XCTFail("First purchase should NOT fail. Failed with \(error)")
+        firstPurchaseExpectation.fulfill()
+      }
+    }
+    await fulfillment(of: [firstPurchaseExpectation], timeout: purchaseTimeout)
+
+    plugin.purchase(id: "consumable", options: nil) { result in
+      switch result {
+      case .success:
+        XCTFail("Second purchase should NOT succeed because a transaction is already pending.")
+        secondPurchaseExpectation.fulfill()
+      case .failure(let error as PigeonError):
+        XCTAssertEqual(error.code, "storekit_duplicate_product_object")
+        secondPurchaseExpectation.fulfill()
+      case .failure(let error):
+        XCTFail("Unexpected error type: \(error)")
+        secondPurchaseExpectation.fulfill()
+      }
+    }
+    await fulfillment(of: [secondPurchaseExpectation], timeout: purchaseTimeout)
+  }
+  @available(iOS 16.0, macOS 15.0, *)
+  func testRedeemCodeSheetFailsGracefullyWhenNoWindow() {
+    let expectation = self.expectation(
+      description: "Should fail gracefully when without key window")
+
+    plugin.registrar = nil
+
+    plugin.presentOfferCodeRedeemSheet { result in
+      if case .failure = result {
+        expectation.fulfill()
+      }
+    }
+
+    waitForExpectations(timeout: 1.0)
+  }
+
+  func testShowManageSubscriptionsFailsGracefullyWhenNoWindow() {
+    let expectation = self.expectation(
+      description: "Should fail gracefully when without key window")
+
+    plugin.registrar = nil
+
+    plugin.showManageSubscriptions { result in
+      if case .failure = result {
+        expectation.fulfill()
+      }
+    }
+
+    waitForExpectations(timeout: 1.0)
+  }
+
+}

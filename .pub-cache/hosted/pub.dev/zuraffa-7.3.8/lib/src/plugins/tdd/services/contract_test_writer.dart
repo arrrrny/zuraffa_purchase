@@ -1,0 +1,1010 @@
+/// Contract test + contract seam writers (issue #1007) — the `zfa tdd gen`
+/// pair for a CONTRACT-kind behavior.
+///
+/// A contract test is different from a unit test: it proves an
+/// implementation satisfies a **declared contract** (one entity method,
+/// controller method or usecase of the spec's Layer Contracts section),
+/// not that a piece of code does what its author said. This is the
+/// substrate for `zfa dream` — without contract tests, generated and
+/// hand-written code are graded by different rules.
+///
+/// The pair:
+/// - [ContractTestWriter] emits a contract test SCAFFOLD (not an
+///   implementation test): ONE test whose body enumerates the contract's
+///   CASES — the exposure case (the declared method resolves on the
+///   subject), the implementation case (invoking it does not throw
+///   `UnimplementedError`) and the return-type case (every return except
+///   `void`/`Never`/`dynamic`) — asserting the implementation satisfies
+///   them.
+/// - [ContractSubjectWriter] emits the CONTRACT SEAM: a standalone
+///   top-level function with the declared method's name and signature
+///   that throws `UnimplementedError` until the contract is implemented
+///   (or wired to the production method).
+///
+/// While the method is deliberately unimplemented the test fails through
+/// an assertion (`_captured` turns the `UnimplementedError` into the
+/// assertion's actual value, mirroring the ffi lane's pattern), and
+/// `zfa tdd verify-red` grades it **BLOCKED** — never RED — with its own
+/// receipt (`contract-blocked.<feature>.<id>.json`). A failing contract test blocks
+/// the cycle from proceeding to GREEN.
+///
+/// The behavior's description is the STRUCTURED contract carrier plan
+/// writes (`plan_command._deriveContractBehaviors`):
+///
+///     <Interface>.<method>(<params>) -> <Return> (<category> contract)
+///
+/// Both writers parse it through [ContractDeclaration.parse]. Complex
+/// declared types (entity types, `Result<...>`) stay compilable: the
+/// seam renders them as `Object?` (with the declared type preserved in
+/// the doc comment), and the test's invocation case carries a
+/// placeholder argument helper that throws `UnimplementedError` with the
+/// exact instruction — the scaffold stays honestly failing through
+/// assertions until the author provides a representative value.
+///
+/// Issue #1751 — the ENTITY/COLLECTION declared return. The registry lift
+/// the unit lane got in SPEC 1489 ([UnitContractShape.ofResolved]) now
+/// rides the contract lane too: when the entity exists on disk the seam
+/// renders the declared type VERBATIM (import included) and the paired
+/// test's return-type case asserts it (`isA<List<ShellTab>>()`); when it
+/// does not, that case degrades to a DOCUMENTED `Object?` assertion
+/// instead of silently vanishing. Before this, the pair asserted nothing
+/// about the declared outcome while Case 1's reason claimed the declared
+/// signature had been checked.
+library;
+
+import 'dart:io';
+
+import 'package:path/path.dart' as p;
+
+import '../models/behavior.dart';
+import 'behavior_test_writer.dart' show BehaviorTestWriter;
+import 'entity_lookup.dart';
+import 'unit_contract_shape.dart';
+
+/// One parsed contract declaration.
+class ContractDeclaration {
+  const ContractDeclaration({
+    required this.interface,
+    required this.method,
+    required this.params,
+    required this.returnType,
+    required this.category,
+  });
+
+  /// The declared interface (entity, controller, usecase or generic
+  /// layer interface) — `User` for `User.validateEmail(...) -> bool`.
+  final String interface;
+
+  /// The declared method name — `validateEmail`.
+  final String method;
+
+  /// The declared parameters, in declaration order.
+  final List<ContractParam> params;
+
+  /// The declared return type, verbatim (`bool`,
+  /// `Future<Result<bool, String>>`, `void`, ...).
+  final String returnType;
+
+  /// The contract category — `entity method`, `controller method`,
+  /// `usecase` or `interface method`.
+  final String category;
+
+  /// The declared signature as the spec wrote it (`User`-qualified).
+  String get qualifiedMethod => '$interface.$method';
+
+  /// Parse the structured description plan writes for contract rows.
+  /// Returns null when the description does not carry the shape (the
+  /// caller then treats the behavior as unparseable — errors are an API).
+  static ContractDeclaration? parse(String description) {
+    var text = description.trim();
+    // Strip the trailing ` (<category> contract)` marker.
+    final categoryMatch = RegExp(
+      r'\s*\(([^()]*)\s+contract\)\s*$',
+    ).firstMatch(text);
+    var category = 'interface method';
+    if (categoryMatch != null) {
+      category = categoryMatch.group(1)!.trim();
+      text = text.substring(0, categoryMatch.start).trim();
+    }
+    final dot = text.indexOf('.');
+    if (dot <= 0) return null;
+    final interface = text.substring(0, dot).trim();
+    var signature = text.substring(dot + 1).trim();
+    // Split the return: the LAST top-level `->` (params never carry one;
+    // an exotic function-typed return may).
+    var returnType = '';
+    final arrow = _lastTopLevelArrow(signature);
+    if (arrow != null) {
+      returnType = signature.substring(arrow + 2).trim();
+      signature = signature.substring(0, arrow).trim();
+    }
+    final open = signature.indexOf('(');
+    if (open <= 0) return null;
+    final method = signature.substring(0, open).trim();
+    if (!RegExp(r'^[A-Za-z_]\w*$').hasMatch(method)) return null;
+    final close = signature.lastIndexOf(')');
+    if (close < open) return null;
+    final paramsText = signature.substring(open + 1, close).trim();
+    // Issue #1363: the emitted signature's names must be UNIQUE by
+    // invariant — a repeated declared name (validate(email, email)) or
+    // a bare cell colliding with a positional fallback falls back to
+    // the positional form for its position (suffix _p<N> on the rare
+    // double collision).
+    // SPEC 1774: expand braced named-parameter groups into individual
+    // named parameters (the outer group survives the brace-aware split as
+    // one token, then expands here). `required` is stripped per entry by
+    // [ContractParam.parse].
+    final topLevelTokens = _splitTopLevel(paramsText);
+    final expanded = <({String token, bool named})>[];
+    for (final token in topLevelTokens) {
+      final t = token.trim();
+      if (t.isEmpty) continue;
+      if (t.startsWith('{') && t.endsWith('}')) {
+        final inner = t.substring(1, t.length - 1).trim();
+        if (inner.isEmpty) continue;
+        for (final groupToken in _splitTopLevel(inner)) {
+          final g = groupToken.trim();
+          if (g.isEmpty) continue;
+          expanded.add((token: g, named: true));
+        }
+      } else {
+        expanded.add((token: t, named: false));
+      }
+    }
+    final params = <ContractParam>[];
+    final seen = <String>{};
+    for (final entry in expanded.asMap().entries) {
+      final parsed = ContractParam.parse(
+        entry.value.token,
+        index: entry.key,
+        named: entry.value.named,
+      );
+      if (parsed == null) continue;
+      var name = parsed.name;
+      if (seen.contains(name)) {
+        name = seen.contains('arg${entry.key}')
+            ? 'arg${entry.key}_p${entry.key}'
+            : 'arg${entry.key}';
+      }
+      seen.add(name);
+      params.add(
+        ContractParam(
+          type: parsed.type,
+          name: name,
+          named: parsed.named,
+          required: parsed.required,
+        ),
+      );
+    }
+    return ContractDeclaration(
+      interface: interface,
+      method: method,
+      params: params,
+      returnType: returnType.isEmpty ? 'void' : returnType,
+      category: category,
+    );
+  }
+
+  /// The index of the last `->` at bracket depth zero, null when absent.
+  /// The arrow is detected at its `>` BEFORE depth tracking — the `->`
+  /// token is not a type bracket, so its own `>` must not open a depth
+  /// level for the `-` behind it.
+  static int? _lastTopLevelArrow(String text) {
+    var depth = 0;
+    for (var i = text.length - 1; i >= 0; i--) {
+      final c = text[i];
+      if (c == '>' && i > 0 && text[i - 1] == '-' && depth == 0) {
+        return i - 1;
+      }
+      if (c == ')' || c == '>') depth++;
+      if (c == '(' || c == '<') depth--;
+    }
+    return null;
+  }
+
+  /// Split [text] on commas at bracket depth zero (generic `A<B, C>`
+  /// stays one cell). Empty text yields no cells.
+  static List<String> _splitTopLevel(String text) {
+    if (text.isEmpty) return const [];
+    final cells = <String>[];
+    var depth = 0;
+    var start = 0;
+    for (var i = 0; i < text.length; i++) {
+      final c = text[i];
+      if (c == '<' || c == '(' || c == '{' || c == '[') depth++;
+      if (c == '>' || c == ')' || c == '}' || c == ']') depth--;
+      if (c == ',' && depth == 0) {
+        cells.add(text.substring(start, i));
+        start = i + 1;
+      }
+    }
+    cells.add(text.substring(start));
+    return cells.map((c) => c.trim()).where((c) => c.isNotEmpty).toList();
+  }
+}
+
+/// One declared parameter: an optional name plus a (possibly generic)
+/// type, either shape — `String email` or `LoginParams`.
+class ContractParam {
+  const ContractParam({
+    required this.type,
+    required this.name,
+    this.named = false,
+    this.required = false,
+  });
+
+  /// The declared type, verbatim (`String`, `Result<bool, String>`).
+  final String type;
+
+  /// The declared name; `arg0`-style when the declaration carried none.
+  final String name;
+
+  /// SPEC 1774: whether the parameter was declared inside a Dart
+  /// named-parameter group (`{...}`). Named params render `{...}` in
+  /// subject signatures and pass named arguments at the capture site.
+  final bool named;
+
+  /// SPEC 1774: whether a named parameter carries the `required`
+  /// modifier (`{required bool x}`).
+  final bool required;
+
+  /// Parse one parameter cell. Null when the cell is not a plausible
+  /// parameter (empty or malformed).
+  ///
+  /// [index] is the cell's position in the declared parameter list — the
+  /// positional fallback's number. Issue #1363: every fallback hardcoded
+  /// `arg0`, so a multi-param contract of bare-name cells emitted
+  /// `arg0, arg0` — a duplicate-definition stub that could not compile
+  /// and smeared load-errors across the verify-red batch.
+  static ContractParam? parse(
+    String cell, {
+    int index = 0,
+    bool named = false,
+  }) {
+    final trimmed = cell.trim();
+    if (trimmed.isEmpty) return null;
+    // SPEC 1774: strip a leading `required` modifier (named params).
+    var working = trimmed;
+    var isRequired = false;
+    if (working.startsWith('required ')) {
+      isRequired = true;
+      working = working.substring('required '.length).trim();
+    }
+    if (working.isEmpty) return null;
+    // The LAST top-level space separates type from name when the cell
+    // carries both (`String email`, `Result<bool, String> session`).
+    var depth = 0;
+    int? split;
+    for (var i = working.length - 1; i >= 0; i--) {
+      final c = working[i];
+      if (c == '>' || c == ')') depth++;
+      if (c == '<' || c == '(') depth--;
+      if (c == ' ' && depth == 0) {
+        split = i;
+        break;
+      }
+    }
+    if (split == null) {
+      // A bare identifier cell is a declared NAME (the Layer Contracts
+      // grammar: `validate(email, password)`) — the type falls back to
+      // dynamic. A bare non-identifier cell is an unnamed TYPE: it keeps
+      // a positional name.
+      if (RegExp(r'^[A-Za-z_]\w*$').hasMatch(working)) {
+        return ContractParam(
+          type: 'dynamic',
+          name: working,
+          named: named,
+          required: named ? (isRequired || true) : false,
+        );
+      }
+      return ContractParam(
+        type: working,
+        name: 'arg$index',
+        named: named,
+        required: named ? (isRequired || !working.trim().endsWith('?')) : false,
+      );
+    }
+    final type = working.substring(0, split).trim();
+    final name = working.substring(split + 1).trim();
+    if (type.isEmpty || !RegExp(r'^[A-Za-z_]\w*$').hasMatch(name)) {
+      return ContractParam(
+        type: working,
+        name: 'arg$index',
+        named: named,
+        required: named ? (isRequired || !working.trim().endsWith('?')) : false,
+      );
+    }
+    return ContractParam(
+      type: type,
+      name: name,
+      named: named,
+      required: named ? (isRequired || !type.trim().endsWith('?')) : false,
+    );
+  }
+}
+
+/// The scalar (and directly renderable) Dart types the seam and the
+/// test's return-type case can carry verbatim without any import.
+const Set<String> _scalarTypes = {
+  'void',
+  'Never',
+  'bool',
+  'String',
+  'int',
+  'double',
+  'num',
+  'dynamic',
+  'Object',
+};
+
+bool _isRenderableType(String type) {
+  final trimmed = type.trim();
+  var base = trimmed;
+  if (base.endsWith('?')) base = base.substring(0, base.length - 1);
+  if (_scalarTypes.contains(base)) return true;
+  final generic = RegExp(
+    r'^(Future|Stream|List|Set|Iterable)<(.+)>$',
+  ).firstMatch(base);
+  if (generic != null) {
+    return _isRenderableType(generic.group(2)!.trim());
+  }
+  final map = RegExp(r'^Map<\s*([^,>]+)\s*,\s*(.+)>$').firstMatch(base);
+  if (map != null) {
+    return _isRenderableType(map.group(1)!.trim()) &&
+        _isRenderableType(map.group(2)!.trim());
+  }
+  return false;
+}
+
+/// The declared returns that carry NO return-type case (issue #1751):
+/// `void` (no value is returned), `Never` (no value can exist) and
+/// `dynamic` (the declaration carries no type to assert —
+/// `isA<dynamic>()` matches everything). Every other declared return is
+/// asserted: the resolved type verbatim, or the documented `Object?`
+/// degradation.
+const Set<String> _noReturnCase = {'void', 'Never', 'dynamic'};
+
+/// The resolved return shape of a contract declaration (issue #1751).
+///
+/// Before this, an entity/collection declared return (`List<ShellTab>`)
+/// was outside the lane's renderability vocabulary, so the seam rendered
+/// `Object?` AND the paired test silently lost its return-type case: the
+/// contract test asserted nothing about the declared outcome while Case
+/// 1's reason claimed the declared signature had been checked. The
+/// registry lift (the SPEC 1489 machinery the unit lane threads through
+/// `UnitContractShape.ofResolved`) resolves the entity types on disk, so
+/// the declared return renders VERBATIM — import included — and the
+/// return-type case asserts it. An unresolvable type keeps the DOCUMENTED
+/// FR-011 `Object?` degradation instead of vanishing.
+class ContractReturnShape {
+  const ContractReturnShape({
+    required this.declaredReturn,
+    required this.renderType,
+    required this.entityImports,
+    required this.resolved,
+  });
+
+  /// The declared return type verbatim (`List<ShellTab>`).
+  final String declaredReturn;
+
+  /// The type the seam and the return-type case render — the declared
+  /// type verbatim when it resolves, else the `Object?` degradation.
+  final String renderType;
+
+  /// The import URIs the verbatim render needs (the lint-clean
+  /// `package:` URIs [UnitContractShape.packageNameFor] resolves). Empty
+  /// when the declared type is scalar or degraded.
+  final List<String> entityImports;
+
+  /// Whether [declaredReturn] resolved to a renderable type — either the
+  /// lane's own vocabulary ([_isRenderableType]) or an entity the
+  /// registry found on disk. A resolved shape asserts the declared type;
+  /// a degraded one DOCUMENTS its `Object?` case (issue #1751).
+  final bool resolved;
+
+  /// Resolve [declaredReturn] against the entity registry under [cwd].
+  /// A null [cwd] (the direct-construction callers) skips the registry —
+  /// the declared type degrades exactly like an unresolvable one.
+  static Future<ContractReturnShape> resolve(
+    String declaredReturn, {
+    String? cwd,
+  }) async {
+    final declared = declaredReturn.trim();
+    if (_isRenderableType(declared)) {
+      return ContractReturnShape(
+        declaredReturn: declared,
+        renderType: declared,
+        entityImports: const [],
+        resolved: true,
+      );
+    }
+    final names = <String>[];
+    _collectContractEntityNames(declared, (name) {
+      if (!names.contains(name)) names.add(name);
+    });
+    if (cwd == null || names.isEmpty) {
+      return ContractReturnShape(
+        declaredReturn: declared,
+        renderType: 'Object?',
+        entityImports: const [],
+        resolved: false,
+      );
+    }
+    final files = <String, String>{};
+    for (final name in names) {
+      final file = await locateEntityFile(cwd, name);
+      if (file == null) continue;
+      files[name] = p.relative(file, from: p.join(cwd, 'lib'));
+    }
+    if (names.any((name) => !files.containsKey(name))) {
+      return ContractReturnShape(
+        declaredReturn: declared,
+        renderType: 'Object?',
+        entityImports: const [],
+        resolved: false,
+      );
+    }
+    final packageName = UnitContractShape.packageNameFor(cwd);
+    return ContractReturnShape(
+      declaredReturn: declared,
+      renderType: declared,
+      entityImports: [
+        for (final name in names) entityImportUri(files[name]!, packageName),
+      ],
+      resolved: true,
+    );
+  }
+}
+
+/// Collects the entity base names [type] references under the CONTRACT
+/// lane's vocabulary (issue #1751) — [collectEntityNames] widened with
+/// the `Future`/`Stream` wrappers this lane renders and the unit lane's
+/// grammar does not know. The grammar itself lives in ONE place (#1323
+/// lesson): this function only peels the wrappers and delegates.
+void _collectContractEntityNames(String type, void Function(String) emit) {
+  var base = type.trim();
+  if (base.endsWith('?')) base = base.substring(0, base.length - 1).trim();
+  final wrapper = RegExp(r'^(Future|Stream)<(.+)>$').firstMatch(base);
+  if (wrapper != null) {
+    _collectContractEntityNames(wrapper.group(2)!.trim(), emit);
+    return;
+  }
+  collectEntityNames(type, emit);
+}
+
+/// The representative argument expression for a declared parameter type.
+/// Scalar declared types get representative literals; declared types the
+/// seam renders VERBATIM (`List<T>`, `Set<T>`, `Map<K, V>`, `Iterable<T>`,
+/// `Future<T>`, `Stream<T>`) get representative literals too — the
+/// `_argN()` placeholder's `Object?` return does not compile against
+/// those declared parameter types, so the pair would fail to LOAD and
+/// verify-red could never reach the named BLOCKED verdict (issue #1541
+/// review). Complex types and `dynamic`-typed (and empty-typed) declared
+/// params get the scaffold placeholder helper invocation (`_argN()`) that
+/// throws `UnimplementedError` with the exact instruction — the scaffold
+/// fails through an assertion, never an uncaught error, and the author
+/// replaces it with a representative value.
+///
+/// Issue #1541: a `dynamic` declared param no longer resolves to the bare
+/// literal `null`. A bare `null` is not a DECLARED-SHAPE representative —
+/// an argument-validating implementation legitimately rejects it (the
+/// issue's `AgentLog.logger(subsystem as String)` throws for it), and the
+/// rejection used to escape `_captured` as an uncaught runner error. The
+/// `dynamic` param now takes the unit lane's placeholder discipline
+/// (`provide a representative argument`) so the scaffold blocks honestly
+/// until the author supplies a representative value. Nullable complex
+/// types KEEP `null`: their declared shape IS nullable, so `null` is a
+/// legitimate representative argument.
+String _representativeArg(String type, int index) {
+  final trimmed = type.trim();
+  var base = trimmed;
+  if (base.endsWith('?')) base = base.substring(0, base.length - 1).trim();
+  switch (base) {
+    case 'String':
+      return "'contract-sample'";
+    case 'int':
+    case 'num':
+      return '0';
+    case 'double':
+      return '0.0';
+    case 'bool':
+      return 'false';
+    case 'Object':
+      return 'Object()';
+  }
+  // A nullable complex type accepts null as its representative value.
+  if (trimmed.endsWith('?')) return 'null';
+  final literal = _renderableLiteralArg(base, index);
+  if (literal != null) return literal;
+  // Issue #1541: `dynamic` (and the never-emitted empty type) carry NO
+  // declared shape to represent — the placeholder seam asks the author
+  // for a representative argument instead of a bare `null`.
+  return '_arg$index()';
+}
+
+/// The representative literal for a declared type [_isRenderableType]
+/// renders verbatim in the seam: `List<T>`/`Iterable<T>` as `<T>[]`,
+/// `Set<T>` as `<T>{}`, `Map<K, V>` as `<K, V>{}`, `Stream<T>` as
+/// `const Stream.empty()`, `Future<T>` as `Future<T>.value(...)` (the
+/// value-less form for `T = void`; a non-literal inner — `dynamic` —
+/// nests the `_argN()` placeholder, caught at invocation as BLOCKED).
+/// Null when the type or its inner shape is not renderable: the seam
+/// parameter is `Object?` then, the `_argN()` placeholder stays
+/// assignable, and a literal naming an unimported inner type would not
+/// compile (issue #1541 review).
+String? _renderableLiteralArg(String base, int index) {
+  final generic = RegExp(
+    r'^(Future|Stream|List|Set|Iterable)<(.+)>$',
+  ).firstMatch(base);
+  if (generic != null) {
+    final inner = generic.group(2)!.trim();
+    if (!_isRenderableType(inner)) return null;
+    return switch (generic.group(1)!) {
+      'List' || 'Iterable' => '<$inner>[]',
+      'Set' => '<$inner>{}',
+      'Stream' => 'const Stream.empty()',
+      'Future' =>
+        inner == 'void'
+            ? 'Future<void>.value()'
+            : 'Future<$inner>.value(${_representativeArg(inner, index)})',
+      _ => null,
+    };
+  }
+  final map = RegExp(r'^Map<\s*([^,>]+)\s*,\s*(.+)>$').firstMatch(base);
+  if (map != null) {
+    final key = map.group(1)!.trim();
+    final value = map.group(2)!.trim();
+    if (!_isRenderableType(key) || !_isRenderableType(value)) return null;
+    return '<$key, $value>{}';
+  }
+  return null;
+}
+
+/// Writes the contract test half of a `gen` pair for contract-kind
+/// behaviors (issue #1007).
+class ContractTestWriter {
+  const ContractTestWriter({this.flutterTest = false, this.cwd});
+
+  /// Whether the host project runs on the Flutter test runner
+  /// (`flutter_test`) instead of plain `dart test` (issue #1513, the
+  /// contract lane of the #1349/#1351 family): on Flutter projects the
+  /// plain `test` package is not resolvable — every generated contract
+  /// test stopped at `verify-red` with `Couldn't resolve the package
+  /// 'test'`. When true, both templates import
+  /// `package:flutter_test/flutter_test.dart` (which re-exports the same
+  /// group/test/expect API). Defaults to `false` — the pure-Dart output
+  /// is byte-stable.
+  final bool flutterTest;
+
+  /// The consumer project root the entity registry resolves against
+  /// (issue #1751) — the SAME fact the unit lane's
+  /// `UnitContractShape.ofResolved` consults, so an entity that exists on
+  /// disk renders its declared type in the seam and gets a real
+  /// return-type case. Null (the direct-construction callers) skips the
+  /// registry: the declared return degrades to the documented `Object?`
+  /// case.
+  final String? cwd;
+
+  /// The test-framework import both contract templates emit.
+  String get _testImport => flutterTest
+      ? "package:flutter_test/flutter_test.dart"
+      : "package:test/test.dart";
+
+  Future<void> write({
+    required Behavior behavior,
+    required String testPath,
+    required String subjectPath,
+    bool golden = false,
+  }) async {
+    final file = File(testPath);
+    await file.parent.create(recursive: true);
+    final declaration = ContractDeclaration.parse(behavior.description);
+    final subjectImport = _subjectImport(testPath, subjectPath);
+    final returnShape = declaration == null
+        ? null
+        : await ContractReturnShape.resolve(declaration.returnType, cwd: cwd);
+    await file.writeAsString(
+      declaration == null
+          ? _renderUnparseable(behavior, subjectImport)
+          : _render(behavior, declaration, subjectImport, returnShape!),
+    );
+  }
+
+  String _render(
+    Behavior b,
+    ContractDeclaration c,
+    String subjectImport,
+    ContractReturnShape returnShape,
+  ) {
+    final escapedDescription = BehaviorTestWriter.escapeDartString(
+      b.description,
+    );
+    final escapedGroupDescription = BehaviorTestWriter.escapeDartString(
+      '${b.id} (${b.sourceCriterion})',
+    );
+    // Issue #1751: every return except void/Never/dynamic carries the
+    // return-type case — the RESOLVED type verbatim when the registry
+    // lifts it (`isA<List<ShellTab>>()`), else the documented `Object?`
+    // degradation. A case that silently vanishes is the defect this
+    // fixes: the pair asserted nothing about the declared outcome while
+    // Case 1's reason claimed the declared signature had been checked.
+    final returnTypeCase = _noReturnCase.contains(c.returnType.trim())
+        ? null
+        : returnShape.renderType;
+    final caseCount = 2 + (returnTypeCase != null ? 1 : 0);
+    // Issue #1751: the entity imports the resolved return needs — the
+    // Case 3 assertion references the declared type, so the import is
+    // REQUIRED and guaranteed USED (the unit lane's #1691 rule). Empty
+    // for every scalar and degraded shape: the template stays
+    // byte-identical there.
+    final entityImportLines = returnShape.entityImports.isEmpty
+        ? ''
+        : "${returnShape.entityImports.map((uri) => "import '$uri';").join('\n')}\n\n";
+    final placeholderArgs = <int, String>{};
+    for (var i = 0; i < c.params.length; i++) {
+      final paramType = c.params[i].type;
+      final arg = _representativeArg(paramType, i);
+      if (arg.startsWith('_arg')) {
+        placeholderArgs[i] = paramType;
+      } else if (arg.contains('_arg')) {
+        // The nested placeholder shape `Future<T>.value(_argN())`: the
+        // author supplies an INNER-typed representative value there.
+        final inner = RegExp(r'^Future<(.+)>$').firstMatch(paramType.trim());
+        placeholderArgs[i] = inner == null ? paramType : inner.group(1)!.trim();
+      }
+    }
+    final args = [
+      for (var i = 0; i < c.params.length; i++)
+        c.params[i].named
+            ? '${c.params[i].name}: ${_representativeArg(c.params[i].type, i)}'
+            : _representativeArg(c.params[i].type, i),
+    ].join(', ');
+    final paramSummary = c.params.isEmpty
+        ? 'no parameters'
+        : c.params.map((param) => '${param.type} ${param.name}').join(', ');
+    // Issue #1541 review: the rejection signal and the Case 3 guard are
+    // emitted together — a render without a return-type case (`void`,
+    // `Never`, `dynamic`) has no signal reader, and an unread declaration
+    // would leak an `unused_element` analyzer warning into that scaffold.
+    final rejectionSignal = returnTypeCase == null
+        ? ''
+        : '''
+/// The value the captured invocation THREW (null when it returned
+/// normally). The Case 3 guard reads this SIGNAL — never the outcome's
+/// runtime type, which cannot tell a returned Error/Exception instance
+/// from a thrown raw value.
+Object? _rejection;
+
+''';
+    final rejectionReset = returnTypeCase == null
+        ? ''
+        : '  _rejection = null;\n';
+    final rejectionRecord = returnTypeCase == null
+        ? ''
+        : '    _rejection = error;\n';
+    final rejectionDoc = returnTypeCase == null
+        ? ''
+        : '''
+///
+/// The thrown value is also recorded in `_rejection` (reset per capture)
+/// so the Case 3 guard keys on the SIGNAL: a thrown RAW value — neither
+/// an Error nor an Exception — is surfaced by Case 3 instead of passing
+/// as a return that never happened.
+''';
+    // Issue #1751: the DOCUMENTED degradation of an unresolved declared
+    // return — the case is emitted (never a silent vanish), and this note
+    // tells the reader why it asserts `Object?` instead of the declared
+    // type.
+    final degradationNote = returnTypeCase == null || returnShape.resolved
+        ? ''
+        : '''
+      //
+      // NOTE (issue #1751): the declared return `${c.returnType}` did not
+      // resolve to a renderable type — the lane's own vocabulary does not
+      // carry it and no entity file for it was resolved on disk — so this
+      // case carries the documented `Object?` degradation the seam
+      // applies (the FR-011 pattern). The case is enumerated on purpose:
+      // a return-type case that silently vanishes is the defect this note
+      // replaces.
+''';
+
+    return '''
+// GENERATED TEST — `zfa tdd gen ${b.id}` (issue #1007, contract lane).
+//
+// behavior_id: ${b.id}
+// source_criterion: ${b.sourceCriterion}
+// kind: contract
+// description: ${b.description}
+//
+// CONTRACT TEST (issue #1007): this is NOT an implementation test — it
+// proves the implementation at `$subjectImport`
+// satisfies the DECLARED contract above. The body enumerates the
+// contract's cases; every case must hold for the contract to be
+// satisfied. While the method is deliberately unimplemented the test
+// fails through an assertion and `zfa tdd verify-red` reports BLOCKED
+// (never RED): a failing contract test blocks the cycle from proceeding
+// to GREEN until the implementation satisfies the contract.
+library;
+
+import '$_testImport';
+${entityImportLines}import '$subjectImport' as subject;
+
+void main() {
+  group('$escapedGroupDescription', () {
+    test('${b.id} \\u2014 $escapedDescription', () {
+      // Case 1 of $caseCount — exposure: the declared method
+      // `${c.qualifiedMethod}($paramSummary) -> ${c.returnType}` must
+      // resolve on the implementation subject. This case proves EXPOSURE
+      // only — a tearoff of the declared function type is never null; the
+      // invocation and the declared outcome are Case 2 and Case 3 (issue
+      // #1751).
+      final impl = subject.${c.method};
+      expect(impl, isNotNull,
+          reason: '${c.qualifiedMethod} must be exposed on the '
+              'implementation subject (exposure only — the declared '
+              'outcome is asserted by the return case)');
+
+      // Case 2 of $caseCount — implementation: invoking the declared
+      // method does not throw UnimplementedError. A captured rejection
+      // (the implementation threw ArgumentError/TypeError/... for the
+      // representative argument) PASSES this case: the seam is
+      // implemented and validating (issue #1541) — the outcome split is
+      // recorded below, never an uncaught error.
+      final Object? outcome = _captured(() => impl($args));
+      expect(outcome, isNot(isA<UnimplementedError>()),
+          reason: '${c.qualifiedMethod} is not implemented — the declared '
+              'contract is unsatisfied, so the cycle is BLOCKED and cannot '
+              'proceed to GREEN (issue #1007)');
+${returnTypeCase == null ? '' : '''
+      // Case 3 of $caseCount — return: when NO rejection was captured the
+      // invocation returned a value, which must satisfy the declared
+      // return type `${c.returnType}`. `_rejection` is the capture SIGNAL
+      // set by `_captured` — never a runtime-type guess over the outcome,
+      // which cannot tell a returned Error/Exception instance from a
+      // thrown raw value. A captured rejection (an ArgumentError, a
+      // TypeError, a domain Error/Exception, ... thrown by an
+      // argument-validating implementation) has no return value to
+      // type-check and the contract is SATISFIED-WITH-REJECTION (issue
+      // #1541).
+$degradationNote      if (_rejection == null) {
+        expect(outcome, isA<$returnTypeCase>(),
+            reason: '${c.qualifiedMethod} must return the declared type '
+                '`${c.returnType}`');
+      } else {
+        expect(_rejection, anyOf(isA<Error>(), isA<Exception>()),
+            reason: '${c.qualifiedMethod} threw a raw value — neither an '
+                'Error nor an Exception. A raw throw is neither a return '
+                'nor a rejection: return the declared type or throw an '
+                'Error/Exception');
+      }
+'''}${placeholderArgs.isEmpty ? '' : '''
+      // SCAFFOLD PLACEHOLDERS — the placeholder arguments below (complex-
+      // typed or dynamic-typed declared params, issue #1541) throw
+      // UnimplementedError with the exact instruction. Replace each
+      // placeholder with a representative value for its declared type so
+      // this contract test exercises the real invocation:
+${placeholderArgs.entries.map((entry) => '      //   _arg${entry.key}() -> a representative `${entry.value}` value').join('\n')}
+'''}    });
+  });
+}
+
+$rejectionSignal/// Captures ANY error the contract seam invocation can throw (issue
+/// #1541) as the assertion's actual value — never an uncaught escape into
+/// the runner transcript (an uncaught error graded `runner-error`, never
+/// a named verdict). The outcome classes stay split at the assertions:
+/// an [UnimplementedError] (the unimplemented seam, or a scaffold
+/// placeholder argument) drives the BLOCKED verdict through the Case 2
+/// assertion; any OTHER captured Error/Exception (`ArgumentError` from an
+/// argument-validating implementation, a `TypeError` from a cast, ...) is
+/// a satisfied-with-rejection — the seam is implemented and rejected the
+/// scaffold's representative argument.
+${rejectionDoc}Object? _captured(Object? Function() invoke) {
+$rejectionReset  try {
+    return invoke();
+  } on Object catch (error) {
+$rejectionRecord    return error;
+  }
+}
+
+${placeholderArgs.isEmpty ? '' : placeholderArgs.entries.map((entry) => """
+/// Scaffold placeholder for parameter ${entry.key} (declared type
+/// `${entry.value}`). Replace with a representative value.
+Object? _arg${entry.key}() =>
+    throw UnimplementedError('provide a representative `${entry.value}` '
+        'value for the `${c.qualifiedMethod}` contract test');
+""").join('\n')}''';
+  }
+
+  /// The refusal-shaped test for a contract row whose description lost
+  /// the structured shape: a single failing assertion naming the drift
+  /// (format drift is surfaced, not papered over — house pattern).
+  String _renderUnparseable(Behavior b, String subjectImport) {
+    final escapedDescription = BehaviorTestWriter.escapeDartString(
+      b.description,
+    );
+    return '''
+// GENERATED TEST — `zfa tdd gen ${b.id}` (issue #1007, contract lane).
+//
+// behavior_id: ${b.id}
+// source_criterion: ${b.sourceCriterion}
+// kind: contract
+// description: ${b.description}
+//
+// UNPARSEABLE CONTRACT: the behavior description does not carry the
+// structured `<Interface>.<method>(<params>) -> <Return>` shape plan
+// writes for contract rows. The test fails until the row is re-planned
+// (`zfa tdd plan <feature>`) or hand-corrected to the shape.
+library;
+
+import '$_testImport';
+import '$subjectImport' as subject;
+
+void main() {
+  group('${BehaviorTestWriter.escapeDartString('${b.id} (${b.sourceCriterion})')}', () {
+    test('${b.id} \\u2014 $escapedDescription', () {
+      // Case 1 of 1 — declaration: the row must carry the structured
+      // contract description `zfa tdd plan` writes.
+      expect(subject.kContractDeclarationDrift, isNull,
+          reason: 'the behavior description must carry the structured '
+              'contract shape `<Interface>.<method>(<params>) -> '
+              '<Return>` (<category> contract) — re-plan the feature');
+    });
+  });
+}
+''';
+  }
+
+  /// The subject import the contract test emits (issue #1513): a
+  /// `package:` URI when the subject sits under the enclosing project's
+  /// `lib/` (#1035 parity — the same rule, the same helper, the unit lane
+  /// answers), else the legacy relative shape (non-absolute fixture
+  /// paths, no pubspec, subject outside `lib/`).
+  ///
+  /// The package rule only runs for absolute path pairs — the guard the
+  /// unit lane keeps (`behavior_test_writer.dart:440`). A relative
+  /// `testPath` would otherwise walk up from the process CWD and could
+  /// resolve a `package:` URI belonging to whatever package sits there.
+  String _subjectImport(String testPath, String subjectPath) {
+    if (p.isAbsolute(subjectPath) && p.isAbsolute(testPath)) {
+      final packageImport = BehaviorTestWriter.packageSubjectImportFor(
+        testPath,
+        subjectPath,
+      );
+      if (packageImport != null) return packageImport;
+    }
+    return _relativeSubjectPath(testPath, subjectPath);
+  }
+
+  String _relativeSubjectPath(String testPath, String subjectPath) {
+    if (p.isAbsolute(subjectPath) && p.isAbsolute(testPath)) {
+      return p.relative(subjectPath, from: p.dirname(testPath));
+    }
+    return subjectPath;
+  }
+}
+
+/// Writes the contract seam (subject) half of a `gen` pair for
+/// contract-kind behaviors (issue #1007): a standalone top-level
+/// function with the declared method's name and signature that throws
+/// [UnimplementedError] until the contract is implemented.
+class ContractSubjectWriter {
+  const ContractSubjectWriter({this.cwd});
+
+  /// The consumer project root the entity registry resolves against
+  /// (issue #1751) — the SAME fact [ContractTestWriter.cwd] carries, so
+  /// the seam and the paired test render the same declared type. Null
+  /// keeps the pre-#1751 `Object?` degradation.
+  final String? cwd;
+
+  Future<void> write({
+    required Behavior behavior,
+    required String subjectPath,
+  }) async {
+    final file = File(subjectPath);
+    await file.parent.create(recursive: true);
+    final declaration = ContractDeclaration.parse(behavior.description);
+    final returnShape = declaration == null
+        ? null
+        : await ContractReturnShape.resolve(declaration.returnType, cwd: cwd);
+    await file.writeAsString(
+      declaration == null
+          ? _renderUnparseable(behavior)
+          : _render(behavior, declaration, returnShape!),
+    );
+  }
+
+  String _render(
+    Behavior b,
+    ContractDeclaration c,
+    ContractReturnShape returnShape,
+  ) {
+    // Issue #1443: `void` is NOT renderable for the seam — the paired
+    // test captures the invocation result (`final Object? outcome =
+    // _captured(() => impl(...))`), and a `void`-returning subject makes
+    // that capture a compile error. Render `Object?` like the
+    // entity-return case: the seam still throws UnimplementedError until
+    // implemented, and the honest red compiles.
+    //
+    // Issue #1751: every other return renders the RESOLVED type — the
+    // declared entity/collection type verbatim (import included) when the
+    // registry finds it on disk, the documented `Object?` degradation
+    // otherwise. The paired test asserts the SAME resolved type, so the
+    // seam's signature and the Case 3 assertion never drift apart.
+    final returnRender = c.returnType.trim() == 'void'
+        ? 'Object?'
+        : returnShape.renderType;
+    final entityImportLines = returnShape.entityImports.isEmpty
+        ? ''
+        : "\n${returnShape.entityImports.map((uri) => "import '$uri';").join('\n')}\n";
+    String renderType(ContractParam param) =>
+        _isRenderableType(param.type) ? param.type : 'Object?';
+    final positional = c.params
+        .where((param) => !param.named)
+        .map((param) => '${renderType(param)} ${param.name}')
+        .toList();
+    final named = c.params.where((param) => param.named).map((param) {
+      final req = param.required ? 'required ' : '';
+      return '$req${renderType(param)} ${param.name}';
+    }).toList();
+    final params = c.params.isEmpty
+        ? ''
+        : [
+            ...positional,
+            if (named.isNotEmpty) '{${named.join(', ')}}',
+          ].join(', ');
+    final signature = '${c.method}($params)';
+    return '''
+// GENERATED STUB — `zfa tdd gen ${b.id}` (issue #1007).
+//
+// behavior_id: ${b.id}
+// source_criterion: ${b.sourceCriterion}
+// kind: contract
+// target: ${b.target}
+// description: ${b.description}
+//
+// CONTRACT SEAM (issue #1007): this file is where the declared contract
+// `${c.qualifiedMethod}($params) -> ${c.returnType}`
+// (${c.category} contract) gets its implementation. Implement the seam
+// below — or wire it to the production method. The paired contract test
+// enumerates the contract's cases and stays BLOCKED (never RED) until
+// every case is satisfied.
+library;
+$entityImportLines
+/// Contract seam for `${c.qualifiedMethod}($params) -> ${c.returnType}`
+/// (${c.category} contract, declared in the spec's Layer Contracts
+/// section).
+///
+/// Throws [UnimplementedError] until the contract is implemented.
+$returnRender $signature =>
+    throw UnimplementedError(
+        '${c.qualifiedMethod}(${c.params.map((param) => param.type).join(', ')}) -> ${c.returnType} '
+        'is not implemented');
+''';
+  }
+
+  /// The refusal-shaped subject for an unparseable contract row: a
+  /// typed drift marker the paired test asserts on (compilable on its
+  /// own — the test's red is the surfaced drift).
+  String _renderUnparseable(Behavior b) {
+    return '''
+// GENERATED STUB — `zfa tdd gen ${b.id}` (issue #1007).
+//
+// behavior_id: ${b.id}
+// source_criterion: ${b.sourceCriterion}
+// kind: contract
+// target: ${b.target}
+// description: ${b.description}
+//
+// UNPARSEABLE CONTRACT: the behavior description does not carry the
+// structured `<Interface>.<method>(<params>) -> <Return>` shape plan
+// writes for contract rows. Re-plan the feature (`zfa tdd plan`) or
+// hand-correct the row; the paired test fails until then.
+library;
+
+/// Non-null while the row's contract description has drifted from the
+/// structured shape `zfa tdd plan` writes (surfaced, not papered over).
+const String? kContractDeclarationDrift =
+    'contract row "${b.id}" lost its structured declaration';
+''';
+  }
+}

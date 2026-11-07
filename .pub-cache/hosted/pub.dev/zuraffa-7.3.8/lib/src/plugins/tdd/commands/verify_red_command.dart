@@ -1,0 +1,1777 @@
+/// `zfa tdd verify-red` — the honest-red gate for the TDD loop
+/// (spec 046-tdd-verify-red, FR-001..010; 041 Phase 7, T055-T061).
+///
+/// The command:
+///   1. Resolves the target behavior's test path + runnable test name
+///      from the artifact registry written by `zfa tdd gen` (FR-001) —
+///      never by globbing. Explicit unknown ids are rejected before any
+///      run (FR-002); with no id, the target is inferred only when
+///      exactly one behavior has gen artifacts and no red evidence.
+///   2. Loads the `single` command template from
+///      `.specify/memory/tdd-profile.md` (FR-003) and executes exactly
+///      the target test through it via [SingleTestRunner].
+///   3. Classifies the outcome into exactly one of six classes (FR-004)
+///      and rejects blended/empty runs (FR-005).
+///   4. On `assertion` ONLY — after the issue #964 kind gate confirms the
+///      test's assertion KINDS match the scenario verbs (a presence red
+///      in a navigation scenario is honest but irrelevant to the
+///      scenario; it is refused as kind-mismatch, no evidence) — appends
+///      the 8-field red-evidence entry to
+///      `specs/<feature>/tdd/cycle-log.md` (FR-006). The log is
+///      append-only.
+///   5. On any other class, exits non-zero with a named classification
+///      and a remediation hint, writing no evidence (FR-007).
+///   6. Never modifies, creates, or deletes anything under `test/` or
+///      `lib/` (FR-008) — the only write is the cycle-log append.
+///   7. Prints the machine-readable summary line
+///      `verify-red: behavior=<id> classification=<class> certified=<bool> feature=<feature>`
+///      as the final stdout line on every code path (FR-009); exit code
+///      0 means exactly "honest red certified".
+///   8. Misfire-stops: any internal step that cannot complete stops the
+///      command immediately, non-zero, with a clear message (FR-010).
+///
+/// Rejections and misfires are signaled through dart:io `exitCode` (which
+/// [CliRunner] honors) rather than by throwing, so the summary line stays
+/// the final stdout line. `classification=unresolved` marks pre-run
+/// failures (resolution/misfire) where no test was executed.
+///
+/// Issue #1528: a MISSING TDD profile is a SETUP condition, not an
+/// unclassifiable failure — it fail-closes as `classification=setup-error`
+/// (verdict receipt + `--> fix:` line, exit 1) before any test spawns.
+/// The probe sits AFTER target resolution (a caller error is not a setup
+/// condition) and NEVER writes: the baseline self-heal belongs to the
+/// `tdd run` / `tdd gen` entries, preserving this command's FR-008
+/// read-only contract.
+library;
+
+import 'dart:io';
+
+import 'package:args/command_runner.dart';
+import 'package:crypto/crypto.dart';
+import 'package:path/path.dart' as p;
+
+import '../models/red_classification.dart';
+import '../services/artifact_registry.dart';
+import '../services/contract_blocked_receipt.dart';
+import '../services/hand_surface.dart';
+import '../services/cycle_evidence.dart';
+import '../services/cycle_log.dart';
+import '../services/cycle_log_sections.dart';
+import '../services/feature_path_resolver.dart';
+import '../services/finder_taxonomy.dart';
+import '../services/hand_delta_receipt.dart';
+import '../services/profile_preflight.dart';
+import '../services/red_classifier.dart';
+import '../services/runner.dart';
+import '../services/tdd_generation_receipt.dart';
+import '../services/tdd_timeout.dart';
+import '../services/verdict_emitter.dart';
+import '../../../cli/exit_protocol.dart';
+import '../models/verdict_envelope.dart';
+import '../services/widget_scaffold.dart' show contentIsScaffolded;
+import '../tdd_plugin.dart';
+import '../../../core/project/project_root.dart';
+
+/// Resolution-stage failure: message + the feature context if known.
+class VerifyRedResolutionError implements Exception {
+  VerifyRedResolutionError(this.message, {this.feature});
+
+  final String message;
+  final String? feature;
+
+  @override
+  String toString() => message;
+}
+
+class VerifyRedCommand extends Command<void> {
+  VerifyRedCommand(this.plugin) {
+    argParser.addFlag(
+      'json',
+      help:
+          'Emit a versioned verdict.v1 JSON envelope as the final stdout '
+          'line (VISION §5, issue #964).',
+      negatable: false,
+    );
+    argParser.addFlag(
+      'all',
+      negatable: false,
+      help:
+          'Batched red certification (spec 069 T002): certify EVERY '
+          'behavior that has gen artifacts but no red evidence through '
+          'ONE whole-file runner invocation (the profile\'s `file` '
+          'template with every target test path) instead of one '
+          'single-test spawn per behavior. Exit 0 only when every '
+          'behavior certifies an honest assertion red; evidence is '
+          'appended per certified behavior.',
+    );
+    argParser.addFlag(
+      're-certify',
+      negatable: false,
+      help:
+          'The issue #1162 re-certification transition: when the target '
+          'test PASSES (the subject was hand-implemented after the red '
+          'was certified — exactly what the gen\'d test header '
+          'instructs), append GREEN evidence binding the CURRENT subject '
+          'hash and the passing transcript. Requires certified red '
+          'evidence and a subject hash that differs from it — a '
+          'born-green behavior (no red evidence, or a green against the '
+          'certified red shape itself) is still refused, no evidence.',
+    );
+    argParser.addOption(
+      'feature',
+      help:
+          'Feature name (e.g. 046-tdd-verify-red). Restricts target '
+          'resolution to specs/<feature>/tdd/artifacts.json. When '
+          'omitted, every feature registry is scanned.',
+    );
+    argParser.addOption(
+      'project',
+      aliases: const ['project-root'],
+      help:
+          'Project root containing specs/, test/, and .specify/ (the fixture '
+          'or target project). When omitted, the current working directory is '
+          'used. Tests pass the temp fixture root here instead of mutating '
+          'Directory.current, which is process-global and unsafe under '
+          'concurrent test execution.',
+    );
+    argParser.addOption(
+      'timeout',
+      valueHelp: 'minutes',
+      help:
+          'Hard deadline in minutes for the spawned target-test process (bug '
+          '#742; default 2). Fractions are allowed (0.5 = 30 seconds). On '
+          'timeout the child is killed and the command stops non-zero with '
+          'classification runner-error.',
+    );
+  }
+
+  final TddPlugin plugin;
+
+  /// Issue #969: the envelope carrier the wrapper reads on exit.
+  final VerdictContext _verdict = VerdictContext();
+
+  /// Issue #1528: fail CLOSED when the TDD profile is missing — print the
+  /// setup diagnosis + the machine-actionable remediation, stamp the
+  /// verdict receipt (`exit_class=setup-error`), and stop before any
+  /// test is executed. NO writes: the read-only contract (FR-008) holds —
+  /// the `tdd init` self-heal belongs to the run/gen entries.
+  Future<bool> _missingProfile({required String cwd}) async {
+    final profileFile = File(p.join(cwd, SingleTestRunner.defaultProfilePath));
+    return !await profileFile.exists();
+  }
+
+  /// Issue #1528: the setup diagnosis naming the probed profile path —
+  /// BOTH the single and the batch refusal print this same line (the
+  /// batch lane used to print only the count + `--> fix:` lines, leaving
+  /// the operator without the path to act on).
+  void _printMissingProfileDiagnosis({required String cwd}) {
+    final profileFile = File(p.join(cwd, SingleTestRunner.defaultProfilePath));
+    print(
+      'zfa tdd verify-red: $kSetupErrorLabel — TDD profile not found at '
+      '${profileFile.path}. This is a setup condition: the idempotent '
+      '`zfa tdd init` creates the baseline (issue #1528).',
+    );
+  }
+
+  Future<void> _failClosedOnMissingProfile({
+    required String cwd,
+    required String behaviorLabel,
+    String? feature,
+  }) async {
+    _printMissingProfileDiagnosis(cwd: cwd);
+    print(ExitProtocol.fixLine('run `zfa tdd init`, then re-run'));
+    _printSummary(
+      behavior: behaviorLabel,
+      classification: kSetupErrorLabel,
+      certified: false,
+      feature: feature ?? _resolvedFeatureName(cwd, null) ?? 'unknown',
+    );
+    _verdict
+      ..exitClass = kSetupErrorLabel
+      ..outcome = VerdictOutcome.fail
+      ..fix = 'run `zfa tdd init` (idempotent), then re-run'
+      ..details['setup'] = 'missing ${SingleTestRunner.defaultProfilePath}'
+      ..details['classification'] = kSetupErrorLabel;
+    exitCode = 1;
+  }
+
+  @override
+  String get name => 'verify-red';
+
+  @override
+  String get description =>
+      'Prove the target test is honestly red (assertion failure), append '
+      'the red evidence to tdd/cycle-log.md, and exit 0 — or name the '
+      'dishonest failure class and exit non-zero (spec 046).';
+
+  @override
+  String get invocation =>
+      'zfa tdd verify-red [<behavior-id>] [--feature <name>] '
+      '[--re-certify] [--project <path>]';
+
+  @override
+  Future<void> run() => runWithVerdictEnvelope(this, _verdict, _run);
+
+  Future<void> _run() async {
+    final rest = argResults?.rest ?? const <String>[];
+    final behaviorId = rest.isNotEmpty ? rest.first : null;
+    final rawFeatureFlag = argResults?['feature'] as String?;
+    final featureFlag = (rawFeatureFlag != null && rawFeatureFlag.isNotEmpty)
+        ? _stripSpecsPrefix(rawFeatureFlag)
+        : rawFeatureFlag;
+    if (featureFlag != null && featureFlag.isNotEmpty) {
+      _validateFeatureSegment(featureFlag);
+    }
+    // Prefer an explicit --project root so the command never depends on the
+    // process-global Directory.current (which other concurrent tests can
+    // mutate). Falls back to the current working directory for real CLI use.
+    final projectFlag = argResults?['project'] as String?;
+    final cwd = projectFlag != null && projectFlag.isNotEmpty
+        ? p.absolute(projectFlag)
+        : ProjectRoot.find(anchorDir: 'specs');
+
+    // Bug #742: the --timeout override for the spawned target-test process.
+    Duration? timeoutOverride;
+    try {
+      timeoutOverride = parseTddTimeoutMinutes(
+        argResults?['timeout'] as String?,
+      );
+    } on TddTimeoutFormatException catch (e) {
+      print('zfa tdd verify-red: ${e.message}');
+      _printSummary(
+        behavior: behaviorId ?? '-',
+        classification: 'unresolved',
+        certified: false,
+        feature: _resolvedFeatureName(cwd, featureFlag) ?? 'unknown',
+      );
+      exitCode = 1;
+      return;
+    }
+
+    // ---------------------------------------------------------------
+    // Spec 069 T002: the batched red lane — one whole-file invocation
+    // for every gen'd-but-not-red behavior. Dispatched BEFORE the
+    // single-target resolution (multiple pending behaviors are the
+    // batch's normal input, not an ambiguity).
+    // ---------------------------------------------------------------
+    if (argResults?['all'] as bool? ?? false) {
+      if (behaviorId != null) {
+        usageException(
+          'zfa tdd verify-red --all takes no behavior id — it targets '
+          'every behavior lacking red evidence (drop "$behaviorId" or '
+          'drop --all).',
+        );
+      }
+      if (argResults?['re-certify'] as bool? ?? false) {
+        usageException(
+          'zfa tdd verify-red --all takes no --re-certify — the '
+          'transition re-binds ONE behavior\'s evidence after its subject '
+          'was hand-implemented (drop --re-certify or drop --all).',
+        );
+      }
+      await _runBatch(
+        cwd: cwd,
+        featureFlag: featureFlag,
+        timeout: timeoutOverride,
+        runner: const SingleTestRunner(),
+      );
+      return;
+    }
+
+    // ---------------------------------------------------------------
+    // 1. Resolve the target from the registry (FR-001, FR-002).
+    // ---------------------------------------------------------------
+    _ResolvedTarget target;
+    try {
+      target = await _resolveTarget(cwd, behaviorId, featureFlag);
+    } on VerifyRedResolutionError catch (e) {
+      print('zfa tdd verify-red: ${e.message}');
+      _printSummary(
+        behavior: behaviorId ?? '-',
+        classification: 'unresolved',
+        certified: false,
+        feature:
+            e.feature ?? _resolvedFeatureName(cwd, featureFlag) ?? 'unknown',
+      );
+      exitCode = 1;
+      return;
+    }
+    var record = target.record;
+    // Issue #1528: a missing TDD profile is a SETUP condition — fail
+    // closed with `classification=setup-error` BEFORE any write, including
+    // the #1778 rebind below (which updates artifacts.json). The setup
+    // path promises no writes (issue #1778 review).
+    if (await _missingProfile(cwd: cwd)) {
+      await _failClosedOnMissingProfile(
+        cwd: cwd,
+        behaviorLabel: record.behaviorId,
+        feature: target.featureName,
+      );
+      return;
+    }
+    print('zfa tdd verify-red: behavior ${record.behaviorId}');
+    print('   feature: ${target.featureName}');
+    print('   test: ${record.testPath}');
+
+    // ---------------------------------------------------------------
+    // 2. Load the profile single template (FR-003, misfire-stop U27).
+    // ---------------------------------------------------------------
+    final runner = const SingleTestRunner();
+    String template;
+    try {
+      template = await runner.loadSingleTemplate(workingDirectory: cwd);
+    } on StateError catch (e) {
+      print(e.message);
+      _printSummary(
+        behavior: record.behaviorId,
+        classification: 'unresolved',
+        certified: false,
+        feature: target.featureName,
+      );
+      exitCode = 1;
+      return;
+    }
+    // Issue #1778: re-bind the recorded runnable_test_name to a corrected
+    // title found in the test file. Moved here (after profile + template
+    // checks) so setup-error returns without writing artifacts.json.
+    // The #964 kind gate below must judge the RECORDED scenario, never
+    // the rebound title: copyWithRunnableTestName rewrites
+    // descriptionSegment — the gate's kind source — so gating on the
+    // rebound record would let a title-derived description certify a red
+    // that does not satisfy the recorded scenario (review of PR #2013).
+    // The rebound record still drives the run and the evidence. The
+    // rebind persists the original scenario (recorded_scenario), so the
+    // LATER invocations — which hold no pre-rebind record — gate on the
+    // same scenario through the record itself.
+    final preRebindRecord = record;
+    record = await _rebindRunnableTestNameIfNeeded(cwd, target, record);
+
+    // ---------------------------------------------------------------
+    // 3. Execute exactly the target test (FR-003).
+    // ---------------------------------------------------------------
+    final testPath = p.isAbsolute(record.testPath)
+        ? record.testPath
+        : p.join(cwd, record.testPath);
+    final testName = _runnableNameOf(record);
+    print('   command: $template');
+    final ownedPaths = _ownedRelativePaths(record, cwd);
+    _ReadOnlyTreeSnapshot beforeRun;
+    try {
+      beforeRun = await _ReadOnlyTreeSnapshot.capture(
+        cwd,
+        ownedPaths: ownedPaths,
+      );
+    } on FileSystemException catch (e) {
+      print('zfa tdd verify-red: cannot snapshot owned paths: ${e.message}');
+      _printSummary(
+        behavior: record.behaviorId,
+        classification: 'unresolved',
+        certified: false,
+        feature: target.featureName,
+      );
+      exitCode = 1;
+      return;
+    }
+    final run = await runner.runSingle(
+      singleTemplate: template,
+      testPath: testPath,
+      testName: testName,
+      workingDirectory: cwd,
+      timeout: timeoutOverride,
+    );
+    print('   runner exit: ${run.exitCode}');
+    if (run.timedOut) {
+      // Bug #742: name the behavior, the step, and the command, then stop
+      // non-zero — the classification below is runner-error either way.
+      print(
+        'zfa tdd verify-red: behavior "${record.behaviorId}" — target test '
+        'timed out: ${run.output}',
+      );
+      print(
+        '   re-run with a larger --timeout <minutes> if the test '
+        'legitimately needs longer.',
+      );
+    }
+
+    List<String> changedPaths;
+    try {
+      final afterRun = await _ReadOnlyTreeSnapshot.capture(
+        cwd,
+        ownedPaths: ownedPaths,
+      );
+      changedPaths = beforeRun.changedPaths(afterRun);
+    } on FileSystemException catch (e) {
+      changedPaths = ['snapshot failed: ${e.message}'];
+    }
+    if (changedPaths.isNotEmpty) {
+      const classification = RedClassification.runnerError;
+      print('   classification: ${classification.label}');
+      print(
+        'zfa tdd verify-red: read-only integrity violation under owned paths: '
+        '${changedPaths.join(', ')}',
+      );
+      print('   no evidence written');
+      _printSummary(
+        behavior: record.behaviorId,
+        classification: classification.label,
+        certified: false,
+        feature: target.featureName,
+      );
+      exitCode = 1;
+      return;
+    }
+
+    // ---------------------------------------------------------------
+    // 4. Classify (FR-004, FR-005).
+    // ---------------------------------------------------------------
+    final classification = classify(run);
+    print('   classification: ${classification.label}');
+    if (classification == RedClassification.testNameMismatch) {
+      print('   recorded runnable_test_name: ${record.runnableTestName}');
+      final mismatchTestPath = p.isAbsolute(record.testPath)
+          ? record.testPath
+          : p.join(cwd, record.testPath);
+      String mismatchContent = '';
+      try {
+        mismatchContent = File(mismatchTestPath).readAsStringSync();
+      } catch (_) {}
+      final presentNames = _extractTestTitles(mismatchContent);
+      print(
+        '   tests present in ${record.testPath}: '
+        '${presentNames.isEmpty ? '(none)' : presentNames.join(', ')}',
+      );
+    }
+
+    // ---------------------------------------------------------------
+    // 4b. Issue #1007 — the CONTRACT lane: a failing contract test is
+    //     BLOCKED, never a certified red. A contract test proves the
+    //     implementation satisfies a DECLARED contract; its assertion
+    //     failure means the contract is UNSATISFIED — the opposite of
+    //     honest-red evidence (which certifies the loop may proceed to
+    //     make/GREEN). So: re-grade the verdict BLOCKED, write the
+    //     distinct receipt (contract-blocked.<feature>.<id>.json), append NO red
+    //     evidence, and exit non-zero — the run driver marks the
+    //     behavior BLOCKED and the cycle cannot proceed to GREEN until
+    //     the implementation satisfies the contract.
+    // ---------------------------------------------------------------
+    if (classification == RedClassification.assertion &&
+        await _targetIsContractKind(cwd, record)) {
+      final receiptPath = await _writeBlockedReceipt(
+        cwd: cwd,
+        target: target,
+        record: record,
+        run: run,
+      );
+      print(
+        '   contract lane: re-graded BLOCKED (issue #1007) — the declared '
+        'contract is not satisfied; the cycle cannot proceed to GREEN',
+      );
+      print('   blocked receipt: $receiptPath');
+      stderr.writeln(
+        'zfa tdd verify-red: blocked — implement the declared contract '
+        '${record.sourceCriterion}, then re-run '
+        '`zfa tdd verify-red ${record.behaviorId}`',
+      );
+      // Issue #1589: the blocked verdict names the hand surface — where
+      // the declared contract is implemented (the seam) and the command
+      // that binds it (wire) — so the verdict is actionable as written.
+      // Issue #1625: the seam is resolved subject-first (the implementation
+      // seam the contract test imports, not the generated test) and the
+      // wire example only prints when the traced entity exists.
+      // Messaging only: the verdict, the receipt and the no-red-evidence
+      // contract are the #1007 ones.
+      final seamRel = HandSurface.seamPathFor(
+        projectRoot: cwd,
+        feature: target.featureName,
+        behaviorId: record.behaviorId,
+      );
+      stderr.writeln(
+        '   ${HandSurface.hintLine(behaviorId: record.behaviorId, seamPath: seamRel, contract: record.sourceCriterion, projectRoot: cwd)}',
+      );
+      stderr.writeln('   no red evidence written');
+      _printSummary(
+        behavior: record.behaviorId,
+        classification: 'blocked',
+        certified: false,
+        feature: target.featureName,
+      );
+      exitCode = 1;
+      return;
+    }
+
+    // ---------------------------------------------------------------
+    // 4c. Issue #1162 — the --re-certify transition: the sanctioned
+    //     path from certified red -> hand-implemented subject -> green
+    //     evidence. The generated test header instructs the developer to
+    //     replace the stub body; when the test then PASSES, plain
+    //     verify-red grades unexpected-green (no evidence) and make's
+    //     #1036 guard refuses the skip — the bug loop could never close.
+    //     The transition re-binds the evidence honestly: certified red
+    //     evidence must exist (the born-green precondition), the subject
+    //     hash must have CHANGED since it (a green against the certified
+    //     red shape itself is the born-green vacuity — refused), and the
+    //     passing transcript becomes the green evidence bound to the
+    //     CURRENT subject hash.
+    // ---------------------------------------------------------------
+    if (classification == RedClassification.unexpectedGreen &&
+        (argResults?['re-certify'] as bool? ?? false)) {
+      final lastRed = await CycleEvidence(
+        target.featureDir,
+      ).lastEntryFor(record.behaviorId, kind: 'red');
+      if (lastRed == null) {
+        print(
+          'zfa tdd verify-red: behavior "${record.behaviorId}" passes but '
+          'has no certified red evidence in cycle-log.md — re-certifying '
+          'it would certify the born-green class (issue #1036). Certify '
+          'the honest red first (`zfa tdd verify-red '
+          '${record.behaviorId}` against the failing subject).',
+        );
+        stderr.writeln('   no evidence written');
+        _printSummary(
+          behavior: record.behaviorId,
+          classification: RedClassification.unexpectedGreen.label,
+          certified: false,
+          feature: target.featureName,
+        );
+        exitCode = 1;
+        return;
+      }
+      final currentHash = await _subjectHashAt(cwd, record);
+      if (lastRed.subjectHash != null && lastRed.subjectHash == currentHash) {
+        print(
+          'zfa tdd verify-red: behavior "${record.behaviorId}" passes '
+          'against the SAME subject shape the certified red captured '
+          '(issue #1036) — the test passes on its certified red subject, '
+          'the born-green vacuity; there is nothing to re-certify.',
+        );
+        stderr.writeln('   no evidence written');
+        _printSummary(
+          behavior: record.behaviorId,
+          classification: RedClassification.unexpectedGreen.label,
+          certified: false,
+          feature: target.featureName,
+        );
+        exitCode = 1;
+        return;
+      }
+      final log = CycleLog(target.featureDir);
+      await log.append(
+        CycleLogEntry(
+          behaviorId: record.behaviorId,
+          kind: CycleEntryKind.green,
+          runnerCommand: run.command,
+          exitCode: run.exitCode,
+          capturedOutput: run.output,
+          redEvidence:
+              'issue #1162 re-certification — the subject was '
+              'hand-implemented after the certified red; this green '
+              'evidence binds the NEW subject shape with the passing '
+              'transcript',
+          subjectHash: currentHash,
+          sourceCriterion: record.sourceCriterion,
+          testPath: p.isAbsolute(record.testPath)
+              ? record.testPath
+              : p.join(cwd, record.testPath),
+          timestamp: DateTime.now().toUtc().toIso8601String(),
+        ),
+      );
+      print(
+        '   re-certified: green evidence appended to '
+        '${TddFeaturePaths.displayDir(cwd: cwd, dir: target.featureDir)}/tdd/cycle-log.md (issue #1162) — '
+        'the new subject hash is bound to the passing transcript',
+      );
+      // Issue #969 T003: the re-certified evidence becomes
+      // self-certifying.
+      await TddGenerationReceipts.writeBestEffort(
+        projectRoot: cwd,
+        command: 'tdd verify-red --re-certify',
+        target: record.behaviorId,
+        feature: target.featureName,
+        files: {p.join(target.featureDir, 'tdd', 'cycle-log.md'): 'update'},
+      );
+      // Spec 1423: the re-certified hand-delta becomes SELF-CERTIFYING —
+      // the drifted receipted test/subject paths are re-hashed from the
+      // CURRENT bytes (action: update) so the verify proof preflight
+      // validates the certified hand-delta instead of demanding its
+      // destruction via `zfa tdd gen` (issue #1375). Append-only: the gen
+      // receipts stay; latest-wins resolves the certified state. The
+      // id-bearing command becomes the event's runnable `repro`
+      // (`zfa tdd verify-red <id> --re-certify`), the remedy a later
+      // drift on the same file prints.
+      await HandDeltaReceipts.refreshBestEffort(
+        projectRoot: cwd,
+        feature: target.featureName,
+        behaviorId: record.behaviorId,
+        command: 'tdd verify-red ${record.behaviorId} --re-certify',
+        transition: 're-certify',
+        artifactPaths: [record.testPath, record.subjectPath],
+      );
+      _printSummary(
+        behavior: record.behaviorId,
+        classification: 're-certified',
+        certified: true,
+        feature: target.featureName,
+      );
+      exitCode = 0;
+      return;
+    }
+
+    // ---------------------------------------------------------------
+    // 5/6. Evidence on assertion only; rejection otherwise (FR-006/007).
+    //      Issue #964 kind gate: BEFORE evidence, the test's assertion
+    //      kinds must match the scenario verbs — a red from a presence
+    //      finder in a navigation scenario is honest but IRRELEVANT to
+    //      the scenario (the certified lie of issue #964).
+    // ---------------------------------------------------------------
+    if (classification == RedClassification.assertion) {
+      // Issue #964 kind gate: BEFORE evidence, the test's assertion
+      // kinds must match the scenario verbs — a red from a presence
+      // finder in a navigation scenario is honest but IRRELEVANT to
+      // the scenario (the certified lie of issue #964). Gated on the
+      // PRE-REBIND record: a rebind rewrote descriptionSegment, and the
+      // gate must judge the recorded scenario, not the rebound title
+      // (review of PR #2013).
+      final kindGaps = await _certifyFinderKinds(cwd, preRebindRecord);
+      if (kindGaps == null) {
+        print('   classification: ${RedClassification.kindMismatch.label}');
+        print(
+          'zfa tdd verify-red: red observed, but no scenario description '
+          'is available from the artifact record or legacy test header; '
+          'the assertion kinds cannot be certified.',
+        );
+        stderr.writeln('   no evidence written');
+        _printSummary(
+          behavior: record.behaviorId,
+          classification: RedClassification.kindMismatch.label,
+          certified: false,
+          feature: target.featureName,
+        );
+        exitCode = 1;
+        return;
+      }
+      if (kindGaps.isNotEmpty) {
+        print('   classification: ${RedClassification.kindMismatch.label}');
+        print(
+          'zfa tdd verify-red: red observed, but the test\'s assertion '
+          'kinds do not match the scenario verb (issue #964): required '
+          '${kindGaps.map((c) => c.label).join(', ')} — a rendered '
+          'string, an absence of a finder, or a wrong-kind assertion '
+          'never proves this scenario.',
+        );
+        stderr.writeln(
+          'zfa tdd verify-red: ${RedClassification.kindMismatch.label} — '
+          '${RedClassification.kindMismatch.remediationHint}',
+        );
+        stderr.writeln('   no evidence written');
+        _printSummary(
+          behavior: record.behaviorId,
+          classification: RedClassification.kindMismatch.label,
+          certified: false,
+          feature: target.featureName,
+        );
+        exitCode = 1;
+        return;
+      }
+      // Issue #959: name the failing authored assertion in the verdict
+      // surface — detail line, summary token, and cycle-log field. Null
+      // identity (unparseable transcript) omits the detail everywhere
+      // rather than fabricating a name.
+      final evidence = failingAssertionOf(run.output);
+      if (evidence != null) {
+        print('   red-evidence: $evidence');
+      }
+      final log = CycleLog(target.featureDir);
+      await log.append(
+        CycleLogEntry(
+          behaviorId: record.behaviorId,
+          kind: CycleEntryKind.red,
+          runnerCommand: run.command,
+          exitCode: run.exitCode,
+          capturedOutput: run.output,
+          classification: FailureClass.assertionFailure,
+          redEvidence: evidence,
+          subjectHash: await _subjectHashAt(cwd, record),
+          sourceCriterion: record.sourceCriterion,
+          testPath: testPath,
+          timestamp: DateTime.now().toUtc().toIso8601String(),
+        ),
+      );
+      print(
+        '   red evidence appended to ${TddFeaturePaths.displayDir(cwd: cwd, dir: target.featureDir)}/tdd/'
+        'cycle-log.md',
+      );
+      // Issue #969 T003: the red evidence becomes self-certifying.
+      await TddGenerationReceipts.writeBestEffort(
+        projectRoot: cwd,
+        command: 'tdd verify-red',
+        target: record.behaviorId,
+        feature: target.featureName,
+        files: {p.join(target.featureDir, 'tdd', 'cycle-log.md'): 'update'},
+      );
+      _printSummary(
+        behavior: record.behaviorId,
+        classification: classification.label,
+        certified: true,
+        feature: target.featureName,
+      );
+      exitCode = 0;
+      return;
+    }
+
+    stderr.writeln(
+      'zfa tdd verify-red: classification ${classification.label} — '
+      '${classification.remediationHint}',
+    );
+    stderr.writeln('   no evidence written');
+    _printSummary(
+      behavior: record.behaviorId,
+      classification: classification.label,
+      certified: false,
+      feature: target.featureName,
+    );
+    exitCode = 1;
+  }
+
+  /// Whether the target test is a CONTRACT-lane artifact (issue #1007):
+  /// the generated test carries `// kind: contract` in its provenance
+  /// header. The test file IS the artifact being verified, so the kind
+  /// travels with it (a re-planned test list cannot drift the verdict).
+  Future<bool> _targetIsContractKind(String cwd, ArtifactRecord record) async {
+    final testPath = p.isAbsolute(record.testPath)
+        ? record.testPath
+        : p.join(cwd, record.testPath);
+    try {
+      final content = await File(testPath).readAsString();
+      return RegExp(r'^// kind: contract$', multiLine: true).hasMatch(content);
+    } on FileSystemException {
+      return false;
+    }
+  }
+
+  /// Write the BLOCKED verdict's receipt (issue #1007):
+  /// `.zfa/receipts/contract-blocked.<feature>.<id>.json`, schema
+  /// `contract-blocked.v1`.
+  Future<String> _writeBlockedReceipt({
+    required String cwd,
+    required _ResolvedTarget target,
+    required ArtifactRecord record,
+    required RunRecord run,
+  }) async {
+    final store = ContractBlockedReceiptStore(projectRoot: cwd);
+    return store.write(
+      ContractBlockedReceipt(
+        behavior: record.behaviorId,
+        feature: target.featureName,
+        contract: record.sourceCriterion,
+        command: run.command,
+        exitCode: run.exitCode,
+        outputExcerpt: run.output
+            .split('\n')
+            .map((l) => l.trimRight())
+            .where((l) => l.isNotEmpty)
+            .take(5)
+            .join('\n'),
+        blockedAt: DateTime.now().toUtc().toIso8601String(),
+      ),
+    );
+  }
+
+  // -------------------------------------------------------------------
+  // Target resolution (FR-001, FR-002, SC-004)
+  // -------------------------------------------------------------------
+
+  Future<_ResolvedTarget> _resolveTarget(
+    String cwd,
+    String? behaviorId,
+    String? featureFlag,
+  ) async {
+    final registries = await _scanRegistries(cwd, featureFlag);
+    // Issue #1471: the label is the canonical NAME, never the raw
+    // `.specify/bugs/<slug>` reference.
+    final featureLabel = _resolvedFeatureName(cwd, featureFlag);
+
+    if (behaviorId != null) {
+      final matches = <_ResolvedTarget>[];
+      for (final entry in registries) {
+        final record = await entry.registry.findRecord(behaviorId);
+        if (record != null) {
+          matches.add(
+            _ResolvedTarget(record, entry.featureDir, entry.featureName),
+          );
+        }
+      }
+      if (matches.isEmpty) {
+        // FR-002 / U22: distinguish "planned but not gen'd" from unknown.
+        final plannedFeature = await _isPlannedInTestList(
+          cwd,
+          behaviorId,
+          featureFlag,
+        );
+        if (plannedFeature != null) {
+          throw VerifyRedResolutionError(
+            'behavior "$behaviorId" is planned in the $plannedFeature test '
+            'list but has no gen artifacts. Run `zfa tdd gen $behaviorId` '
+            'first.',
+            feature: plannedFeature,
+          );
+        }
+        throw VerifyRedResolutionError(
+          'unknown behavior id "$behaviorId". No matching record in any '
+          'specs/<feature>/tdd/artifacts.json'
+          '${featureLabel != null ? ' for feature $featureLabel' : ''}. '
+          'Run `zfa tdd gen $behaviorId` to materialize it.',
+          feature: featureLabel,
+        );
+      }
+      if (matches.length > 1) {
+        final list = matches
+            .map((m) => '${m.record.behaviorId} (${m.featureName})')
+            .join(', ');
+        throw VerifyRedResolutionError(
+          'ambiguous behavior id "$behaviorId" registered in multiple '
+          'features: $list. Use --feature to disambiguate.',
+        );
+      }
+      return matches.single;
+    }
+
+    // No id: infer ONLY when exactly one behavior has gen artifacts and
+    // no red evidence yet (FR-002, U19-U21).
+    final candidates = <_ResolvedTarget>[];
+    for (final entry in registries) {
+      final certified = await _certifiedBehaviors(entry.featureDir);
+      for (final record in await entry.registry.loadAll()) {
+        if (!certified.contains(record.behaviorId)) {
+          candidates.add(
+            _ResolvedTarget(record, entry.featureDir, entry.featureName),
+          );
+        }
+      }
+    }
+    if (candidates.isEmpty) {
+      throw VerifyRedResolutionError(
+        'no behavior with gen artifacts lacks red evidence — nothing to '
+        'verify. Run `zfa tdd gen <behavior-id>` first.',
+      );
+    }
+    if (candidates.length > 1) {
+      final list = candidates
+          .map((c) => '${c.record.behaviorId} (${c.featureName})')
+          .join(', ');
+      throw VerifyRedResolutionError(
+        'ambiguous invocation: multiple behaviors have gen artifacts and '
+        'no red evidence: $list. Pass an explicit behavior id.',
+      );
+    }
+    return candidates.single;
+  }
+
+  Future<List<_RegistryEntry>> _scanRegistries(
+    String cwd,
+    String? featureFlag,
+  ) async {
+    if (featureFlag != null && featureFlag.isNotEmpty) {
+      // Issue #1471: the reference may name a bug directory
+      // (`.specify/bugs/<slug>`) outside `specs/` — resolve it through the
+      // shared resolver so the registry is read from the REAL directory and
+      // the entry is labelled with the canonical name (a plain basename).
+      final resolved = TddFeaturePaths.resolveWithPin(
+        projectRoot: cwd,
+        featureRef: featureFlag,
+      );
+      final featureDir = resolved.dir;
+      return [
+        _RegistryEntry(
+          resolved.name,
+          featureDir,
+          ArtifactRegistry(featureDir: featureDir),
+        ),
+      ];
+    }
+    final specsDir = Directory(p.join(cwd, 'specs'));
+    if (!await specsDir.exists()) return const [];
+    final dirs = specsDir.listSync().whereType<Directory>().toList()
+      ..sort((a, b) => p.basename(a.path).compareTo(p.basename(b.path)));
+    final entries = <_RegistryEntry>[];
+    for (final dir in dirs) {
+      final registryFile = File(p.join(dir.path, 'tdd', 'artifacts.json'));
+      if (await registryFile.exists()) {
+        final name = p.basename(dir.path);
+        entries.add(
+          _RegistryEntry(
+            name,
+            dir.path,
+            ArtifactRegistry(featureDir: dir.path),
+          ),
+        );
+      }
+    }
+    return entries;
+  }
+
+  /// Behavior ids that already have a red entry in the feature's
+  /// cycle-log (evidence of a certified red).
+  Future<Set<String>> _certifiedBehaviors(String featureDir) async {
+    final file = File(p.join(featureDir, 'tdd', 'cycle-log.md'));
+    if (!await file.exists()) return const {};
+    final raw = await file.readAsString();
+    final certified = <String>{};
+    for (final section in splitCycleLogSections(raw)) {
+      final behavior = RegExp(
+        r'^- behavior: (\S+)',
+        multiLine: true,
+      ).firstMatch(section);
+      if (behavior == null) continue;
+      if (RegExp(r'^- kind: red$', multiLine: true).hasMatch(section)) {
+        certified.add(behavior.group(1)!);
+      }
+    }
+    return certified;
+  }
+
+  /// Whether [behaviorId] appears as a row in any feature's
+  /// `tdd/test-list.md`. Returns the feature name when found.
+  Future<String?> _isPlannedInTestList(
+    String cwd,
+    String behaviorId,
+    String? featureFlag,
+  ) async {
+    List<Directory> dirs;
+    if (featureFlag != null && featureFlag.isNotEmpty) {
+      // Issue #1471: resolve the reference so a bug directory
+      // (`.specify/bugs/<slug>`) is scanned at its real location.
+      dirs = [
+        Directory(
+          TddFeaturePaths.resolveWithPin(
+            projectRoot: cwd,
+            featureRef: featureFlag,
+          ).dir,
+        ),
+      ];
+    } else {
+      final specsDir = Directory(p.join(cwd, 'specs'));
+      if (!await specsDir.exists()) return null;
+      dirs = specsDir.listSync().whereType<Directory>().toList()
+        ..sort((a, b) => p.basename(a.path).compareTo(p.basename(b.path)));
+    }
+    for (final dir in dirs) {
+      final file = File(p.join(dir.path, 'tdd', 'test-list.md'));
+      if (!await file.exists()) continue;
+      final raw = await file.readAsString();
+      for (final line in raw.split('\n')) {
+        final trimmed = line.trimLeft();
+        if (!trimmed.startsWith('|') || trimmed.contains('---')) continue;
+        // Row shape: `| <id> | <behavior> | ...` — the first cell after
+        // the leading pipe is the behavior id.
+        final cells = trimmed.split('|').map((s) => s.trim()).toList();
+        if (cells.length > 1 && cells[1] == behaviorId) {
+          return p.basename(dir.path);
+        }
+      }
+    }
+    return null;
+  }
+
+  /// Issue #1778: re-bind the recorded `runnable_test_name` to a
+  /// corrected test title found in the target file, when the recorded
+  /// name matches nothing. Returns [record] unchanged when no rebind is
+  /// needed or possible (the zero-match then surfaces as
+  /// `test-name-mismatch`).
+  Future<ArtifactRecord> _rebindRunnableTestNameIfNeeded(
+    String cwd,
+    _ResolvedTarget target,
+    ArtifactRecord record,
+  ) async {
+    final testPath = p.isAbsolute(record.testPath)
+        ? record.testPath
+        : p.join(cwd, record.testPath);
+    final file = File(testPath);
+    if (!file.existsSync()) return record;
+    String content;
+    try {
+      content = await file.readAsString();
+    } catch (_) {
+      return record;
+    }
+    final titles = _extractTestTitles(content);
+    if (titles.isEmpty) return record;
+    final recorded = record.plainTestName;
+    // Issue #1778 (review): mirror `--plain-name`'s substring
+    // matching — a title that contains the recorded name still matches
+    // at runtime, so treat it as present. Equality is checked first so a
+    // name with non-word boundary characters is not mishandled.
+    final present =
+        recorded.isNotEmpty &&
+        titles.any((t) => t == recorded || t.contains(recorded));
+    if (present) return record;
+    String? candidate;
+    if (recorded.isNotEmpty) {
+      // Sole-test fallback (issue #1778 review): when the file holds
+      // exactly one test title, the recorded name is unambiguously
+      // stale — rebind to that sole title even when the description
+      // changed enough to break containment (e.g. a title that drops
+      // the id prefix after the #871 pure-description change).
+      // Sole-test fallback only applies when the recorded name was
+      // plausibly a (now-stale) test title — i.e. it carried the
+      // behavior id. A recorded name that is a scenario description
+      // (no id) must not be silently rebound to an unrelated sole
+      // title, or the kind gate (issue #964) loses its evidence —
+      // UNLESS the sole title itself carries the behavior id
+      // (issue #2011): a per-behavior file holds exactly one test, so
+      // gate 2 below (titles.length > 1) never runs, and the lone
+      // id-carrying title is the same unambiguous evidence the
+      // multi-test branch trusts. Refusing it left the rebind
+      // unsatisfiable: the mismatch remedy prescribed re-running the
+      // command that just refused.
+      // Sole-title id check (review of PR #2013): the id must match as a
+      // WHOLE token — a bare substring lets behavior `U9` rebind a sole
+      // title written for `U90`, certifying another behavior's test as
+      // `U9`'s evidence. Boundaries are non-alphanumerics, so `U9` still
+      // matches `U9 — …` and `(U9)`; RegExp.escape keeps ids holding
+      // regex metacharacters literal.
+      if (titles.length == 1 &&
+          (recorded.contains(record.behaviorId) ||
+              RegExp(
+                '(?<![A-Za-z0-9])${RegExp.escape(record.behaviorId)}'
+                '(?![A-Za-z0-9])',
+              ).hasMatch(titles.first))) {
+        candidate = titles.first;
+      } else if (titles.length > 1) {
+        // Id-based binding: a title carrying the behavior id is the
+        // intended target (unambiguous). Only when there is more than
+        // one title to choose among — a lone title must not be rebound
+        // from a scenario-derived recorded name (issue #964 kind gate).
+        final idMatches = titles
+            .where((t) => t.contains(record.behaviorId))
+            .toList();
+        if (idMatches.length == 1) {
+          candidate = idMatches.first;
+        }
+        // Note: binding by description containment alone is deliberately
+        // NOT attempted — an unrelated test whose title happens to be a
+        // substring of the recorded name could otherwise be bound to this
+        // behavior and certified as its red evidence (issue #1778 review).
+        // Such cases retain `test-name-mismatch` and need an explicit
+        // rebind.
+      }
+    }
+    if (candidate == null) return record;
+    final newRunnable = '${record.testPath}::${record.behaviorId}::$candidate';
+    if (newRunnable == record.runnableTestName) return record;
+    try {
+      final registry = ArtifactRegistry(featureDir: target.featureDir);
+      await registry.updateRunnableTestName(record.behaviorId, newRunnable);
+    } catch (_) {
+      // Best-effort: a failed write keeps the old record; the
+      // zero-match surfaces as test-name-mismatch below.
+      return record;
+    }
+    print(
+      '   rebind: runnable_test_name updated from '
+      '"${record.runnableTestName}" to "$newRunnable" (issue #1778)',
+    );
+    return record.copyWithRunnableTestName(newRunnable);
+  }
+
+  /// Extract the outer test titles (the strings passed to `test(...)` /
+  /// `testWidgets(...)` / `test ( ... )`) from a test file's source.
+  List<String> _extractTestTitles(String content) {
+    final titles = <String>[];
+    // Tolerant of titles containing apostrophes/quotes: accept either
+    // quote kind and allow escaped quotes inside the matching string.
+    final re = RegExp(
+      r'''\btest(?:Widgets)?\s*\(\s*(?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)")''',
+    );
+    for (final m in re.allMatches(content)) {
+      var t = m.group(1) ?? m.group(2);
+      if (t == null || t.isEmpty) continue;
+      // Unescape common escape sequences so the captured title matches
+      // the runtime test name.
+      t = t
+          .replaceAll(r"\'", "'")
+          .replaceAll(r'\"', '"')
+          .replaceAll(r'\\', r'\');
+      if (!titles.contains(t)) titles.add(t);
+    }
+    return titles;
+  }
+
+  /// The runnable test name for `--plain-name` matching — the record's
+  /// own contract ([ArtifactRecord.plainTestName]): the last segment with
+  /// any legacy `<id> — ` echo stripped (bug #871).
+  String _runnableNameOf(ArtifactRecord record) => record.plainTestName;
+
+  /// The sha256 of the behavior's subject file at certification time
+  /// (issue #1036): binds the red evidence to the EXACT subject shape it
+  /// exercised, so the make skip transition can refuse a skip on a
+  /// subject the certified evidence never captured (the born-green
+  /// placeholder class). Null when the subject artifact is missing —
+  /// the field is omitted and the downstream validation fails open for
+  /// that entry (legacy tolerance).
+  Future<String?> _subjectHashAt(String cwd, ArtifactRecord record) async {
+    final subjectPath = p.isAbsolute(record.subjectPath)
+        ? record.subjectPath
+        : p.join(cwd, record.subjectPath);
+    final subjectFile = File(subjectPath);
+    if (!await subjectFile.exists()) return null;
+    return sha256.convert(await subjectFile.readAsBytes()).toString();
+  }
+
+  /// The issue #964 kind gate: re-derive the scenario's required
+  /// assertion classes from the artifact record's scenario description
+  /// and check the file satisfies them. Legacy records without a description
+  /// segment fall back to the generated test's description header. Returns
+  /// the unsatisfied classes, or null when neither source supplies a scenario
+  /// description. An unreadable file, scaffolded test, or non-widget test
+  /// does not apply the gate and returns an empty set.
+  Future<Set<ScenarioAssertionClass>?> _certifyFinderKinds(
+    String cwd,
+    ArtifactRecord record,
+  ) async {
+    final testPath = p.isAbsolute(record.testPath)
+        ? record.testPath
+        : p.join(cwd, record.testPath);
+    final String content;
+    try {
+      content = await File(testPath).readAsString();
+    } on FileSystemException {
+      return const <ScenarioAssertionClass>{};
+    }
+    // Scaffolded tests are already excluded from green certification —
+    // their reds stay the bootstrap honest red.
+    if (contentIsScaffolded(content)) {
+      return const <ScenarioAssertionClass>{};
+    }
+    // Only the widget lane carries finder kinds.
+    if (!content.contains('testWidgets(')) {
+      return const <ScenarioAssertionClass>{};
+    }
+    final descriptionMatch = RegExp(
+      r'^// description: (.*)$',
+      multiLine: true,
+    ).firstMatch(content);
+    // The gate's scenario source (review of PR #2013): the
+    // rebind-persisted recorded scenario when the record carries one,
+    // else the description segment — a #1778 rebind rewrites the
+    // segment to the corrected title, and judging the title let a
+    // presence-only red certify against a scenario that requires a
+    // route outcome. The legacy `// description:` header is the last
+    // fallback. `gateScenario` is null-or-non-empty by construction.
+    final recordScenario = record.gateScenario;
+    final headerDescription = descriptionMatch?.group(1)?.trim() ?? '';
+    final description = recordScenario ?? headerDescription;
+    if (description.isEmpty) return null;
+    final analysis = FinderTaxonomy.analyze(description);
+    return FinderTaxonomy.unsatisfiedClasses(analysis, content);
+  }
+
+  // -----------------------------------------------------------------
+  // Spec 069 T002 — the batched red lane.
+  // -----------------------------------------------------------------
+
+  /// Certify every gen'd-but-not-red behavior through ONE whole-file
+  /// runner invocation. Per-behavior classification from the batch
+  /// transcript; evidence appended ONLY for assertion-classified
+  /// behaviors; exit 0 only when every behavior certifies.
+  Future<void> _runBatch({
+    required String cwd,
+    required String? featureFlag,
+    required Duration? timeout,
+    required SingleTestRunner runner,
+  }) async {
+    // 1. Collect the targets: every registry record whose behavior has
+    //    no red evidence yet (the same `_certifiedBehaviors` filter the
+    //    single-target inference uses).
+    final registries = await _scanRegistries(cwd, featureFlag);
+    final targets = <_ResolvedTarget>[];
+    for (final entry in registries) {
+      final certified = await _certifiedBehaviors(entry.featureDir);
+      for (final record in await entry.registry.loadAll()) {
+        if (!certified.contains(record.behaviorId)) {
+          targets.add(
+            _ResolvedTarget(record, entry.featureDir, entry.featureName),
+          );
+        }
+      }
+    }
+
+    final featureLabel = _resolvedFeatureName(cwd, featureFlag) ?? 'all';
+    if (targets.isEmpty) {
+      print(
+        'zfa tdd verify-red --all: no behavior with gen artifacts lacks '
+        'red evidence — nothing to certify.',
+      );
+      print(
+        'verify-red: batch=true behaviors=0 certified=0 '
+        'classification=batch feature=$featureLabel',
+      );
+      return;
+    }
+
+    print(
+      'zfa tdd verify-red --all: ${targets.length} behavior(s) '
+      '(spec 069 T002 batch)',
+    );
+
+    // 2. Issue #1528: a missing TDD profile is a SETUP condition — fail
+    //    closed with `classification=setup-error` before the whole-file
+    //    template load / any runner spawn (after the empty-targets early
+    //    return, so nothing-to-certify stays the honest batch exit).
+    if (await _missingProfile(cwd: cwd)) {
+      // The same diagnosis the single lane prints, ahead of the
+      // per-behavior loop: the operator gets the probed path, not just
+      // the count.
+      _printMissingProfileDiagnosis(cwd: cwd);
+      for (final target in targets) {
+        _printSummary(
+          behavior: target.record.behaviorId,
+          classification: kSetupErrorLabel,
+          certified: false,
+          feature: target.featureName,
+        );
+      }
+      print(
+        'verify-red: batch=true behaviors=${targets.length} certified=0 '
+        'classification=$kSetupErrorLabel feature=$featureLabel',
+      );
+      print(ExitProtocol.fixLine('run `zfa tdd init`, then re-run'));
+      _verdict
+        ..exitClass = kSetupErrorLabel
+        ..outcome = VerdictOutcome.fail
+        ..fix = 'run `zfa tdd init` (idempotent), then re-run'
+        ..details['setup'] = 'missing ${SingleTestRunner.defaultProfilePath}'
+        ..details['classification'] = kSetupErrorLabel;
+      exitCode = 1;
+      return;
+    }
+
+    // 3. Load the whole-file template (misfire-stop: the batch lane
+    //    needs the `file` runner; never a silent per-behavior fallback).
+    final String fileTemplate;
+    try {
+      fileTemplate = await runner.loadFileTemplate(workingDirectory: cwd);
+    } on StateError catch (e) {
+      print(e.message);
+      for (final target in targets) {
+        _printSummary(
+          behavior: target.record.behaviorId,
+          classification: 'unresolved',
+          certified: false,
+          feature: target.featureName,
+        );
+      }
+      print(
+        'verify-red: batch=true behaviors=${targets.length} certified=0 '
+        'classification=unresolved feature=$featureLabel',
+      );
+      exitCode = 1;
+      return;
+    }
+
+    // 3. Build the ONE batch invocation: the file template's tokens with
+    //    the placeholder tokens dropped, then every target test path
+    //    appended (`dart test a_test.dart b_test.dart …`).
+    final testPaths = targets.map((t) {
+      final path = t.record.testPath;
+      return p.isAbsolute(path) ? path : p.join(cwd, path);
+    }).toList();
+    final templateTokens = fileTemplate
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where(
+          (token) => !token.contains('{file}') && !token.contains('{name}'),
+        )
+        .toList();
+    final argv = [...templateTokens, ...testPaths];
+    final display = [
+      fileTemplate.replaceAll('{file}', testPaths.first),
+      ...testPaths.skip(1),
+    ].join(' ');
+    print('zfa tdd verify-red: batch runner');
+    print('   command: $display');
+
+    // 4. Read-only integrity: the batch run must not modify test/ or
+    //    lib/ (FR-008), same as the single run.
+    final ownedPaths = <String>{};
+    for (final t in targets) {
+      ownedPaths.addAll(_ownedRelativePaths(t.record, cwd));
+    }
+    _ReadOnlyTreeSnapshot? beforeRun;
+    try {
+      beforeRun = await _ReadOnlyTreeSnapshot.capture(
+        cwd,
+        ownedPaths: ownedPaths,
+      );
+    } on FileSystemException catch (e) {
+      print('zfa tdd verify-red: cannot snapshot owned paths: ${e.message}');
+      print(
+        'verify-red: batch=true behaviors=${targets.length} certified=0 '
+        'classification=unresolved feature=$featureLabel',
+      );
+      exitCode = 1;
+      return;
+    }
+
+    // 5. Execute the ONE invocation under the deadline (bug #742 unit
+    //    contract; the batch budget defaults to the suite-class deadline).
+    final started = DateTime.now();
+    final ProcessResult batch;
+    try {
+      batch = await runTimed(
+        argv.first,
+        argv.skip(1).toList(),
+        workingDirectory: cwd,
+        timeout: timeout ?? TddTimeouts.defaultSuite,
+      );
+    } on ProcessTimeoutException catch (e) {
+      // Bug #742: the batch child outlived the deadline — nothing about
+      // any behavior was observed; no evidence, never a certified red.
+      print('zfa tdd verify-red: the batch runner timed out: $e');
+      print(
+        '   re-run with a larger --timeout <minutes> if the batch '
+        'legitimately needs longer.',
+      );
+      print(
+        'verify-red: batch=true behaviors=${targets.length} certified=0 '
+        'classification=runner-error feature=$featureLabel',
+      );
+      exitCode = 1;
+      return;
+    } on ProcessException catch (e) {
+      print('zfa tdd verify-red: batch runner failed to start: ${e.message}');
+      print(
+        'verify-red: batch=true behaviors=${targets.length} certified=0 '
+        'classification=runner-error feature=$featureLabel',
+      );
+      exitCode = 1;
+      return;
+    }
+    final elapsed = DateTime.now().difference(started);
+    final output = '${batch.stdout}${batch.stderr}';
+    print('   runner exit: ${batch.exitCode} (${elapsed.inMilliseconds}ms)');
+
+    List<String> changedPaths;
+    try {
+      final afterRun = await _ReadOnlyTreeSnapshot.capture(
+        cwd,
+        ownedPaths: ownedPaths,
+      );
+      changedPaths = beforeRun.changedPaths(afterRun);
+    } on FileSystemException catch (e) {
+      changedPaths = ['snapshot failed: ${e.message}'];
+    }
+    if (changedPaths.isNotEmpty) {
+      print(
+        'zfa tdd verify-red: read-only integrity violation under owned paths: '
+        '${changedPaths.join(', ')}',
+      );
+      print('   no evidence written');
+      print(
+        'verify-red: batch=true behaviors=${targets.length} certified=0 '
+        'classification=runner-error feature=$featureLabel',
+      );
+      exitCode = 1;
+      return;
+    }
+
+    // 6. Classify each behavior from the batch transcript.
+    final failingSegments = _failingSegments(output);
+    final passingNames = _passingNames(output);
+    var certifiedCount = 0;
+    final failures = <(String, String)>[]; // (behavior, classification)
+    for (final target in targets) {
+      final record = target.record;
+      var classification = _classifyBatchBehavior(
+        record: record,
+        output: output,
+        failingSegments: failingSegments,
+        passingNames: passingNames,
+      );
+      // Issue #964 kind gate (batch lane): the same refusal as the
+      // single-target path — evidence only for verb-matched reds. A
+      // behavior whose description is unavailable is refused, never
+      // certified on faith.
+      if (classification == 'assertion') {
+        final kindGaps = await _certifyFinderKinds(cwd, record);
+        if (kindGaps == null || kindGaps.isNotEmpty) {
+          classification = 'kind-mismatch';
+        }
+      }
+      if (classification == 'assertion') {
+        final segment = _segmentFor(record.plainTestName, failingSegments);
+        final log = CycleLog(target.featureDir);
+        await log.append(
+          CycleLogEntry(
+            behaviorId: record.behaviorId,
+            kind: CycleEntryKind.red,
+            runnerCommand: display,
+            exitCode: batch.exitCode,
+            capturedOutput:
+                '${segment ?? output}\n'
+                '(batched red — one runner invocation for '
+                '${targets.length} behavior(s), spec 069 T002)',
+            classification: FailureClass.assertionFailure,
+            subjectHash: await _subjectHashAt(cwd, record),
+            sourceCriterion: record.sourceCriterion,
+            testPath: p.isAbsolute(record.testPath)
+                ? record.testPath
+                : p.join(cwd, record.testPath),
+            timestamp: DateTime.now().toUtc().toIso8601String(),
+          ),
+        );
+        print(
+          '   red evidence appended to ${TddFeaturePaths.displayDir(cwd: cwd, dir: target.featureDir)}/tdd/'
+          'cycle-log.md (${record.behaviorId})',
+        );
+        // Issue #969 T003: the batched red evidence becomes
+        // self-certifying.
+        await TddGenerationReceipts.writeBestEffort(
+          projectRoot: cwd,
+          command: 'tdd verify-red',
+          target: record.behaviorId,
+          feature: target.featureName,
+          files: {p.join(target.featureDir, 'tdd', 'cycle-log.md'): 'update'},
+        );
+        certifiedCount++;
+      } else {
+        failures.add((record.behaviorId, classification));
+      }
+      _printSummary(
+        behavior: record.behaviorId,
+        classification: classification,
+        certified: classification == 'assertion',
+        feature: target.featureName,
+      );
+    }
+    for (final (behavior, classification) in failures) {
+      print(
+        'zfa tdd verify-red: behavior "$behavior" — $classification: not '
+        'certified in the batch (no evidence written for it).',
+      );
+    }
+
+    // 7. The batch summary line — the machine contract's batch form.
+    final allCertified = certifiedCount == targets.length;
+    print(
+      'verify-red: batch=true behaviors=${targets.length} '
+      'certified=$certifiedCount '
+      'classification=${allCertified ? 'batch' : 'mixed'} '
+      'feature=$featureLabel',
+    );
+    _verdict
+      ..exitClass = allCertified ? 'batch' : 'mixed'
+      ..outcome = allCertified ? VerdictOutcome.pass : VerdictOutcome.fail
+      ..details['batch'] = true
+      ..details['behaviors'] = targets.length
+      ..details['certified'] = certifiedCount
+      ..feature = featureLabel == '-' ? null : featureLabel;
+    exitCode = allCertified ? 0 : 1;
+  }
+
+  /// The failing test-name → failure-detail segments of a `dart test`
+  /// batch transcript (pure). A failing progress line
+  /// `HH:MM +N ~S -M: <name> [E]` opens a segment that runs to the next
+  /// progress line; loading/summary lines are not test names.
+  static Map<String, String> _failingSegments(String output) {
+    final segments = <String, String>{};
+    final lines = output.split('\n');
+    String? currentName;
+    final current = StringBuffer();
+    // Lines accumulated while no failing test is open: these are the
+    // framework-banner / assertion block that `flutter test` prints
+    // BEFORE the failing progress line for a widget (SKIN) test, i.e.
+    // the body that must land in that test's segment (issue #1820).
+    final pending = StringBuffer();
+    bool isBannerStart(String line) {
+      final trimmed = line.trimLeft();
+      if (trimmed.isEmpty) return false;
+      if (line.contains('EXCEPTION CAUGHT')) return true;
+      if (RegExp(r'[═]{3,}').hasMatch(line)) return true;
+      if (trimmed.startsWith('The following') &&
+          trimmed.contains('was thrown')) {
+        return true;
+      }
+      return false;
+    }
+
+    for (final line in lines) {
+      final failing = RegExp(
+        r'^\d\d:\d\d \+\d+(?: ~\d+)?(?: -\d+(?: ~\d+)?)?: (.+) \[E\]\s*$',
+      ).firstMatch(line);
+      final progress = RegExp(r'^\d\d:\d\d [+\-~]').hasMatch(line);
+      if (failing != null) {
+        if (currentName != null) {
+          segments[currentName] = current.toString();
+          current.clear();
+        }
+        currentName = failing.group(1)!.trim();
+        if (pending.isNotEmpty) {
+          current.write(pending.toString());
+          pending.clear();
+        }
+        continue;
+      }
+      if (progress) {
+        if (currentName != null) {
+          segments[currentName] = current.toString();
+          currentName = null;
+          current.clear();
+        }
+        pending.clear();
+        continue;
+      }
+      if (currentName == null) {
+        pending.writeln(line);
+      } else if (isBannerStart(line)) {
+        segments[currentName] = current.toString();
+        current.clear();
+        currentName = null;
+        pending.writeln(line);
+      } else {
+        current.writeln(line);
+      }
+    }
+    if (currentName != null) {
+      segments[currentName] = current.toString();
+    }
+    return segments;
+  }
+
+  /// The names that PASSED in the batch transcript (progress lines
+  /// `HH:MM +N: <name>` / `HH:MM +N -M: <name>` / `HH:MM +N ~S -M:
+  /// <name>` without the `[E]` failure marker — a test passing AFTER an
+  /// earlier failure still counts as passed).
+  static Set<String> _passingNames(String output) {
+    final names = <String>{};
+    for (final line in output.split('\n')) {
+      final m = RegExp(
+        r'^\d\d:\d\d \+\d+(?: ~\d+)?(?: -\d+(?: ~\d+)?)?: (.+)$',
+      ).firstMatch(line);
+      if (m == null) continue;
+      var name = m.group(1)!.trim();
+      if (name.endsWith('[E]')) continue; // a failing line, not a pass.
+      name = name.trim();
+      if (name.startsWith('loading ') ||
+          name == 'All tests passed!' ||
+          name == 'Some tests failed.') {
+        continue;
+      }
+      names.add(name);
+    }
+    return names;
+  }
+
+  /// Classify one behavior against the batch transcript (pure): the
+  /// behavior's test must appear as a FAILING name with an assertion
+  /// signature in its detail segment — everything else is an honest
+  /// rejection, never a certified red.
+  static String _classifyBatchBehavior({
+    required ArtifactRecord record,
+    required String output,
+    required Map<String, String> failingSegments,
+    required Set<String> passingNames,
+  }) {
+    final name = record.plainTestName;
+    // A load failure naming this behavior's file: its test never ran.
+    if (output.contains('Failed to load')) {
+      final fileRef = p.basename(record.testPath);
+      if (RegExp(
+        'Failed to load .*${RegExp.escape(fileRef)}',
+      ).hasMatch(output)) {
+        return 'load-error';
+      }
+    }
+    final segment = _segmentFor(name, failingSegments);
+    if (segment != null) {
+      final hasAssertion =
+          segment.contains('Expected:') ||
+          segment.contains('Actual:') ||
+          segment.contains('TestFailure');
+      return hasAssertion ? 'assertion' : 'runner-error';
+    }
+    final passed = passingNames.any((n) => _transcriptNameMatches(n, name));
+    if (passed) return 'unexpected-green';
+    return 'runner-error';
+  }
+
+  /// Whether a transcript test name refers to [plainName]: exact, or the
+  /// plain name as a whole-suffix word (transcript names carry
+  /// `<file>: <groups>` prefixes ahead of it). A bare `contains` is
+  /// wrong for natural-language names — "adds item" is contained in
+  /// "adds item to cart", so a PASSING behavior would be certified from
+  /// a longer FAILING behavior's segment (a fabricated red).
+  static bool _transcriptNameMatches(String transcriptName, String plainName) =>
+      transcriptName == plainName || transcriptName.endsWith(' $plainName');
+
+  /// The detail segment for [plainName] under the [_transcriptNameMatches]
+  /// rule. Several matches resolve to the SHORTEST key — the most
+  /// specific suffix.
+  static String? _segmentFor(
+    String plainName,
+    Map<String, String> failingSegments,
+  ) {
+    String? best;
+    for (final key in failingSegments.keys) {
+      if (!_transcriptNameMatches(key, plainName)) continue;
+      if (best == null || key.length < best.length) best = key;
+    }
+    return best == null ? null : failingSegments[best];
+  }
+
+  void _printSummary({
+    required String behavior,
+    required String classification,
+    required bool certified,
+    required String feature,
+  }) {
+    // `print` (not stdout.writeln) so CliRunner's capturing zone sees it.
+    // Byte-identical to the pre-#959 pinned contract on every path (FR-009,
+    // spec 046): the failing-assertion identity surfaces in the
+    // `red-evidence:` detail line and the cycle-log `- evidence:` field,
+    // never as a token on this line.
+    print(
+      'verify-red: behavior=$behavior classification=$classification '
+      'certified=$certified feature=$feature',
+    );
+    // Issue #969: the classification IS the exit class (shipped
+    // taxonomy label, never changed).
+    _verdict
+      ..exitClass = classification
+      ..outcome = certified ? VerdictOutcome.pass : VerdictOutcome.fail
+      ..details['behavior'] = behavior
+      ..details['certified'] = certified;
+  }
+}
+
+/// The canonical feature NAME a `--feature` reference labels: `specs/<name>`
+/// and `.specify/bugs/<slug>` both collapse to their basename, matching the
+/// registry entries this command scans (issue #1471). Null when no reference
+/// was given.
+String? _resolvedFeatureName(String cwd, String? featureFlag) =>
+    featureFlag != null && featureFlag.isNotEmpty
+    ? TddFeaturePaths.resolveWithPin(
+        projectRoot: cwd,
+        featureRef: featureFlag,
+      ).name
+    : null;
+
+/// `--feature` lands in a filesystem path: accept exactly the shapes
+/// [TddFeaturePaths] resolves (a plain segment, `specs/<name>`,
+/// `.specify/bugs/<slug>`, or an absolute path) and refuse the rest —
+/// `.`, `..`, a traversal shape, or a trailing separator (issue #1471).
+void _validateFeatureSegment(String feature) {
+  if (TddFeaturePaths.isSupportedRef(feature) &&
+      !feature.endsWith('/') &&
+      !feature.endsWith(r'\')) {
+    return;
+  }
+  throw UsageException(
+    'invalid --feature "$feature": expected a single spec directory name '
+        'such as 046-tdd-verify-red, not a path.',
+    'zfa tdd verify-red [<behavior-id>] [--feature <name>]',
+  );
+}
+
+/// Strip a leading `specs/` prefix from a user-supplied --feature
+/// reference. Lets users paste the path format shown throughout
+/// zuraffa's docs and error messages (`specs/<feature>`) without
+/// triggering the segment check above. The traversal guard on
+/// `_validateFeatureSegment` still rejects `..` and other escaping
+/// shapes after stripping.
+String _stripSpecsPrefix(String feature) {
+  if (feature.startsWith('specs/') || feature.startsWith('specs\\')) {
+    final stripped = feature.substring('specs/'.length);
+    // `specs/` alone is not a feature name.
+    if (stripped.isEmpty) return feature;
+    return stripped;
+  }
+  return feature;
+}
+
+class _RegistryEntry {
+  const _RegistryEntry(this.featureName, this.featureDir, this.registry);
+
+  final String featureName;
+  final String featureDir;
+  final ArtifactRegistry registry;
+}
+
+class _ResolvedTarget {
+  const _ResolvedTarget(this.record, this.featureDir, this.featureName);
+
+  final ArtifactRecord record;
+  final String featureDir;
+  final String featureName;
+}
+
+/// Issue #1754: the set of project-relative paths a behavior owns — its
+/// registered test path and its `<id>_subject.dart`. Only these paths
+/// participate in the read-only integrity check.
+Set<String> _ownedRelativePaths(ArtifactRecord record, String cwd) {
+  final result = <String>{};
+  for (final raw in <String>[record.testPath, record.subjectPath]) {
+    if (raw.trim().isEmpty) continue;
+    final abs = p.isAbsolute(raw) ? raw : p.join(cwd, raw);
+    final relative = p
+        .normalize(p.relative(abs, from: cwd))
+        .replaceAll(p.separator, '/');
+    // Reject paths that escape the project root (issue #1754 finding 4).
+    if (relative.isEmpty ||
+        relative == '.' ||
+        relative == '..' ||
+        relative.startsWith('../') ||
+        relative.startsWith('..\\') ||
+        p.isAbsolute(relative)) {
+      continue;
+    }
+    result.add(relative);
+  }
+  return result;
+}
+
+/// Content and shape snapshot for the command's read-only source trees.
+class _ReadOnlyTreeSnapshot {
+  const _ReadOnlyTreeSnapshot(this.entries);
+
+  final Map<String, String> entries;
+
+  static Future<_ReadOnlyTreeSnapshot> capture(
+    String projectRoot, {
+    required Set<String> ownedPaths,
+  }) async {
+    // Issue #1754: only the paths the behavior owns are snapshotted, so
+    // unrelated writes elsewhere under test/ or lib/ cannot abort the
+    // lane. Each owned path is recorded as `file:<sha256>` when present,
+    // `directory`/`link:<target>` for other entity kinds, or `missing`
+    // when absent — so additions and deletions are still detected.
+    // Fail closed: an empty owned-paths set would silently disable the
+    // integrity check (issue #1754 finding 3).
+    if (ownedPaths.isEmpty) {
+      throw FileSystemException(
+        'no owned paths registered for read-only snapshot',
+      );
+    }
+    final entries = <String, String>{};
+    for (final relative in ownedPaths) {
+      final normalized = relative.replaceAll(p.separator, '/');
+      final abs = p.join(projectRoot, normalized);
+      final type = FileSystemEntity.typeSync(abs, followLinks: false);
+      if (type == FileSystemEntityType.file) {
+        entries[normalized] =
+            'file:${sha256.convert(await File(abs).readAsBytes())}';
+      } else if (type == FileSystemEntityType.directory) {
+        entries['$normalized/'] = 'directory';
+      } else if (type == FileSystemEntityType.link) {
+        entries[normalized] = 'link:${await Link(abs).target()}';
+      } else {
+        entries[normalized] = 'missing';
+      }
+    }
+    return _ReadOnlyTreeSnapshot(entries);
+  }
+
+  List<String> changedPaths(_ReadOnlyTreeSnapshot other) {
+    final paths = {...entries.keys, ...other.entries.keys}.toList()..sort();
+    return paths.where((path) => entries[path] != other.entries[path]).toList();
+  }
+}

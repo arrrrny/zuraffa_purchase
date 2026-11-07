@@ -1,0 +1,432 @@
+/// Value objects for the generation-only green step of the TDD loop
+/// (spec 047-tdd-make, T002; data-model.md).
+///
+/// A [GenerationPlan] is either expressible (steps non-empty, ending in
+/// a `build` step) or carries an `unexpressibleReason` naming the
+/// unmet capability in behavior terms — never both.
+///
+/// A [GenerationStepSpec] is one pipeline invocation: the `args` to
+/// pass after the `zfa` entrypoint, plus a human-readable `purpose`
+/// tying it back to the behavior.
+///
+/// A [GenerationStep] is an executed [GenerationStepSpec]: the full
+/// resolved command line, exit code, captured stdout+stderr, and the
+/// spec it executed.
+library;
+
+/// Outcome of a `make` run — drives the summary line + exit code +
+/// green-entry decision (spec FR-010, data-model.md table).
+enum MakeOutcome {
+  /// Generated implementation, target test passes, suite guard clean.
+  /// Exit 0, green entry appended.
+  green('green'),
+
+  /// No red evidence in cycle log for the behavior.
+  /// Non-zero exit, no green entry.
+  notCertifiedRed('not-certified-red'),
+
+  /// Target test already green before generation — the skip transition
+  /// (issue #694, amending US2.AC3): generation never runs, the suite is
+  /// re-certified with no NEW failures, a green evidence entry with an
+  /// explicitly empty generation block is appended, exit 0.
+  skipped('skipped'),
+
+  /// The plan's terminal `build` step FAILED but the per-behavior guard
+  /// tolerated it (issue #737) because the behavior's own test passes —
+  /// and the failed build's output carried NO analyzer errors (issue
+  /// #942 gate), so the failure is pre-existing build/suite noise rather
+  /// than a non-compiling generated tree. Exit 0, green evidence
+  /// appended. Issue #942: this outcome EXISTS so the summary never
+  /// conflates honest green with green-with-failed-build — the run loop
+  /// accepts it as success (the loop must flow past tolerated noise),
+  /// but the accounting stays distinguishable.
+  greenWithFailedBuild('green-with-failed-build'),
+
+  /// Planner cannot map behavior to pipeline steps.
+  /// Non-zero exit, no green entry.
+  unexpressible('unexpressible'),
+
+  /// A pipeline step failed or produced non-compiling output.
+  /// Non-zero exit, no green entry.
+  generationError('generation-error'),
+
+  /// The generation subprocess was killed by resource pressure — a
+  /// signal death (OS OOM killer SIGKILL, or the bounded ceiling turning
+  /// runaway allocation into a deterministic in-child abort), classified
+  /// per the bug #826 remediation. Transient by nature: a direct re-run
+  /// succeeds, no state changed. Non-zero exit, no green entry.
+  resourceLimit('resource-limit'),
+
+  /// The generation subprocess outlived its hard deadline and was killed
+  /// (bug #742 deadline, classified per bug #826). Non-zero exit, no
+  /// green entry.
+  timeout('timeout'),
+
+  /// The behavior's generation plan resolves to an empty inner
+  /// `zfa make` plan ("No active plugins to run.") — there is nothing to
+  /// generate, so the make records a no-op WITHOUT attempting the
+  /// subprocess (bug #826 remediation). The run loop defers it to phase 2
+  /// exactly like `unexpressible`. Non-zero exit, no green entry.
+  noOp('no-op'),
+
+  /// Suite guard found NEW failures.
+  /// Non-zero exit, no green entry.
+  regression('regression'),
+
+  /// The target test already passes and the subject is the
+  /// complete-but-unowned re-drive class (issue #1331): the behavior's
+  /// surviving certification was invalidated by the LAST reset tombstone
+  /// (the registry was dropped and the behavior re-driven from gen), so
+  /// the certified-hash basis of the #1036 subject-drift guard is stale
+  /// by decree. The make ADOPTS the passing subject — the re-drive
+  /// class's own first-drive semantics — certifies green, and appends a
+  /// green evidence entry binding the CURRENT subject hash (any
+  /// post-adoption drift still refuses). Exit 0. The outcome is
+  /// EXPLICITLY `adopted`: distinguishable in accounting from `skipped`
+  /// (#694, no certification change) and from `green` (generated this
+  /// make). Every non-re-drive refusal class is untouched.
+  adopted('adopted'),
+
+  /// The target test already passes and the on-disk subject is the
+  /// born-green compose-pipeline placeholder for a TOMBSTONED re-drive of
+  /// an ACCEPTANCE-kind behavior (issue #1345): the placeholder is the
+  /// pipeline's OWN product — the exact bytes `zfa tdd gen` emits, the
+  /// input shape compose exists to rewrite — so neither the #1331
+  /// adoption (it would certify green on a vacuous subject) nor the
+  /// #1036 refusal (it dead-ends the documented reset → doctor → run
+  /// recovery loop) applies. The make RE-ENTERS the acceptance pipeline
+  /// at compose/make phase-2: generation planning runs the SAME
+  /// composition fallback a first drive runs (`compose` → `build`), and
+  /// the cycle re-certifies from the pipeline's actual output. Exit 0,
+  /// green entry appended binding the CURRENT post-re-entry subject hash
+  /// with the compose/build generation steps recorded. The outcome is
+  /// EXPLICITLY `adopted-placeholder`: distinguishable from `green`
+  /// (generated), `skipped` (#694), and `adopted` (#1331 — the subject
+  /// was NOT a placeholder). Every non-re-drive refusal class and every
+  /// non-acceptance re-drive refusal is untouched.
+  adoptedPlaceholder('adopted-placeholder'),
+
+  /// The target test already passes and the write-ahead interrupt marker
+  /// proves the PREVIOUS make of this behavior died mid-flight (issue
+  /// #1398: process death — external timeout SIGKILL, OOM) after mutating
+  /// the subject but before any green evidence landed. The crash class and
+  /// the dishonest hand-edit class were indistinguishable, so every resume
+  /// dead-ended at the #1036 subject-drift refusal. The marker is the
+  /// honesty signal: the make ADOPTS the passing subject through the #1331
+  /// adoption mechanics — green evidence binding the CURRENT subject hash
+  /// (any post-adoption drift still refuses), exit 0 — and the outcome is
+  /// EXPLICITLY `adopted-interrupted`: distinguishable in accounting from
+  /// `green` (generated this make), `skipped` (#694), `adopted` (#1331
+  /// tombstone re-drive), and `adopted-placeholder` (#1345). The born-green
+  /// placeholder class keeps refusing (a marker never legitimizes a vacuous
+  /// subject); the marker is consumed by every graceful exit that resolves
+  /// the crash — and by issue #1669, KEPT by a non-adopting exit that
+  /// inherited it while the implemented-subject mutation survives — so
+  /// only process death (or a crash mutation still awaiting adoption)
+  /// leaves one behind.
+  adoptedInterrupted('adopted-interrupted'),
+
+  /// The target test already passes but the subject file's shape no
+  /// longer matches the shape the certified evidence captured (issue
+  /// #1036): a skip here would certify green on a subject the red
+  /// evidence never exercised — the born-green placeholder class. The
+  /// behavior is EXCLUDED from contract-green accounting: non-zero
+  /// exit, no green entry; the remedy is to restore the subject to its
+  /// certified shape (or re-certify red), then re-run make. Same
+  /// honesty class as `scaffolded` (issue #912 defect 3).
+  subjectDrift('subject-drift'),
+
+  /// The target test is a SCAFFOLDED widget test (issue #912 defect 3):
+  /// its scenario assertions are placeholder finders (marked
+  /// `zfa:tdd: scaffolded` by the widget template), so a green proves
+  /// nothing about the scenario — a bare SizedBox() would pass it. The
+  /// behavior is EXCLUDED from contract-green accounting: non-zero exit,
+  /// no green entry; the remedy is concrete scenario finders + marker
+  /// removal, then re-run make.
+  scaffolded('scaffolded'),
+
+  /// The target UNIT test's assertion set is only the UnimplementedError
+  /// guard (issue #1259): a green proves only "the subject does not
+  /// throw" — a func-scaffolded dummy `return 0;` flips it green with
+  /// zero declared-contract code. The unit-lane analogue of
+  /// [scaffolded] (#912 defect 3): the red surface may start at the
+  /// guard, but green requires at least one assertion on the observable
+  /// outcome named by the behavior description. Non-zero exit, no green
+  /// entry; the remedy is a real outcome assertion (+ marker removal),
+  /// then re-run make.
+  vacuousGreen('vacuous-green'),
+
+  /// Runner/profile/tooling failure.
+  /// Non-zero exit, no green entry.
+  runnerError('runner-error'),
+
+  /// The dependency_overrides path preflight refused the make BEFORE any
+  /// resolution or generation ran (issue #1303): a `dependency_overrides`
+  /// path target does not resolve to a package, so every pipeline step
+  /// would die with a raw version-solving dump buried mid-log and the
+  /// clean-cache retry would burn a full rebuild on a resolution error
+  /// no cache clean can fix. The SPEC 917 drift class — the stale
+  /// override is corrupt project state — exit 3, no green entry; the
+  /// remedy is to correct or remove the override, then re-run.
+  preflightRed('preflight-red'),
+
+  /// The target test still fails after generation because the generated
+  /// test's `_argN()` placeholder helper threw (issue #1323, spec 991):
+  /// a declared contract param the writer cannot scalar-literalize. The
+  /// DESIGNED hand-delta seam, SURFACED — the stop names the EXACT edit
+  /// ("replace _arg0() in <test> with a representative <type> — then
+  /// re-run zfa tdd make <id>") instead of the generic
+  /// `generation-error` that buried the remedy inside a thrown
+  /// exception message mid-test-output. Non-zero exit, no green entry,
+  /// the subject restored byte-identically (#1036); the run driver
+  /// reports the named hand step `stopped_at=<id>:hand` (the issue
+  /// #1308 hand-step contract).
+  handDeltaRequired('hand-delta-required'),
+
+  /// The born-green hand transition (issue #1411): the DESIGNED hand
+  /// step (real outcome assertion, vacuous-guard marker removed,
+  /// subject hand-implemented) was completed BEFORE the first red
+  /// certification — the hand-first ordering the guide prescribes but
+  /// the red-first pipeline refused (verify-red graded the passing test
+  /// unexpected-green, make found no certified red: the catch-22). The
+  /// explicit `--born-green` flag (the no-prior-red analogue of
+  /// verify-red's `--re-certify`, issue #1162) certifies green from an
+  /// honestly re-run PASSING target test gated on the `U<n>:hand`
+  /// attestation header, the marker absence, and a non-placeholder
+  /// subject (#1036 class). Exit 0, green evidence appended in the
+  /// existing format with an explicitly empty generation block. The
+  /// outcome is EXPLICITLY `born-green`: distinguishable in accounting
+  /// from `skipped` (#694 — certified red existed), `adopted` (#1331),
+  /// and `green` (generated this make). Refuses safe-failure on every
+  /// non-attested shape.
+  bornGreen('born-green'),
+
+  /// The blocked-contract precondition stop (issue #1589): the target is
+  /// a CONTRACT behavior whose BLOCKED verdict receipt exists and whose
+  /// watched world is unchanged since the verdict — there is no certified
+  /// red to make from, and the contract lane never certifies one (#1007),
+  /// so the plain refusal names the hand surface (the seam file + the
+  /// `zfa tdd wire <id>` command) instead of dead-ending the documented
+  /// resume path with "run verify-red first". Exit 1, no green entry, no
+  /// state advance: the verdict, the contract lane and the state machine
+  /// are untouched. Fail-open: any change signal since the verdict, a
+  /// missing receipt, or a non-contract target keeps the existing
+  /// `not-certified-red` refusal.
+  implementSeamFirst('implement-seam-first'),
+
+  /// A plan `build` step failed because the BUILDER package is not in the
+  /// dependency graph (issue #1322): build_runner warned `Ignoring
+  /// options for unknown builder <key>` and silently generated nothing —
+  /// a missing dev dependency, not generation noise. The outcome label
+  /// and stop message name the missing package and prescribe the exact
+  /// `dart pub add --dev <pkg>` fix instead of the generic
+  /// `generation-error`. Exit 1, no green entry (the same honesty class);
+  /// the remedy is to add the dependency, then re-run make.
+  missingBuilderDependency('missing-builder-dependency'),
+
+  /// The #1689 pre-flight fast stop: the plan schedules the func pass
+  /// for gen's provenance-marked parametrized scalar stub whose declared
+  /// return scaffolds the #1517 zero-value dummy (`return 0;`-class
+  /// body), and the paired test carries a value assertion naming a
+  /// DIFFERENT literal (`equals(5)` — the #1679 scenario-derived shape).
+  /// The attempt (func write + target test + restore) is provably
+  /// guaranteed-failing work — a zero-value scaffold can never satisfy
+  /// `equals(<literal ≠ zero>)` — so make stops BEFORE the pipeline with
+  /// the same honest hand-step remedy the post-generation stop
+  /// prescribed, minus the 30–40s. Non-zero exit, no green entry, the
+  /// subject untouched (nothing ran). The gate self-removes when func
+  /// grows real generation: it keys on the scaffold being a zero-value
+  /// literal, so it goes silent with no code change. Non-scenaried
+  /// behaviors (guard-only, type-only + marker) carry no value assertion
+  /// and are never skipped by it.
+  wouldNeverPass('would-never-pass');
+
+  const MakeOutcome(this.label);
+
+  /// Kebab-case label used in the machine-readable summary line
+  /// (`make: behavior=<id> outcome=<label> feature=<f>`).
+  final String label;
+}
+
+/// One step in a [GenerationPlan]: the args to pass after the `zfa`
+/// entrypoint, plus a purpose describing what behavior it serves.
+class GenerationStepSpec {
+  /// Args passed after the `zfa` entrypoint, e.g.
+  /// `['entity', 'create', 'User', '--fields=email']`.
+  final List<String> args;
+
+  /// Human-readable purpose tying this step to the behavior, e.g.
+  /// `'create entity User'`.
+  final String purpose;
+
+  const GenerationStepSpec({required this.args, required this.purpose});
+
+  @override
+  String toString() => 'GenerationStepSpec($purpose: zfa ${args.join(' ')})';
+}
+
+/// One executed pipeline step — captured for audit (FR-006).
+class GenerationStep {
+  /// The full resolved command line, e.g. `zfa entity create User`.
+  final String command;
+
+  /// The exit code of the step. `-1` when the process failed to start.
+  final int exitCode;
+
+  /// Combined stdout + stderr of the step.
+  final String output;
+
+  /// The purpose inherited from the spec.
+  final String purpose;
+
+  /// True when the step was killed by the per-command timeout (bug #742).
+  /// The process launched but outlived the deadline — a tooling failure,
+  /// not a generation failure.
+  final bool timedOut;
+
+  /// Why the step's process died, when it died by kill rather than by its
+  /// own exit (bug #826): [GenerationKillClass.timeout] when our deadline
+  /// fired, [GenerationKillClass.resourceLimit] when the OS or the bounded
+  /// ceiling killed it (the SIGKILL/OOM class — Dart reports a
+  /// signal-killed child as a negative exit code). [GenerationKillClass.none]
+  /// for every ordinary exit, including ordinary failures.
+  final GenerationKillClass killClass;
+
+  /// Resource telemetry around the step's subprocess (bug #826): the
+  /// spawning process's RSS just before/after the child ran and the
+  /// child's wall-clock duration. Surface in the verdict JSON for
+  /// observability; never used in decisions.
+  final StepTelemetry? telemetry;
+
+  /// Issue #1587: true when the step was SKIPPED by the build-skip
+  /// scheduling gate — the terminal `build` step of a plan whose
+  /// generation wrote nothing a builder consumes. The captured step is
+  /// synthetic (exit 0, [output] carries the skip note): no subprocess
+  /// was spawned, and the audit stays honest about that. Every
+  /// executed step (including a real build) carries the default false.
+  final bool buildSkipped;
+
+  const GenerationStep({
+    required this.command,
+    required this.exitCode,
+    required this.output,
+    required this.purpose,
+    this.timedOut = false,
+    this.killClass = GenerationKillClass.none,
+    this.telemetry,
+    this.buildSkipped = false,
+  });
+
+  /// The machine-parseable verdict class for a killed step
+  /// (`resource-limit` or `timeout`), null for every ordinary exit —
+  /// a killed step is never graded as a bare `generation-error` (bug #826).
+  String? get verdictLabel => switch (killClass) {
+    GenerationKillClass.none => null,
+    GenerationKillClass.timeout => 'timeout',
+    GenerationKillClass.resourceLimit => 'resource-limit',
+  };
+
+  /// The JSON verdict for a killed step: the classification, the exact
+  /// exit code, and the resource telemetry (bug #826 remediation 4).
+  /// Empty for ordinary exits (they keep their honest failure records).
+  Map<String, dynamic> verdictJson() => {
+    if (verdictLabel != null) 'verdict': verdictLabel,
+    'exitCode': exitCode,
+    'timedOut': timedOut,
+    'rssBeforeKb': telemetry?.rssBeforeKb,
+    'rssAfterKb': telemetry?.rssAfterKb,
+    'wallClockMs': telemetry?.wallClockMs,
+    'command': command,
+  };
+
+  @override
+  String toString() =>
+      'GenerationStep($purpose: exit=$exitCode cmd=$command'
+      '${verdictLabel == null ? '' : ' verdict=$verdictLabel'})';
+}
+
+/// Why a killed generation step died (bug #826). Only kills are
+/// classified; an ordinary non-zero exit stays an unclassified, honest
+/// generation failure.
+enum GenerationKillClass {
+  /// The process exited by itself (exit code — zero or not).
+  none,
+
+  /// Our per-step deadline fired and we killed the child (bug #742 path).
+  timeout,
+
+  /// The child died by signal — the OS OOM killer (SIGKILL, exit -9 on
+  /// POSIX) or the bounded ceiling turning runaway allocation into a
+  /// deterministic in-child abort. The transient, re-runnable class.
+  resourceLimit,
+}
+
+/// Resource telemetry around one generation step's subprocess (bug #826).
+class StepTelemetry {
+  /// The spawning process's RSS (KB) just before the child spawned.
+  final int rssBeforeKb;
+
+  /// The spawning process's RSS (KB) just after the child completed.
+  final int rssAfterKb;
+
+  /// The child's wall-clock duration in milliseconds.
+  final int wallClockMs;
+
+  const StepTelemetry({
+    required this.rssBeforeKb,
+    required this.rssAfterKb,
+    required this.wallClockMs,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'rssBeforeKb': rssBeforeKb,
+    'rssAfterKb': rssAfterKb,
+    'wallClockMs': wallClockMs,
+  };
+
+  @override
+  String toString() =>
+      'StepTelemetry(rss: ${rssBeforeKb}KB -> ${rssAfterKb}KB, '
+      'wall: ${wallClockMs}ms)';
+}
+
+/// A behavior → pipeline mapping. Either expressible (steps non-empty,
+/// ending in `build`) or unexpressible (`unexpressibleReason` set);
+/// never both (FR-005 validation rule).
+class GenerationPlan {
+  final String behaviorId;
+  final String feature;
+  final String sourceCriterion;
+  final List<GenerationStepSpec> steps;
+  final String? unexpressibleReason;
+
+  /// Issue #1565: the func-surface branch omitted the `tdd func` step
+  /// because the subject is already gen's contract-derived stub func
+  /// would refuse to rewrite — the ONLY plan shape that drops a func
+  /// step. Make gates its audit note on THIS plan fact (an omission the
+  /// plan actually made), never on the summary-wide predicate: plans
+  /// that never scheduled a func step (entity pipelines, wire,
+  /// acceptance composition) must not claim one was skipped.
+  final bool funcStepSkipped;
+
+  GenerationPlan({
+    required this.behaviorId,
+    required this.feature,
+    required this.sourceCriterion,
+    required this.steps,
+    this.unexpressibleReason,
+    this.funcStepSkipped = false,
+  }) : assert(
+         (steps.isNotEmpty && unexpressibleReason == null) ||
+             (steps.isEmpty && unexpressibleReason != null),
+         'A plan is either expressible (steps non-empty) or carries an '
+         'unexpressibleReason — never both, never neither.',
+       );
+
+  bool get isExpressible => steps.isNotEmpty;
+
+  @override
+  String toString() => isExpressible
+      ? 'GenerationPlan($behaviorId, ${steps.length} steps)'
+      : 'GenerationPlan($behaviorId, unexpressible: $unexpressibleReason)';
+}
