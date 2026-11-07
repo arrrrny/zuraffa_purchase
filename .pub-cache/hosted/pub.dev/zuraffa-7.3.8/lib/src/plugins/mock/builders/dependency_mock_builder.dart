@@ -1,0 +1,351 @@
+/// DependencyMockBuilder (feature 072, issue #960): the deterministic
+/// emitter for a declared dependency's certified mock package.
+///
+/// Pure: contract in, file contents out. No I/O, no timestamps, no
+/// iteration-order hazards — same contract ⇒ byte-identical artifacts
+/// (data-model invariant I2).
+library;
+
+import '../models/dependency_contract.dart';
+
+/// One generated artifact: relative path + full content.
+class GeneratedDependencyArtifact {
+  final String path;
+  final String content;
+
+  const GeneratedDependencyArtifact({
+    required this.path,
+    required this.content,
+  });
+}
+
+/// The package layout for one dependency:
+/// - `<name>.dart` — the declared interface (exactly the declared members)
+/// - `<name>_fake.dart` — certified fake: scriptable responses + call recorder
+/// - `<name>_fixtures.dart` — deterministic fixture lane
+abstract final class DependencyMockBuilder {
+  /// Emit the package for [contract] under [outDir] (e.g.
+  /// `test/mock/dependencies/firebase_auth/`).
+  ///
+  /// [packageName] (issue #1035) is the enclosing project's pubspec
+  /// name; when provided, entity imports are emitted as `package:` URIs
+  /// — a relative import reaching into `lib/` from `test/` provably
+  /// trips `avoid_relative_lib_imports` in the generated artifacts. The
+  /// name is stable per project, so the byte-identical regeneration
+  /// guarantee holds. When omitted, the legacy relative shape is kept.
+  static List<GeneratedDependencyArtifact> emit({
+    required DependencyContract contract,
+    required String outDir,
+    String? packageName,
+  }) {
+    final dirName = snake(contract.name);
+    // Issue #1030: the declared signatures reference project types the
+    // artifacts must import. Derived from the contract only, so the
+    // byte-identical regeneration guarantee holds.
+    final entityImports = _entityImports(contract, outDir, packageName);
+    return [
+      GeneratedDependencyArtifact(
+        path: '$outDir/$dirName.dart',
+        content: _interface(contract, entityImports),
+      ),
+      GeneratedDependencyArtifact(
+        path: '$outDir/${dirName}_fake.dart',
+        content: _fake(contract, entityImports),
+      ),
+      GeneratedDependencyArtifact(
+        path: '$outDir/${dirName}_fixtures.dart',
+        content: _fixtures(contract, entityImports),
+      ),
+    ];
+  }
+
+  /// Contract-derived entity import block for the declared signatures:
+  /// every non-primitive PascalCase token in a parameter or return type
+  /// maps to `lib/src/domain/entities/<snake>/<snake>.dart`. When
+  /// [packageName] is provided the import is a `package:` URI (issue
+  /// #1035 — relative lib imports trip avoid_relative_lib_imports);
+  /// otherwise it is relative to the artifact directory. Empty when the
+  /// contract only references primitives. Same contract => same block
+  /// (determinism).
+  static String _entityImports(
+    DependencyContract c,
+    String outDir,
+    String? packageName,
+  ) {
+    final typeToken = RegExp(r'\b[A-Z][A-Za-z0-9_]*\b');
+    final types = <String>{};
+    for (final s in c.signatures) {
+      final raws = [...s.parameters, s.returnType];
+      for (final raw in raws) {
+        for (final m in typeToken.allMatches(raw)) {
+          final t = m.group(0)!;
+          if (!_primitives.contains(t)) types.add(t);
+        }
+      }
+    }
+    if (types.isEmpty) return '';
+    // Issue #1035: with the package name resolved, entity imports are
+    // `package:` URIs — never a relative path reaching into lib/ from
+    // the test-side artifact directory.
+    if (packageName != null && packageName.isNotEmpty) {
+      return types
+          .map(
+            (t) =>
+                "import 'package:$packageName/src/domain/entities/${snake(t)}/${snake(t)}.dart';",
+          )
+          .join('\n');
+    }
+    // Depth anchor (issue #1030 follow-up): outDir may be absolute or
+    // root-relative — count the hops from the artifact dir to the project
+    // root as the segments AFTER the `test` root segment (the directory
+    // that owns lib/). `test/mock/dependencies/x` -> 4 ups whether the
+    // outDir arrived as `test/mock/...` or `/home/u/proj/test/mock/...`.
+    final segments = outDir.split('/').where((s) => s.isNotEmpty).toList();
+    final testIndex = segments.lastIndexOf('test');
+    final ups = testIndex == -1 ? segments.length : segments.length - testIndex;
+    final prefix = '../' * ups;
+    return types
+        .map(
+          (t) =>
+              "import '${prefix}lib/src/domain/entities/${snake(t)}/${snake(t)}.dart';",
+        )
+        .join('\n');
+  }
+
+  /// snake_case of a dependency name (`FirebaseAuth` → `firebase_auth`).
+  static String snake(String raw) {
+    final out = StringBuffer();
+    for (var i = 0; i < raw.length; i++) {
+      final c = raw[i];
+      if (c == '-' || c == ' ' || c == '_') {
+        out.write('_');
+      } else if (c.toUpperCase() == c && c.toLowerCase() != c && i > 0) {
+        out.write('_');
+        out.write(c.toLowerCase());
+      } else {
+        out.write(c.toLowerCase());
+      }
+    }
+    return out.toString();
+  }
+
+  static String _pascal(String raw) {
+    final parts = raw
+        .split(RegExp(r'[^A-Za-z0-9]+'))
+        .where((p) => p.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) return raw;
+    return parts.map((p) => '${p[0].toUpperCase()}${p.substring(1)}').join();
+  }
+
+  /// The one primitive classifier: import collection and parameter
+  /// rendering must agree on what is a declared entity type — two
+  /// copies drifting apart is exactly what caused #1893.
+  static const Set<String> _primitives = {
+    'String',
+    'int',
+    'double',
+    'num',
+    'bool',
+    'void',
+    'DateTime',
+    'dynamic',
+    'Object',
+    'Map',
+    'List',
+    'Set',
+    'Iterable',
+    'Future',
+    'Stream',
+    'Function',
+  };
+
+  /// Whether [token] is a bare PascalCase identifier naming a declared
+  /// entity type rather than a primitive.
+  static bool _isEntityToken(String token) =>
+      RegExp(r'^[A-Z][A-Za-z0-9_]*$').hasMatch(token) &&
+      !_primitives.contains(token);
+
+  /// Derived parameter name for a declared parameter token — matches
+  /// the name rendered by [_paramList], so the fake's call recorder
+  /// keys arguments consistently (issue #1893).
+  static String _paramName(String raw) {
+    final t = raw.trim();
+    if (t.contains(' ')) return t.split(' ').last;
+    if (_isEntityToken(t)) return '${t[0].toLowerCase()}${t.substring(1)}';
+    return t;
+  }
+
+  /// Declared parameters → typed parameter list. A bare name is typed
+  /// `String`; `int attempts` keeps its declared type. A bare
+  /// non-primitive PascalCase token is treated as a TYPE (agreeing with
+  /// `_entityImports`, which already collects it as one) and rendered as
+  /// `Type type` with a derived lowerCamel parameter name, so the
+  /// emitted entity import is actually used instead of a silent
+  /// `String` parameter (issue #1893).
+  static String _paramList(List<String> parameters) {
+    if (parameters.isEmpty) return '';
+    return parameters
+        .map((p) {
+          final t = p.trim();
+          if (t.contains(' ')) return t;
+          // Bare PascalCase token that resolves as a non-primitive type:
+          // render it as the type with a derived lowerCamel name.
+          if (_isEntityToken(t)) {
+            final name = _paramName(t);
+            return '$t $name';
+          }
+          return 'String $t';
+        })
+        .join(', ');
+  }
+
+  /// Async shaping per the mock-datasource convention: declared `void`
+  /// becomes `Future<void>`; declared `T` becomes `Future<T>` unless it
+  /// is already `Future<T>`/`Stream<T>`.
+  static String _returnType(String declared) {
+    final t = declared.trim();
+    if (t == 'void') return 'Future<void>';
+    if (t.startsWith('Future<') || t.startsWith('Stream<')) return t;
+    return 'Future<$t>';
+  }
+
+  static String _classDoc(DependencyContract c) =>
+      '// Declared: ${c.type} | priority: ${c.priority.label}'
+      '${c.specLine == null ? '' : ' | spec line ${c.specLine}'}';
+
+  static String _interface(DependencyContract c, String entityImports) {
+    final members = c.signatures
+        .map(
+          (s) =>
+              '  ${_returnType(s.returnType)} ${s.name}'
+              '(${_paramList(s.parameters)});',
+        )
+        .join('\n');
+    return '''
+// GENERATED — `zfa mock dependency ${c.name}` (issue #960).
+//
+// Declared interface: exactly the members the External Dependencies &
+// Contracts row declares — no invented, missing, or renamed members.
+// Regenerating from an unchanged row is byte-for-byte identical.
+library;
+
+${entityImports.isEmpty ? '' : '$entityImports\n\n'}${_classDoc(c)}
+abstract class ${c.name} {
+$members
+}
+''';
+  }
+
+  static String _fake(DependencyContract c, String entityImports) {
+    final dirName = snake(c.name);
+    final slots = c.signatures
+        .map(
+          (s) =>
+              '  ${_returnType(s.returnType)} Function()? _scripted${_pascal(s.name)};',
+        )
+        .join('\n');
+    final scripters = c.signatures
+        .map(
+          (s) =>
+              '''
+  /// Script the response for `${s.name}` — the fake returns exactly
+  /// this value (and records the call) while the script is set.
+  void script${_pascal(s.name)}(${_returnType(s.returnType)} response) {
+    _scripted${_pascal(s.name)} = () => response;
+  }
+
+  /// Script a THROWING outcome for `${s.name}`.
+  void script${_pascal(s.name)}Error(Object error) {
+    _scripted${_pascal(s.name)} = () => throw error;
+  }
+''',
+        )
+        .join('\n');
+    final impls = c.signatures
+        .map((s) {
+          final args = _paramList(s.parameters);
+          final argNames = s.parameters.map(_paramName).toList();
+          final recordArgs = argNames.isEmpty
+              ? ''
+              : ', arguments: {${argNames.map((a) => "'$a': $a").join(', ')}}';
+          return '''
+  @override
+  ${_returnType(s.returnType)} ${s.name}($args) {
+    _recorder.add('${s.name}'$recordArgs);
+    final scripted = _scripted${_pascal(s.name)};
+    if (scripted == null) {
+      throw StateError(
+        'unscripted call: ${c.name}.${s.name} — script it with '
+        'script${_pascal(s.name)}() (an unscripted call is a test bug, '
+        'never a silent default)',
+      );
+    }
+    return scripted();
+  }
+''';
+        })
+        .join('\n');
+    return '''
+// GENERATED — certified fake for ${c.name} (issue #960).
+//
+// Scriptable per-method responses + a call recorder (method, named
+// arguments, invocation order). An unscripted call is a NAMED error —
+// a green here means the staged scenario happened.
+
+${_classDoc(c)}
+import '$dirName.dart';${entityImports.isEmpty ? '' : '\n$entityImports'}
+
+class ${c.name}Fake implements ${c.name} {
+  final _CallRecorder _recorder = _CallRecorder();
+$slots
+
+$scripters
+$impls
+}
+
+/// Call recorder: (method, named arguments, invocation order) — query
+/// per method for interaction assertions.
+class _CallRecorder {
+  final List<({String method, Map<String, Object?> arguments})> calls =
+      <({String method, Map<String, Object?> arguments})>[];
+
+  void add(String method, {Map<String, Object?> arguments = const {}}) =>
+      calls.add((method: method, arguments: arguments));
+
+  List<({String method, Map<String, Object?> arguments})> callsTo(
+    String method,
+  ) => calls.where((c) => c.method == method).toList();
+}
+''';
+  }
+
+  static String _fixtures(DependencyContract c, String entityImports) {
+    final dirName = snake(c.name);
+    final scenarios = c.signatures
+        .map(
+          (s) =>
+              '''
+  /// Staged scenario for `${s.name}` — deterministic staging from the
+  /// declared signature; the response is supplied by the test.
+  static void ${s.name}(
+    ${c.name}Fake fake,
+    ${_returnType(s.returnType)} response,
+  ) {
+    fake.script${_pascal(s.name)}(response);
+  }
+''',
+        )
+        .join('\n');
+    return '''
+// GENERATED — fixture lane for ${c.name} (issue #960).
+
+${_classDoc(c)}
+import '${dirName}_fake.dart';${entityImports.isEmpty ? '' : '\n$entityImports'}
+
+class ${c.name}Fixtures {
+$scenarios
+}
+''';
+  }
+}

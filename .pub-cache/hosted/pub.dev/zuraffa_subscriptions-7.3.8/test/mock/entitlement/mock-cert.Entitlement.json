@@ -1,0 +1,39 @@
+{
+  "schema": 1,
+  "spec": 1001,
+  "entity": "Entitlement",
+  "interface": "EntitlementDataSource",
+  "subject": "lib/src/data/datasources/entitlement/entitlement_mock_datasource.dart",
+  "contract_test": "test/mock/entitlement/entitlement_mock_contract_test.dart",
+  "contract_digest": "d71d104ef725252cd84e17d884c2ea4ecaa40e76a3322a7b617e204d1228037f",
+  "methods": [
+    {
+      "name": "create",
+      "satisfied": true
+    },
+    {
+      "name": "get",
+      "satisfied": true
+    },
+    {
+      "name": "getList",
+      "satisfied": true
+    },
+    {
+      "name": "update",
+      "satisfied": true
+    },
+    {
+      "name": "delete",
+      "satisfied": true
+    }
+  ],
+  "sandbox": {
+    "runner": "dart",
+    "analyze_issues": 0,
+    "analyze_errors": 0,
+    "tests_passed": 5,
+    "tests_failed": 0
+  },
+  "certified_at": "2026-09-09T20:02:52.889978Z"
+}

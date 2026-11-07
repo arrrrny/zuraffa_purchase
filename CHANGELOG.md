@@ -1,3 +1,14 @@
+## 7.3.9 - 2026-11-08
+
+* fix(purchase): arm the purchase wait before startPurchase — StoreKit 2 delivers the transaction while the purchase call is in flight, and the broadcast event queue dropped it, hanging every purchase at its timeout (the Pro→Max upgrade hang)
+* fix(fleet): post-upgrade verification fixes (changelog heading format, workspace member overrides, hard-coded version pins)
+* fix(fleet): regenerate pubspecs via fleet_pubspec_tool (section-safe overrides)
+* fix: address review comments on #7
+* fix: address review comments on #2
+* fix: address review comments on #5
+* fix: keep the contract-lane hand-step marker single-copy (arrrrny/zuraffa#1984)
+* fix: address review comments on #4
+
 ## 7.3.8 - 2026-11-07
 
 - Mono-version fleet alignment to 7.3.8; internal dependencies refreshed; xml override 7.1.0.

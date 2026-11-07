@@ -1,0 +1,240 @@
+/// The shared `--json` verdict-envelope runner (issue #969, T001).
+///
+/// Every `zfa tdd` subcommand routes its body through
+/// [runWithVerdictEnvelope]. The wrapper:
+///
+///   * runs the command body verbatim when `--json` is absent — the
+///     observable behavior is byte-identical (exceptions rethrow, the
+///     runner prints them, no envelope appears);
+///   * when `--json` IS set, emits ONE versioned verdict envelope
+///     (`verdict.v1`) as the FINAL stdout line on every exit path —
+///     normal returns, refusal returns, and thrown errors (the error is
+///     printed first, then the envelope; the exit code is forced
+///     non-zero so the envelope and the exit agree);
+///   * reads the per-command specifics (feature, verdict override,
+///     exit-class label, fix line, drifts, details) from the
+///     [VerdictContext] the body populates while it runs.
+library;
+
+import 'dart:io';
+
+import 'package:args/command_runner.dart';
+
+import '../../../cli/exit_protocol.dart';
+import '../models/verdict_envelope.dart';
+import 'explain_emitter.dart';
+
+/// Mutable carrier a command body populates with its envelope fields.
+///
+/// Everything is optional: the wrapper derives sensible defaults from
+/// the final exit code and the command's `--feature`/positional args.
+class VerdictContext {
+  /// The feature the command operated on (when the body knows it).
+  String? feature;
+
+  /// Verdict override — when null, derived from the exit code.
+  VerdictOutcome? outcome;
+
+  /// The command's shipped exit-taxonomy label (`complete`,
+  /// `stopped`, `runner-error`, ...). Null falls back to `ok`/`fail`.
+  String? exitClass;
+
+  /// The machine-actionable remediation line, when the path has one.
+  String? fix;
+
+  /// Drift findings the verdict is about.
+  final List<String> drifts = <String>[];
+
+  /// Command-specific key/value details (mirrors the text summary).
+  final Map<String, Object?> details = <String, Object?>{};
+
+  /// Whether the envelope was already emitted by the body itself (a
+  /// verb with legacy emit sites that could not be folded). The wrapper
+  /// then stays silent — exactly one envelope, never two.
+  bool emitted = false;
+
+  /// Issue #1125: the `--explain` prose the body accumulates while it
+  /// runs. Null when the body stopped before it could populate one —
+  /// the wrapper then derives a minimal block from the envelope fields
+  /// so the sections print on EVERY exit path (never a silent
+  /// `--explain`).
+  TddExplain? explain;
+}
+
+/// Extracts the `--json` flag from a command's parsed args.
+bool tddJsonMode(Command<void> command) {
+  final args = command.argResults;
+  if (args == null) return false;
+  try {
+    return args['json'] as bool? ?? false;
+  } catch (_) {
+    return false; // verb does not declare --json (parent commands)
+  }
+}
+
+/// Resolves the feature for the envelope: the body's explicit value
+/// wins, then the `--feature` option, then the first positional for
+/// verbs whose first positional IS a feature name.
+String? tddResolveFeature(
+  Command<void> command,
+  VerdictContext ctx, {
+  bool featureFromRest = false,
+}) {
+  if (ctx.feature != null && ctx.feature!.isNotEmpty) return ctx.feature;
+  final args = command.argResults;
+  if (args == null) return null;
+  try {
+    final flag = args['feature'] as String?;
+    if (flag != null && flag.isNotEmpty) return flag;
+  } catch (_) {
+    // --feature not declared on this verb.
+  }
+  if (featureFromRest && args.rest.isNotEmpty) return args.rest.first;
+  return null;
+}
+
+/// Runs [body] and emits the `verdict.v1` envelope as the final stdout
+/// line when the command was invoked with `--json`.
+///
+/// [featureFromRest] marks verbs whose FIRST positional argument is the
+/// feature name (plan, run, reset, doctor, replay) — the envelope's
+/// `feature` then defaults to it when the body did not set one.
+/// [commandOverride] names the FULL verb path for family subcommands
+/// (`corpus status`, `referee gate`) so the envelope is unambiguous.
+/// [envelopeEnabled] (SPEC 917) overrides the default `--json`-only gate:
+/// the driving verbs also close with the envelope when `--stream` is set
+/// (the streamed NDJSON events are terminated by the final verdict).
+Future<void> runWithVerdictEnvelope(
+  Command<void> command,
+  VerdictContext ctx,
+  Future<void> Function() body, {
+  bool featureFromRest = false,
+  String? commandOverride,
+  bool Function()? envelopeEnabled,
+}) async {
+  final jsonMode = envelopeEnabled?.call() ?? tddJsonMode(command);
+  // Issue #1125: `--explain` prints the human-prose block AFTER the
+  // verdict envelope so the combined output reads JSON + separator +
+  // explanation. `--json` alone never prints it (semantics unchanged).
+  final explainMode = tddExplainMode(command);
+  // Command instances are REUSED across invocations on the same
+  // CliRunner (tests call runCapturing repeatedly) — never inherit the
+  // previous run's envelope state.
+  ctx
+    ..emitted = false
+    ..explain = null
+    ..drifts.clear()
+    ..details.clear();
+  Object? thrown;
+  StackTrace? stack;
+  final verb = commandOverride ?? command.name;
+  try {
+    await body();
+  } catch (e, s) {
+    thrown = e;
+    stack = s;
+    if (!jsonMode) rethrow; // flag absent: byte-identical legacy behavior
+  } finally {
+    if (jsonMode && !ctx.emitted) {
+      if (thrown != null) {
+        // Mirror the runner's own error line so the visible output is
+        // not lost, then close with the envelope (the runner would
+        // otherwise print AFTER the envelope and break the contract).
+        // ignore: avoid_print
+        print('❌ Error: $thrown');
+      }
+      final exitCodeValue = thrown != null && exitCode == 0 ? 1 : exitCode;
+      final outcome =
+          ctx.outcome ??
+          (exitCodeValue == 0
+              ? VerdictOutcome.pass
+              : exitCodeValue == 1
+              ? VerdictOutcome.fail
+              : VerdictOutcome.error);
+      VerdictEnvelope.emit(
+        command: verb,
+        outcome: outcome,
+        exitClass:
+            ctx.exitClass ??
+            (thrown != null
+                ? 'error'
+                : exitCodeValue == 0
+                ? 'ok'
+                : 'fail'),
+        fix: ctx.fix,
+        drifts: ctx.drifts,
+        details: ctx.details,
+        feature: tddResolveFeature(
+          command,
+          ctx,
+          featureFromRest: featureFromRest,
+        ),
+      );
+      ctx.emitted = true;
+    }
+    if (explainMode) {
+      // Issue #1125: after the envelope (or after the body's own output
+      // when `--json` is absent) — the separator header opens the block,
+      // so the combined output reads JSON + separator + explanation.
+      emitExplainBlock(
+        ctx.explain ??
+            _fallbackExplain(
+              verb,
+              command,
+              ctx,
+              featureFromRest,
+              exitCodeValue: thrown != null && exitCode == 0 ? 1 : exitCode,
+            ),
+      );
+    }
+  }
+  if (thrown != null) {
+    if (jsonMode) {
+      // JSON mode consumed the error (printed + enveloped above): force
+      // the non-zero exit the runner's own catch would have produced —
+      // usage errors exit the CANONICAL 2 (SPEC 917; the legacy 64 is
+      // retired, ExitProtocol.canonicalize).
+      if (exitCode == 0) {
+        exitCode = thrown is UsageException ? ExitProtocol.usage : 1;
+      }
+      return;
+    }
+    // Flag absent: propagate untouched (legacy behavior).
+    Error.throwWithStackTrace(thrown, stack!);
+  }
+}
+
+/// The minimal explain block the wrapper derives when the body stopped
+/// before populating one (a usage refusal, a misfire): the envelope
+/// fields the command DID set — the resolved feature, the exit class,
+/// the fix line, the drifts — rendered into the issue-#1125 sections.
+/// Every `--explain` invocation prints the sections, on every path.
+TddExplain _fallbackExplain(
+  String verb,
+  Command<void> command,
+  VerdictContext ctx,
+  bool featureFromRest, {
+  required int exitCodeValue,
+}) {
+  final feature = tddResolveFeature(
+    command,
+    ctx,
+    featureFromRest: featureFromRest,
+  );
+  final fix = <String>[if (ctx.fix != null && ctx.fix!.isNotEmpty) ctx.fix!];
+  final summary = StringBuffer()
+    ..write(
+      '$verb ended before it could record a full explanation: '
+      'verdict=${ctx.outcome?.name ?? 'derived from the exit code'}, '
+      'exit_class=${ctx.exitClass ?? 'unclassified'}',
+    )
+    ..write(exitCodeValue == 0 ? ' (exit 0).' : ' (exit $exitCodeValue).')
+    ..write(fix.isEmpty ? '' : ' Remediation: ${fix.single}')
+    ..write(ctx.drifts.isEmpty ? '' : ' Drift: ${ctx.drifts.join('; ')}.');
+  return TddExplain(
+    command: verb,
+    features: feature == null ? const <String>[] : <String>[feature],
+    fixHints: fix,
+    summary: summary.toString(),
+  );
+}

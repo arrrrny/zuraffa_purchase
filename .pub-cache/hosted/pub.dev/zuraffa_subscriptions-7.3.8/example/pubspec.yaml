@@ -1,0 +1,30 @@
+name: zuraffa_subscriptions_example
+description: "Demonstrates every zuraffa_subscriptions operation end to end on android, ios and macos."
+publish_to: 'none'
+version: 7.3.8
+
+environment:
+  sdk: ^3.13.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  get_it: ^9.3.0
+  zuraffa_subscriptions:
+    path: ../
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+# Fleet-wide xml policy: pin the override to the latest xml so graphs that
+# still transitively pull the abandoned minio (xml 6.x) resolve cleanly.
+dependency_overrides:
+  xml: 7.1.0
+
+  zuraffa:
+    path: ../../../../zuraffa

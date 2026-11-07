@@ -1,0 +1,3133 @@
+/// `zfa tdd gen <behavior-id>` — materializes a planned behavior into
+/// exactly ONE test + ONE compilable subject (spec 044-test-tdd-generation,
+/// FR-001..011).
+///
+/// The command:
+///   1. Loads `specs/<feature>/tdd/test-list.md` through the SHARED
+///      [TestListReader] (bug #617: gen previously carried a private
+///      6-column parser that silently skipped the 4-column rows plan
+///      writes, so every planned behavior was "unknown" to gen and the
+///      full loop stopped at its first step). Looks up the behavior row
+///      by id; the target defaults in the reader. If the id is unknown
+///      or the row is malformed, exits non-zero BEFORE any file is
+///      written (FR-002).
+///   2. Computes the test path + subject path + runnable test name for the
+///      behavior. Path convention (bug #827): the artifacts are namespaced
+///      by feature-slug — `test/tdd/<feature-slug>/<snake-id>_test.dart` and
+///      `lib/tdd/<feature-slug>/<snake-id>_subject.dart` — so two features
+///      that plan the same behavior id never map to the same file (the flat
+///      pre-#827 layout made feature N+1 unstartable while feature N's
+///      artifacts existed; registries are per-feature, so the second
+///      feature's gen was refused by the FR-008 guardrail for a file it did
+///      not own). Legacy flat projects migrate via `zfa tdd migrate-paths`.
+///   3. Delegates test file writing to [BehaviorTestWriter] and subject
+///      file writing to [SubjectWriter].
+///   4. Persists an [ArtifactRecord] via [ArtifactRegistry] (FR-007).
+///   5. Prints a structured result with the six required fields (FR-005):
+///      behavior_id, source_criterion, test_path, subject_path,
+///      runnable_test_name, ownership.
+///
+/// Idempotent: a repeat `gen` for the same behavior is a no-op that returns
+/// `Ownership.reused` for both artifacts (FR-006) — with one exception
+/// (bug #683): when the stub on disk was written by an OLDER binary (its
+/// content no longer matches what the current binary would render) and is
+/// still an `UnimplementedError` stub, the pair is regenerated with a
+/// `binary updated, stub regenerated` note so a rebuilt binary cannot
+/// silently leave a stale stub behind. A progressed subject (no
+/// `UnimplementedError` left) is never clobbered.
+///
+/// Ownership conflict (FR-008): if a file exists on disk but the registry
+/// has no record for it, exits non-zero WITHOUT modifying the file (FR-008)
+/// — the refusal names `--adopt` as the resolving command (bug #840). The
+/// opposite drift direction (issue #1495) — the registry RECORDS a file
+/// that is missing from disk — refuses with the `--repair` remedy: nothing
+/// is on disk to clobber, so dropping the stale record and regenerating is
+/// safe once explicitly requested (audit-logged, adopt discipline for
+/// surviving halves).
+///
+/// `--dry-run`: plans the pair without writing anything (FR-009) — the
+/// issue-#1528 entry preflight probes the TDD profile but never
+/// initializes it, so a missing profile fails closed as `setup-error`
+/// instead of scaffolding a baseline the invocation was told to plan
+/// only.
+///
+/// Issue #1528 ordering: the behavior/test-list row is resolved BEFORE
+/// the entry preflight, so a caller-level error (`unknown behavior id`,
+/// a malformed test list) is reported without baseline side effects
+/// (`tdd run` orders its preflight the same way, after feature
+/// resolution).
+///
+/// Bounded flow (bug #744): every awaited stage of the flow — behavior
+/// resolution, ownership preflight, the two writer writes, the registry
+/// append, and the staleness re-render — runs under ONE wall-clock
+/// deadline (`--timeout`, minutes with fractions allowed, default
+/// 0.5 = 30s: the same acceptance budget the #744 records name, and the
+/// same unit/format as every other TDD command's `--timeout` per #742).
+/// The deadline is enforced INSIDE the flow — hardening over the merged
+/// #748 wrapper-level budget: a fired deadline surfaces from the flow
+/// body itself, so the transactional cleanup removes whatever THIS
+/// attempt created before the misfire-stop classification prints (a
+/// timed-out gen can no longer leave an orphan pair file with no
+/// registry record, which preflight reports as an FR-008 ownership
+/// conflict and which would poison the next run). Because Dart futures
+/// cannot be cancelled, every stage re-checks the expired deadline
+/// BEFORE it starts, so an abandoned continuation aborts at its next
+/// stage boundary instead of silently completing writes or the registry
+/// append after the command has already reported the timeout. The
+/// misfire-stop follows the #742 house pattern: one classification line
+/// naming behavior, step, and `outcome=timeout`, exit 1 — no exception
+/// noise. The flow spawns NO subprocess of its own (test execution is
+/// verify-red/make's contract, not gen's), so the deadline needs no
+/// process-kill side effects. The flow also depends only on the
+/// test-list row, the registry, and the pair on disk — never on
+/// run-state or suite health — so a DEFERRED/unexpressible predecessor
+/// (A1 red at its phase-2 make, bug #625/#657) cannot block a later gen
+/// (A2): the #738-era deadlock inspection found no cross-behavior wait
+/// in this flow, and the deadline caps whatever could stall.
+library;
+
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:args/command_runner.dart';
+import 'package:path/path.dart' as p;
+import 'package:yaml/yaml.dart';
+
+import '../../../cli/exit_protocol.dart';
+
+import '../models/channel_scenario.dart';
+import '../models/routing.dart';
+import '../models/verdict_envelope.dart';
+import '../services/artifact_registry.dart';
+import '../services/cross_feature_ownership.dart';
+import '../services/behavior_test_writer.dart';
+import '../services/contract_test_writer.dart';
+import '../services/feature_path_resolver.dart';
+import '../services/finder_taxonomy.dart';
+import '../services/generated_shape.dart';
+import '../services/gen_reuse_fingerprint.dart';
+import '../services/i18n_key_contract.dart';
+import '../services/nuance_receipts.dart';
+import '../services/profile_preflight.dart';
+import '../services/scenario_example.dart';
+import '../services/spec_parser.dart';
+import '../services/vacuous_guard.dart';
+import '../services/tdd_generation_receipt.dart';
+import '../services/declared_routing.dart';
+import '../services/golden_harness_writer.dart';
+import '../services/platform_harness_context.dart';
+import '../services/platform_harness_subject_writer.dart';
+import '../services/platform_harness_test_writer.dart';
+import '../services/subject_writer.dart';
+import '../services/test_list_reader.dart';
+import '../services/theme_harness_subject_writer.dart';
+import '../services/theme_harness_test_writer.dart';
+import '../services/unit_contract_shape.dart';
+import '../tdd_plugin.dart';
+import '../services/tdd_timeout.dart';
+import '../services/verdict_emitter.dart';
+import '../services/widget_scaffold.dart';
+import '../../../config/zfa_config.dart';
+import '../../../core/project/project_root.dart';
+
+class GenCommand extends Command<void> {
+  GenCommand(this.plugin) {
+    argParser.addFlag(
+      'json',
+      help:
+          'Emit a versioned verdict.v1 JSON envelope as the final stdout '
+          'line (VISION §5, issue #964).',
+      negatable: false,
+    );
+    argParser.addFlag(
+      'dry-run',
+      abbr: 'n',
+      help: 'Plan the test+subject pair without writing anything (FR-009).',
+      defaultsTo: false,
+      negatable: false,
+    );
+    argParser.addOption(
+      'kind',
+      allowed: ['acceptance', 'unit', 'widget', 'contract'],
+      help:
+          'Override the subject kind taken from the test-list row (bug '
+          '#830). `widget` emits a testWidgets pair: a view-builder subject '
+          'stub plus a widget test that pumps the view inside an app shell '
+          'and asserts the acceptance scenario. `contract` (issue #1007) '
+          'emits the contract pair: a contract test scaffold that '
+          'enumerates the contract\'s cases plus a contract seam subject. '
+          'Unknown values are a usage error.',
+    );
+    argParser.addOption(
+      'widget-shell',
+      allowed: ['zuraffaapp', 'materialapp'],
+      help:
+          'Widget kind only (issue #912 defect 2): the app shell the '
+          'generated widget test pumps the view in. Defaults to zuraffaapp '
+          '(zuraffa apps are zuraffa_ui apps); `.zfa.json` `tdd.widgetShell` '
+          'sets the project default, this flag wins over it.',
+    );
+    argParser.addFlag(
+      'golden',
+      help:
+          'Widget kind only (bug #830): append a matchesGoldenFile baseline '
+          'hook to the generated widget test. Baselines are committed per '
+          'platform under test/tdd/goldens/ and refreshed with `flutter test '
+          '--update-goldens`.',
+      defaultsTo: false,
+      negatable: false,
+    );
+    argParser.addFlag(
+      'adopt',
+      help:
+          'Recovery mode (bug #840): when files exist on disk unowned by the '
+          'registry (post-crash, post-merge), verify their content matches '
+          'the generated artifact shape (provenance header + behavior id), '
+          'then register ownership and audit-log the adoption instead of '
+          'refusing. Files that do not match the shape are never adopted; '
+          'missing halves are generated.',
+      defaultsTo: false,
+      negatable: false,
+    );
+    argParser.addFlag(
+      'repair',
+      help:
+          'Recovery mode (issue #1495): when the registry RECORDS a file '
+          'that is missing from disk (the opposite drift direction of '
+          '--adopt), drop the stale record and regenerate. Surviving '
+          'halves are kept only after the same generated-shape '
+          'verification --adopt uses; the repair is audit-logged '
+          '(action "repair"). Owned-and-missing has nothing to clobber, '
+          'so regenerating is safe once explicitly requested.',
+      defaultsTo: false,
+      negatable: false,
+    );
+    argParser.addFlag(
+      'all',
+      negatable: false,
+      help:
+          'Batch generation (spec 069 T002): generate EVERY pending row '
+          'of the feature\'s test list — or every feature\'s rows when '
+          '--feature is omitted — in ONE invocation (one process, one '
+          'registry pass per feature). Pairs with `zfa tdd verify-red '
+          '--all` to collapse the per-behavior test spawns of the '
+          'batched lineage. A refusing row stops ITS FEATURE\'s rows '
+          'honestly at that row (already-written pairs stay registered; a '
+          're-run is idempotent) and the batch keeps driving the other '
+          'features — a refusal in an unrelated feature never starves the '
+          'pending pairs of the feature under repair (issue #1975). In '
+          'an unscoped batch the refusing row names the scoping lever '
+          '(`--feature <feature>`), never a destructive reset of a '
+          'feature the caller may not be repairing (issue #1975).',
+    );
+    argParser.addOption(
+      'feature',
+      help:
+          'Feature name (e.g. 044-test-tdd-generation). When set, only '
+          'specs/<feature>/tdd/test-list.md is scanned for the behavior id. '
+          'When omitted, all feature dirs are scanned and the first match '
+          'wins (with a preference for the cwd-matching feature).',
+    );
+    argParser.addOption(
+      'project',
+      aliases: const ['project-root'],
+      help:
+          'Project root containing specs/, test/, and lib/. When omitted, the '
+          'current working directory is used. Tests pass the temp fixture '
+          'root here instead of mutating Directory.current.',
+    );
+    argParser.addOption(
+      'timeout',
+      help:
+          'Wall-clock budget for the whole gen flow, in MINUTES — fractions '
+          'allowed (0.5 = 30 seconds, the default), the same unit and '
+          'format as every other TDD command\'s --timeout (bug #742). On '
+          'expiry the flow stops with outcome=timeout and a non-zero exit '
+          'instead of hanging indefinitely (bug #744).',
+      defaultsTo: '$defaultTimeoutMinutes',
+    );
+    argParser.addOption(
+      'i18n-expansion',
+      help:
+          'Comma-separated expansion locales for the widget lane\'s '
+          'optional i18n tier (issue #965), e.g. "de" or "de,fr". The '
+          'generated widget test gains one expansion testWidgets per '
+          'locale re-asserting keyed surfaces under that locale. Overrides '
+          'the .zfa.json `tdd.i18nExpansion` default.',
+    );
+  }
+
+  bool _jsonMode = false;
+
+  final TddPlugin plugin;
+
+  /// Issue #969: the envelope carrier the wrapper reads on exit (the
+  /// batch verdict folds into it — ONE final envelope, never two).
+  final VerdictContext _verdict = VerdictContext();
+
+  @override
+  String get name => 'gen';
+
+  @override
+  String get description =>
+      'Generate a failing test + compiling source stub for a behavior '
+      '(spec 044-test-tdd-generation, FR-001..011).';
+
+  @override
+  String get invocation =>
+      'zfa tdd gen <behavior-id> [--dry-run] [--kind widget] [--golden] '
+      '[--adopt] [--repair]';
+
+  /// The default wall-clock budget for the whole gen flow: 0.5 minutes =
+  /// 30 seconds (bug #744 — the same acceptance budget the bug records
+  /// name: "A2 completes within 30s"). Minutes, so `--timeout` shares
+  /// the #742 unit across the TDD subsystem.
+  static const double defaultTimeoutMinutes = 0.5;
+
+  /// The default budget as a [Duration].
+  static final Duration defaultBudget = Duration(
+    microseconds: (defaultTimeoutMinutes * Duration.microsecondsPerMinute)
+        .round(),
+  );
+
+  @override
+  Future<void> run() => runWithVerdictEnvelope(this, _verdict, _run);
+
+  Future<void> _run() async {
+    final rest = argResults?.rest ?? const <String>[];
+    _jsonMode = argResults?['json'] as bool? ?? false;
+    final all = argResults!['all'] as bool;
+    if (all) {
+      if (rest.isNotEmpty) {
+        usageException(
+          'zfa tdd gen --all takes no behavior id — it drives every row '
+          'of the test list (drop "${rest.first}" or drop --all).',
+        );
+      }
+    } else if (rest.isEmpty) {
+      usageException('Behavior id is required: zfa tdd gen <behavior-id>');
+    }
+    final behaviorId = rest.isEmpty ? null : rest.first;
+    final dryRun = argResults!['dry-run'] as bool;
+    final adopt = argResults!['adopt'] as bool;
+    final repair = argResults!['repair'] as bool;
+    // Bug #830: explicit subject-kind override and the widget-only golden
+    // baseline hook. The override is validated by args' `allowed` list;
+    // the golden flag is validated against the EFFECTIVE kind below
+    // (widget-only — a golden hook in a plain-function test is nonsense).
+    final kindOverrideName = argResults!['kind'] as String?;
+    final golden = argResults!['golden'] as bool;
+    final BehaviorKind? kindOverride;
+    if (kindOverrideName == null) {
+      kindOverride = null;
+    } else {
+      kindOverride = BehaviorKind.values.firstWhere(
+        (k) => k.name == kindOverrideName,
+      );
+    }
+    final featureFlag = argResults!['feature'] as String?;
+    // Prefer an explicit --project root so the command never depends on the
+    // process-global Directory.current. Falls back to CWD for real CLI use.
+    final projectFlag = argResults!['project'] as String?;
+    final cwd = projectFlag != null && projectFlag.isNotEmpty
+        ? p.absolute(projectFlag)
+        : ProjectRoot.find(anchorDir: 'specs');
+    // Bug #1272: the feature's test list is read STRICTLY from
+    // `<project>/specs/<feature>/tdd/test-list.md` under the resolved
+    // project root. The --feature reference is validated BEFORE any
+    // test-list resolution: a path-shaped reference used to resolve
+    // OUTSIDE the project root (its .. segments normalize above it) and
+    // the parser read whichever foreign test-list.md the escape hit
+    // first — monorepo siblings (`example/specs/`, `.worktrees/`,
+    // `corpus/`) carry differently-shaped lists whose parse errors then
+    // surfaced as gen's own "malformed test list" error (the reported
+    // repro). A usage-level rejection matches gen's other pre-flow
+    // usage errors; the artifact-path validation further down is
+    // unchanged (it runs after a row was found and never saw the
+    // escape).
+    if (featureFlag != null && featureFlag.isNotEmpty) {
+      final scopeRejection = testListScopeRejection(cwd, featureFlag);
+      if (scopeRejection != null) {
+        usageException('zfa tdd gen: $scopeRejection');
+      }
+    }
+    // Issue #912 defect 2: the widget template's app shell — the explicit
+    // flag wins over the `.zfa.json` `tdd.widgetShell` project default;
+    // the default is ZuraffaApp (zuraffa apps are zuraffa_ui apps).
+    final widgetShell = _resolveWidgetShell(argResults, cwd);
+    // Issue #965: the optional i18n expansion tier — the explicit flag
+    // wins over the `.zfa.json` `tdd.i18nExpansion` project default.
+    final i18nExpansion = _resolveI18nExpansion(argResults, cwd);
+    // Bug #742 unit contract: one shared parser for every TDD --timeout
+    // (minutes, fractions allowed). A bad value is a usage error, exactly
+    // like the other flags.
+    final Duration budget;
+    try {
+      budget =
+          parseTddTimeoutMinutes(argResults!['timeout'] as String?) ??
+          defaultBudget;
+    } on TddTimeoutFormatException catch (e) {
+      usageException('zfa tdd gen: ${e.message}');
+    }
+
+    // Bug #744: the WHOLE flow runs under one wall-clock deadline. Unlike
+    // a wrapper-level Future.timeout, the deadline is enforced INSIDE the
+    // flow: a fired deadline surfaces from the flow body itself — after
+    // the transactional cleanup removed whatever this attempt created —
+    // and an abandoned continuation (Dart futures cannot be cancelled)
+    // aborts at its next stage boundary instead of silently completing
+    // writes or the registry append after the timeout was reported.
+    // (The `--all` batch builds one such deadline PER ROW from the same
+    // budget — see _generateAll; the single-flow contract is unchanged.)
+    final deadline = _FlowDeadline(budget);
+    try {
+      if (all) {
+        await _generateAll(
+          dryRun: dryRun,
+          adopt: adopt,
+          repair: repair,
+          kindOverride: kindOverride,
+          golden: golden,
+          featureFlag: featureFlag,
+          cwd: cwd,
+          widgetShell: widgetShell,
+          i18nExpansion: i18nExpansion,
+          budget: budget,
+        );
+        return;
+      }
+      await _generate(
+        behaviorId!,
+        dryRun: dryRun,
+        adopt: adopt,
+        repair: repair,
+        kindOverride: kindOverride,
+        golden: golden,
+        featureFlag: featureFlag,
+        cwd: cwd,
+        widgetShell: widgetShell,
+        i18nExpansion: i18nExpansion,
+        deadline: deadline,
+      );
+    } on _GenFlowTimeout catch (e) {
+      // Misfire-stop, #742 house pattern (make_command): the
+      // classification is printed ONCE through the capturable stdout
+      // channel and the command exits 1 — no stderr duplication and no
+      // "Bad state:" exception noise from the runner's generic handler.
+      print(
+        'zfa tdd gen: timeout after ${formatTddTimeout(budget)} — '
+        'behavior=${behaviorId ?? '(batch)'} step=${e.stage} '
+        'outcome=timeout',
+      );
+      print(
+        '   a gen stage exceeded its wall-clock deadline and was stopped '
+        'before it could hang (bug #742/#744 safety net). Re-run with '
+        '--timeout <minutes> to raise the budget.',
+      );
+      exitCode = 1;
+      return;
+    }
+  }
+
+  /// Spec 069 T002: the batched generation flow — enumerate every row of
+  /// the target feature (or all features, alphabetical, when --feature
+  /// is omitted) and drive each through the SAME deadline-bounded
+  /// per-behavior flow, one deadline PER ROW built from the same
+  /// per-flow budget (a shared batch-wide deadline would cap the whole
+  /// batch at one flow's budget; the single-flow contract is unchanged).
+  /// One process; a refusing row stops the batch honestly AT that row
+  /// (its predecessors stay written + registered — a re-run is
+  /// idempotent). The batch verdict JSON is the FINAL stdout line.
+  Future<void> _generateAll({
+    required bool dryRun,
+    required bool adopt,
+    required bool repair,
+    required BehaviorKind? kindOverride,
+    required bool golden,
+    required String? featureFlag,
+    required String cwd,
+    required WidgetAppShell widgetShell,
+    required List<String> i18nExpansion,
+    required Duration budget,
+  }) async {
+    // Resolve the target rows: (featureDir, featureName, behaviorId) in
+    // list order (feature order alphabetical when unscoped).
+    final specsDir = Directory('$cwd/specs');
+    final targets = <(String, String, String)>[];
+
+    // Issue #1471: the --feature reference may name a bug directory
+    // (`.specify/bugs/<slug>`) — resolve it through the shared resolver so
+    // the scan below and the per-row `_generate` re-resolution (which
+    // receives the tuple's reference) agree on the same directory.
+    final scopedFeature = featureFlag != null && featureFlag.isNotEmpty
+        ? TddFeaturePaths.resolveWithPin(
+            projectRoot: cwd,
+            featureRef: featureFlag,
+          )
+        : null;
+    // Issue #1471: the batch verdict/messages label the canonical NAME — a
+    // bug reference labels as its slug, never the raw `.specify/bugs/...`.
+    final scopedFeatureName = scopedFeature?.name ?? featureFlag;
+    // Issue #1975: an UNSCOPED batch scans every feature, so a refusal
+    // inside it may belong to a feature the caller is not repairing. The
+    // refusing row then names the scoping lever (`--feature <feature>`)
+    // instead of a destructive `zfa tdd reset` of that feature. A scoped
+    // batch keeps the reset remedy — there the refusing feature IS the
+    // feature under repair.
+    final unscopedBatch = featureFlag == null || featureFlag.isEmpty;
+
+    var readable = true;
+    if (scopedFeature != null) {
+      readable = await _tryReadTestList(
+        scopedFeature.dir,
+        scopedFeature.ref,
+        targets,
+      );
+    } else {
+      final dirs = <Directory>[];
+      if (await specsDir.exists()) {
+        await for (final entity in specsDir.list()) {
+          if (entity is Directory) dirs.add(entity);
+        }
+      }
+      dirs.sort((a, b) => p.basename(a.path).compareTo(p.basename(b.path)));
+      for (final dir in dirs) {
+        final featureName = p.basename(dir.path);
+        final testList = File('${dir.path}/tdd/test-list.md');
+        if (!await testList.exists()) continue;
+        if (!await _tryReadTestList(dir.path, featureName, targets)) {
+          readable = false;
+          break;
+        }
+      }
+    }
+    if (!readable) {
+      _printBatchVerdict(
+        feature: scopedFeatureName,
+        behaviors: targets.length,
+        verdict: 'stopped',
+        stoppedAt: null,
+        counts: const {},
+      );
+      exitCode = 1;
+      return;
+    }
+
+    if (targets.isEmpty) {
+      print(
+        'zfa tdd gen --all: no behaviors found'
+        '${featureFlag != null && featureFlag.isNotEmpty ? " for feature $scopedFeatureName" : " in any test list"}'
+        ' — nothing to generate.',
+      );
+      _printBatchVerdict(
+        feature: scopedFeatureName,
+        behaviors: 0,
+        verdict: 'empty',
+        stoppedAt: null,
+        counts: const {},
+      );
+      return;
+    }
+
+    final featureCount = targets.map((t) => t.$2).toSet().length;
+    print(
+      'zfa tdd gen --all: ${targets.length} behavior(s) '
+      '${featureFlag != null && featureFlag.isNotEmpty ? "for feature $scopedFeatureName" : "across $featureCount feature(s)"} '
+      '(spec 069 T002 batch)',
+    );
+
+    final counts = <String, int>{};
+    String? stoppedAt;
+    var driven = 0;
+    // Issue #1975: a refusal is scoped to the FEATURE that owns the
+    // refused row. The batch skips that feature's remaining rows and
+    // keeps driving the other features — an unscoped `--all` batch
+    // scans EVERY feature, so one refusal in an unrelated, already-shipped
+    // feature must not starve the pending pairs of the feature the
+    // caller is repairing (the issue's `created=0`).
+    final refusedFeatures = <String>{};
+    final refusedRows = <String>[];
+    // Issue #1975: the rows the skip leaves undriven are a category of
+    // their own — the envelope must account for EVERY target of the
+    // batch (driven + refused + skipped), never silently drop one.
+    final skippedRows = <String>[];
+    for (final (_, featureRef, id) in targets) {
+      if (refusedFeatures.contains(featureRef)) {
+        // The refusing feature's remaining rows are skipped: this keeps
+        // the SCOPED batch's semantics (a refusal stops its feature at
+        // that row — the caller asked for that feature) and keeps a
+        // refused feature from being half-generated. It is a SCOPE
+        // choice, not a safety rule: the #1388 refusal is per-ROW (that
+        // row's owned pair drifted), so another row of the same feature
+        // may well generate cleanly (issue #1975).
+        skippedRows.add('$featureRef:$id');
+        continue;
+      }
+      final before = exitCode;
+      String? verdictToken;
+      // The deadline is PER ROW: the budget is one gen flow's budget, so
+      // every row gets its own fresh deadline from the same value
+      // instead of the rows sharing (and exhausting) one deadline.
+      final rowDeadline = _FlowDeadline(budget);
+      // The per-behavior flow re-resolves the row by id inside the
+      // feature's test list (featureDir resolved by _generate).
+      try {
+        verdictToken = await _generate(
+          id,
+          dryRun: dryRun,
+          adopt: adopt,
+          repair: repair,
+          kindOverride: kindOverride,
+          golden: golden,
+          featureFlag: featureRef,
+          unscopedBatch: unscopedBatch,
+          cwd: cwd,
+          widgetShell: widgetShell,
+          i18nExpansion: i18nExpansion,
+          deadline: rowDeadline,
+        );
+      } on StateError {
+        // A hard failure (a malformed test list, an ownership conflict)
+        // already printed its own verdict — stop the WHOLE batch here.
+        stoppedAt = id;
+        break;
+      } on TestListReadException catch (e) {
+        stderr.writeln('zfa tdd gen: ${e.message}');
+        stoppedAt = id;
+        break;
+      } on UsageException catch (e) {
+        // A usage error in one row (e.g. --golden on a non-widget row)
+        // must not escape the batch to CliRunner (exit 64) — the row is
+        // the honest stop point and the batch verdict JSON still prints.
+        stderr.writeln('zfa tdd gen: ${e.message}');
+        stoppedAt = id;
+        break;
+      } on _GenFlowTimeout {
+        print(
+          'zfa tdd gen: timeout after ${formatTddTimeout(budget)} — '
+          'batch stopped at behavior=$id',
+        );
+        stoppedAt = id;
+        break;
+      }
+      if (verdictToken == 'refused') {
+        // Issue #1975: the refusal belongs to ONE feature. Its remaining
+        // rows are skipped; the batch continues with the other features
+        // so the pending pairs of the feature under repair are still
+        // generated. The refusal stays a non-zero exit (the run was not
+        // clean) and the batch verdict stays honest about it.
+        refusedFeatures.add(featureRef);
+        refusedRows.add('$featureRef:$id');
+        counts['refused'] = (counts['refused'] ?? 0) + 1;
+        if (!unscopedBatch) {
+          // A SCOPED batch has nowhere else to go — the refusal ends it
+          // (that is the scoped semantics this PR keeps). An UNSCOPED
+          // batch keeps driving the other features, so the refusal is
+          // NOT a stop point: `stopped_at` must name a row the batch
+          // really halted at, never one it drove past (issue #1975).
+          stoppedAt = id;
+        }
+        print(
+          'zfa tdd gen --all: feature $featureRef refused at $id — its '
+          'remaining rows are skipped'
+          '${unscopedBatch ? '; the batch continues with the other features' : ''}'
+          ' (issue #1975).',
+        );
+        continue;
+      }
+      if (verdictToken == 'foreign-owned' || verdictToken == null) {
+        // A cross-feature ownership conflict (it names another feature's
+        // artifacts) and a bail-out without a verdict (the setup-error
+        // path) are hard stops — they are not one feature's refusal.
+        stoppedAt = id;
+        break;
+      }
+      if (exitCode != before) {
+        // A failing path that returned (not threw): stop at this row.
+        stoppedAt = id;
+        break;
+      }
+      driven++;
+      counts[verdictToken] = (counts[verdictToken] ?? 0) + 1;
+      if (rowDeadline.expired) {
+        stoppedAt = id;
+        print(
+          'zfa tdd gen: timeout after ${formatTddTimeout(budget)} — '
+          'batch stopped at behavior=$id',
+        );
+        break;
+      }
+    }
+
+    // Issue #1975: `stopped` means the batch HALTED — a hard failure, a
+    // timeout, or (in a scoped batch) the refusal that ends the batch.
+    // An unscoped batch that refused one row but drove every remaining
+    // row did NOT halt: it reports `refused`, and the refusal stays a
+    // non-zero exit (the run was not clean).
+    final batchVerdict = stoppedAt != null
+        ? 'stopped'
+        : (counts['refused'] ?? 0) > 0
+        ? 'refused'
+        : (counts['created'] ?? 0) > 0
+        ? 'created'
+        : (counts['adopted'] ?? 0) > 0
+        ? 'adopted'
+        : (counts['repaired'] ?? 0) > 0
+        ? 'repaired'
+        : (counts['regenerated'] ?? 0) > 0
+        ? 'regenerated'
+        : (counts['reused'] ?? 0) > 0
+        ? 'reused'
+        : (counts['planned'] ?? 0) > 0
+        ? 'planned'
+        : 'empty';
+    _printBatchVerdict(
+      feature: scopedFeatureName,
+      behaviors: driven,
+      verdict: batchVerdict,
+      stoppedAt: stoppedAt,
+      counts: counts,
+      refusedRows: refusedRows,
+      skippedRows: skippedRows,
+    );
+    if (stoppedAt != null || exitCode != 0) {
+      exitCode = 1;
+    }
+  }
+
+  /// Collect every test-list row of [featureDir] into [targets]
+  /// ((featureDir, featureRef, id) tuples). [featureRef] is the canonical
+  /// reference the per-row `_generate` re-resolves (issue #1471).
+  /// Returns false — the honest stop signal — when the list is
+  /// unreadable/malformed.
+  Future<bool> _tryReadTestList(
+    String featureDir,
+    String featureRef,
+    List<(String, String, String)> targets,
+  ) async {
+    final reader = TestListReader(featureDir);
+    try {
+      for (final row in await reader.read()) {
+        targets.add((featureDir, featureRef, row.id));
+      }
+      return true;
+    } on TestListReadException catch (e) {
+      // FR-011: a malformed list stops honestly naming the line —
+      // never silently skipped.
+      stderr.writeln('zfa tdd gen: ${e.message}');
+      return false;
+    }
+  }
+
+  /// The batch's machine-readable JSON verdict — the FINAL stdout line
+  /// (the per-behavior verdicts print above it).
+  ///
+  /// Issue #1979: without [--json] the batch prints the human-readable
+  /// `key=value` summary AND THEN the raw JSON verdict — the recovery
+  /// commands' contract (bug #840), the shape `zfa tdd doctor` emits.
+  void _printBatchVerdict({
+    required String? feature,
+    required int behaviors,
+    required String verdict,
+    required String? stoppedAt,
+    required Map<String, int> counts,
+    List<String> refusedRows = const [],
+    List<String> skippedRows = const [],
+  }) {
+    if (!_jsonMode) {
+      print(
+        'gen: feature=${feature ?? '-'} behaviors=$behaviors '
+        'verdict=$verdict created=${counts['created'] ?? 0} '
+        'reused=${counts['reused'] ?? 0} adopted=${counts['adopted'] ?? 0} '
+        'repaired=${counts['repaired'] ?? 0} '
+        'regenerated=${counts['regenerated'] ?? 0} '
+        'planned=${counts['planned'] ?? 0} '
+        'refused=${counts['refused'] ?? 0} '
+        'skipped=${skippedRows.length}'
+        '${stoppedAt != null ? ' stopped_at=$stoppedAt' : ''}',
+      );
+      // Issue #1979: the raw JSON verdict — the LAST stdout line (bug
+      // #840's recovery-tooling contract).
+      print(
+        jsonEncode({
+          'command': 'gen',
+          'feature': ?feature,
+          'verdict': verdict,
+          'behaviors': behaviors,
+          'created': counts['created'] ?? 0,
+          'reused': counts['reused'] ?? 0,
+          'adopted': counts['adopted'] ?? 0,
+          'repaired': counts['repaired'] ?? 0,
+          'regenerated': counts['regenerated'] ?? 0,
+          'planned': counts['planned'] ?? 0,
+          'stopped_at': ?stoppedAt,
+        }),
+      );
+      return;
+    }
+    // Issue #969: the batch verdict folds into the wrapper's context —
+    // the final envelope is emitted once, after the body returns.
+    // Issue #1975: `refused` is a FAILURE of the run (the exit code is
+    // non-zero) — it must never read as a `pass`.
+    _verdict
+      ..feature = feature
+      ..outcome = switch (verdict) {
+        'stopped' => VerdictOutcome.stopped,
+        'refused' => VerdictOutcome.fail,
+        _ => VerdictOutcome.pass,
+      };
+    _verdict.details
+      ..['verdict'] = verdict
+      ..['batch'] = true
+      ..['behaviors'] = behaviors
+      ..['created'] = counts['created'] ?? 0
+      ..['reused'] = counts['reused'] ?? 0
+      ..['adopted'] = counts['adopted'] ?? 0
+      ..['repaired'] = counts['repaired'] ?? 0
+      ..['regenerated'] = counts['regenerated'] ?? 0
+      ..['planned'] = counts['planned'] ?? 0
+      // Issue #1975: the refused rows are named — a refusal stops its
+      // FEATURE's rows, not the whole batch, so the envelope must say
+      // WHICH rows refused.
+      ..['refused'] = counts['refused'] ?? 0
+      // Issue #1975: the rows the skip left undriven are counted and
+      // named too — the envelope accounts for EVERY target of the batch.
+      ..['skipped'] = skippedRows.length;
+    if (refusedRows.isNotEmpty) {
+      _verdict.details['refused_rows'] = refusedRows.join(',');
+    }
+    if (skippedRows.isNotEmpty) {
+      _verdict.details['skipped_rows'] = skippedRows.join(',');
+    }
+    if (stoppedAt != null) _verdict.details['stopped_at'] = stoppedAt;
+  }
+
+  /// The deadline-bounded flow body, verbatim the pre-#744 contract:
+  /// resolve → preflight → write → register → (staleness check) → print.
+  /// Every awaited stage is bounded by [deadline] — the single flow's
+  /// deadline from `run`, or the current row's own deadline in the
+  /// `--all` batch.
+  Future<String?> _generate(
+    String behaviorId, {
+    required bool dryRun,
+    required bool adopt,
+    required bool repair,
+    required BehaviorKind? kindOverride,
+    required bool golden,
+    required String? featureFlag,
+    bool unscopedBatch = false,
+    required String cwd,
+    required WidgetAppShell widgetShell,
+    required List<String> i18nExpansion,
+    required _FlowDeadline deadline,
+  }) async {
+    // Every awaited stage runs under the shared deadline (bug #744). A
+    // fired deadline throws _GenFlowTimeout from INSIDE the flow so the
+    // transactional cleanup below runs before the classification
+    // surfaces; an already-expired deadline aborts a stage BEFORE it
+    // starts, which is what stops an abandoned continuation (the
+    // underlying stage's I/O cannot be cancelled) from completing later
+    // stages — notably the registry append — after the timeout was
+    // reported.
+    Future<T> bounded<T>(Future<T> stage, String stageName) async {
+      if (deadline.expired) throw _GenFlowTimeout(stageName);
+      try {
+        return await stage.timeout(deadline.remaining());
+      } on TimeoutException {
+        throw _GenFlowTimeout(stageName);
+      }
+    }
+
+    // Resolve the behavior. If --feature is set, only scan that one
+    // feature's test-list. Otherwise, scan all features and prefer
+    // `044-test-tdd-generation` (the feature this command lives under).
+    // A malformed test list stops honestly naming the line (FR-011) —
+    // never silently skipped (the anti-pattern behind bug #617).
+    final (Behavior?, String, String) resolved;
+    try {
+      resolved = await bounded(
+        _resolveBehavior(cwd, behaviorId, featureFlag),
+        'resolve test list',
+      );
+    } on TestListReadException catch (e) {
+      stderr.writeln('zfa tdd gen: ${e.message}');
+      throw StateError('zfa tdd gen: malformed test list — ${e.message}');
+    }
+    final (behavior, featureDir, featureName) = resolved;
+    if (behavior == null) {
+      // Issue #890 diagnosability: a wrong project root (no specs/ at all)
+      // used to surface as a bare `unknown behavior id`, which reads like a
+      // missing row and hides the real problem. Name the scanned root so a
+      // mis-resolution is visible on the spot.
+      if (!await Directory('$cwd/specs').exists()) {
+        stderr.writeln(
+          'zfa tdd gen: no specs/ directory under the resolved project '
+          'root: $cwd',
+        );
+        stderr.writeln(
+          '   the project root may have been mis-resolved — pass '
+          '--project <root> to pin it explicitly.',
+        );
+      }
+      stderr.writeln(
+        'zfa tdd gen: unknown behavior id "$behaviorId". '
+        'No matching row found in any specs/<feature>/tdd/test-list.md'
+        '${featureFlag != null ? " for feature $featureFlag" : ""}.',
+      );
+      throw StateError('zfa tdd gen: unknown behavior id "$behaviorId"');
+    }
+
+    // ---------------------------------------------------------------
+    // Issue #1528 entry preflight: a missing TDD profile is a SETUP
+    // condition, deterministically detectable before the flow. The row
+    // is resolved FIRST (above), so a caller-level usage error — a
+    // typo'd behavior id, a malformed test list — can never scaffold a
+    // baseline or patch `pubspec.yaml` as a side effect of reporting it
+    // (`tdd run` orders its preflight the same way, after feature
+    // resolution). Ensure the baseline HERE (the shared idempotent init
+    // sequence, created artifacts logged); a misfiring writer fails
+    // CLOSED with the machine-readable setup-error verdict before any
+    // test/subject is touched. A present profile makes this a silent
+    // no-op, and `--dry-run` (plan without writing, FR-009) probes only:
+    // a missing profile there fails closed instead of auto-initializing.
+    // ---------------------------------------------------------------
+    try {
+      await const TddProfilePreflight().ensure(
+        projectRoot: cwd,
+        commandLabel: 'zfa tdd gen',
+        onLine: print,
+        autoInit: !dryRun,
+      );
+    } on TddProfilePreflightError catch (e) {
+      print(
+        'zfa tdd gen: $kSetupErrorLabel — the TDD baseline could not be '
+        'ensured before the flow: ${e.message}',
+      );
+      print(ExitProtocol.fixLine('run `zfa tdd init`, then re-run'));
+      _verdict
+        ..exitClass = kSetupErrorLabel
+        ..outcome = VerdictOutcome.fail
+        ..fix = 'run `zfa tdd init` (idempotent), then re-run'
+        ..details['preflight'] =
+            'baseline preflight refused the gen '
+            '(issue #1528)'
+        ..details['setup'] = 'missing/broken ${TddProfilePreflight.profilePath}'
+        ..details['classification'] = kSetupErrorLabel;
+      // Issue #1979 review: the house pattern (spec 048) — the
+      // machine-readable verdict is the FINAL stdout line on EVERY path,
+      // the setup-error refusal included. Without it the recovery
+      // tooling could not read this refusal (bug #840's contract).
+      _printVerdict(
+        behaviorId: behavior.id,
+        verdict: 'setup-error',
+        reason:
+            'the TDD baseline could not be ensured before the flow: '
+            '${e.message}',
+        kind: behavior.kind.name,
+      );
+      exitCode = 1;
+      return null;
+    }
+
+    // Issue #1471: the feature directory may be a bug directory
+    // (`.specify/bugs/<slug>`). Artifact namespacing stays on [featureName]
+    // (a plain basename — never a path), while every DISPLAY/receipt
+    // reference to the feature's plan artifacts must name the directory
+    // that really exists. `specs/<name>` for a plain name keeps the path
+    // this command always printed.
+    final featureDisplay = TddFeaturePaths.displayDir(
+      cwd: cwd,
+      dir: featureDir,
+    );
+    // The canonical reference a spawned child (`zfa tdd fake ... --feature`)
+    // must resolve back to this same directory; a plain name is its own
+    // reference, a bug directory keeps `.specify/bugs/<slug>`.
+    final featureRef = featureFlag != null && featureFlag.isNotEmpty
+        ? TddFeaturePaths.resolveWithPin(
+            projectRoot: cwd,
+            featureRef: featureFlag,
+          ).ref
+        : featureName;
+
+    // Bug #830: effective subject kind — the --kind override wins over
+    // the test-list row's kind. --golden is widget-only: a golden hook
+    // in a plain-function/scenario-runner test is meaningless, so it is
+    // a usage error (fail fast before ANY file is written, FR-002).
+    final effectiveKind = kindOverride ?? behavior.kind;
+    if (golden && effectiveKind != BehaviorKind.widget) {
+      usageException(
+        'zfa tdd gen: --golden requires a widget-kind behavior '
+        '(use --kind widget or mark the test-list row widget).',
+      );
+    }
+    // Bug #1261: a SPEC-DECLARED golden (the ` [golden]` row tag) on a
+    // non-widget row warns and stays inert — a warning, never a refusal
+    // (the declaration rides the plan, and a plan regression must not
+    // brick gen). The --golden FLAG misfire above keeps its fail-fast.
+    if (!golden && behavior.golden && effectiveKind != BehaviorKind.widget) {
+      print(
+        'note: the [golden] declaration on "${behavior.id}" is widget-only '
+        '— ignored for kind ${effectiveKind.name} (bug #1261). Re-declare '
+        'the row widget to gate a golden baseline.',
+      );
+    }
+    final goldenGate =
+        (golden || behavior.golden) && effectiveKind == BehaviorKind.widget;
+    final effectiveBehavior =
+        identical(kindOverride, null) || kindOverride == behavior.kind
+        ? behavior
+        : Behavior(
+            id: behavior.id,
+            feature: behavior.feature,
+            kind: effectiveKind,
+            description: behavior.description,
+            sourceCriterion: behavior.sourceCriterion,
+            target: behavior.target,
+            state: behavior.state,
+            golden: behavior.golden,
+            finderKinds: behavior.finderKinds,
+          );
+
+    // Validate required fields up front (FR-002).
+    final missingFields = _missingRequiredFields(behavior);
+    if (missingFields.isNotEmpty) {
+      stderr.writeln(
+        'zfa tdd gen: behavior "$behaviorId" is missing required '
+        'field(s): ${missingFields.join(', ')}. Refusing to write any '
+        'file.',
+      );
+      throw StateError(
+        'zfa tdd gen: missing required field(s): ${missingFields.join(', ')}',
+      );
+    }
+
+    // Issue #1140 kind reconciliation: a WIDGET row planned with a
+    // finder-kind column declares the assertion classes its scenario
+    // verbs demand. gen re-derives the prediction from the SAME
+    // description the writer will assert from and refuses on drift —
+    // a description hand-edited after plan would otherwise generate
+    // stale assertions under a column that no longer describes them
+    // (the same certified-lie shape issue #964 closed, one artifact
+    // earlier in the loop). Re-running `zfa tdd plan <feature>` re-derives
+    // the column and heals the row. Legacy rows without the column
+    // (finderKinds == null) keep the derive-only behavior.
+    if (effectiveBehavior.kind == BehaviorKind.widget &&
+        effectiveBehavior.finderKinds != null) {
+      final declared = effectiveBehavior.finderKinds!.toSet();
+      final predicted = FinderTaxonomy.predictedKinds(
+        effectiveBehavior.description,
+      );
+      final drifted =
+          declared.length != predicted.length ||
+          !declared.containsAll(predicted);
+      if (drifted) {
+        String cell(Set<ScenarioAssertionClass> kinds) => kinds.isEmpty
+            ? 'none'
+            : ScenarioAssertionClass.values
+                  .where(kinds.contains)
+                  .map((c) => c.label)
+                  .join(', ');
+        stderr.writeln(
+          'zfa tdd gen: behavior "$behaviorId" declares finder kind '
+          '[${cell(declared)}] but its description derives '
+          '[${cell(predicted)}] — the kind column drifted from the '
+          'scenario prose (issue #1140; hand-edited after plan?).',
+        );
+        stderr.writeln(
+          '   --> fix: re-run `zfa tdd plan <feature>` to re-derive the '
+          'kind column, then gen again.',
+        );
+        throw StateError(
+          'zfa tdd gen: finder kind drift for "$behaviorId" — declared '
+          '[${cell(declared)}], description derives '
+          '[${cell(predicted)}] — Refusing to write any file.',
+        );
+      }
+    }
+
+    // Issue #1259: a DECLARED Layer Contract derives the unit subject's
+    // signature (params from the request entity, return from the result
+    // entity) and the paired test's assertion surface. The resolution
+    // rides the SAME declared-intent machinery `func` uses (feature 071
+    // test-list traces -> spec contract rows); a MALFORMED declaration
+    // refuses gen (errors-are-an-API) instead of silently inventing a
+    // disconnected shape. Undeclared behaviors keep the legacy pair.
+    UnitContractShape? contractShape;
+    Signature? declaredSignature;
+    if (effectiveBehavior.kind == BehaviorKind.unit) {
+      try {
+        // Issue #1420: the FULL declared decision — the surface and the
+        // entity name ride alongside the signature, so the row-only
+        // entity class (a Key Entities trace: no methods to qualify, the
+        // declared surface rides the entity pipeline by design) stops
+        // reading as "undeclared" at this seam.
+        final decision = await bounded(
+          DeclaredRouting.declaredRoutingFor(
+            cwd: cwd,
+            featureName: featureName,
+            featureDir: featureDir,
+            behaviorId: behavior.id,
+          ),
+          'resolve declared contract',
+        );
+        // Issue #1420: the row-only ENTITY synthesis — a trace whose
+        // decision carries surface: entityPipeline and an entity name but
+        // no signature declares the ENTITY as the behavior's surface (the
+        // #920 principle: the declaration is served, never prose). The
+        // synthesized `<Entity>() -> <Entity>` feeds the EXISTING
+        // contract-shape machinery (SPEC 1489), which serves both arms:
+        // the entity on disk → the typed entity-surface assertion
+        // (`isA<Entity>()`) whose green the declared entity pipeline can
+        // honestly earn; the entity absent → the SPEC 1489 degradation
+        // and the traced `zfa:tdd: vacuous-guard` marker (the #1308/#1320
+        // hand-delta seam). A decision WITH a signature (the contract
+        // lane) keeps the exact legacy shape below — the synthesis never
+        // fires there.
+        final declared = _declaredSignatureForGen(decision);
+        // SPEC 1489: the shape is resolved against the entity registry —
+        // an entity phase-0 created before gen spawned (or a pre-existing
+        // one) renders with its declared type, import included; entities
+        // that do not exist keep the unconditional Object? degradation.
+        if (declared != null) {
+          declaredSignature = declared;
+          contractShape = await UnitContractShape.ofResolved(
+            declared,
+            cwd: cwd,
+          );
+        }
+      } on StateError catch (e) {
+        stderr.writeln('zfa tdd gen: declaration refused — ${e.message}');
+        throw StateError(
+          'zfa tdd gen: declaration refused for "${behavior.id}" — '
+          '${e.message}',
+        );
+      }
+    }
+
+    // Issue #1651: the spec's acceptance scenarios carry the declared
+    // contract's concrete example (`Given 2 and 3 ... Then the sum 5`).
+    // Resolve the scenario naming the declared method and thread it into
+    // the test writer so the generated UNIT test asserts the concrete
+    // outcome instead of the type-only check a `return 0;` dummy
+    // satisfies. Fail-open: an unreadable spec keeps the legacy declared
+    // shape (the writer's fallback surface).
+    ScenarioExample? scenarioExample;
+    if (contractShape != null && declaredSignature != null) {
+      scenarioExample = _scenarioExampleFor(
+        cwd: cwd,
+        featureName: featureName,
+        featureDir: featureDir,
+        signature: declaredSignature,
+      );
+    }
+
+    // Issue #938 preflight (VISION §4 errors-are-an-API): the zuraffaapp
+    // widget shell emits `import 'package:zuraffa_ui/zuraffa_ui.dart';`.
+    // When the target project's pubspec does not declare zuraffa_ui, that
+    // import cannot resolve: the generated pair dies at `verify-red` with
+    // compile-error and the loop never reaches an honest RED. Stop HERE —
+    // before any artifact write, registry append, or re-render — with the
+    // machine-parseable fix line, instead of emitting a test that can
+    // only die at compile. Deterministic: the check only READS the
+    // pubspec (no silent pubspec mutation). The materialapp opt-out emits
+    // no skin import, so it is exempt; a project with no pubspec.yaml
+    // keeps gen's pre-#938 behavior (nothing to resolve).
+    if (effectiveBehavior.kind == BehaviorKind.widget &&
+        WidgetSkinPreflight.skinImportRequired(widgetShell) &&
+        !WidgetSkinPreflight.projectDeclaresZuraffaUi(cwd)) {
+      // print() (not stdout.writeln) so the fix line lands on the same
+      // captured channel as the verdict JSON — greppable by tooling and
+      // by `zfa tdd run`'s step logs (the JSON verdict stays the final
+      // stdout line).
+      print(WidgetSkinPreflight.fixLine);
+      _printVerdict(
+        behaviorId: behavior.id,
+        verdict: 'refused',
+        kind: 'widget',
+        reason:
+            'pubspec.yaml does not declare zuraffa_ui — widget-lane '
+            'behaviors boot a ZuraffaApp shell whose import would die at '
+            'compile (issue #938). Run: flutter pub add zuraffa_ui',
+      );
+      // House pattern (spec 048 / bug #840): signal through exitCode and
+      // return, so the JSON verdict stays the final stdout line.
+      exitCode = 1;
+      return 'refused';
+    }
+
+    // Issue #1277 follow-up (CodeRabbit review): the theme-kind harness
+    // (`ThemeHarnessTestWriter`) emits
+    // `import 'package:zuraffa_ui/zuraffa_ui.dart';` regardless of the
+    // --widget-shell value (the harness always uses ZfaTheme /
+    // ZuraffaApp). When the target project's pubspec does not declare
+    // zuraffa_ui, that import cannot resolve: the generated pair dies at
+    // `verify-red` with compile-error. Mirror the widget preflight's
+    // refuse-with-fix-line pattern for the theme lane.
+    if (effectiveBehavior.kind == BehaviorKind.theme &&
+        !WidgetSkinPreflight.projectDeclaresZuraffaUi(cwd)) {
+      print(WidgetSkinPreflight.fixLine);
+      _printVerdict(
+        behaviorId: behavior.id,
+        verdict: 'refused',
+        kind: 'theme',
+        reason:
+            'pubspec.yaml does not declare ${WidgetSkinPreflight.skinPackage} '
+            '— theme-lane behaviors boot a theme harness whose import '
+            'would die at compile (issue #1277 review). Run: flutter '
+            'pub add ${WidgetSkinPreflight.skinPackage}',
+      );
+      exitCode = 1;
+      return 'refused';
+    }
+
+    // Compute paths. Bug #827: the artifacts are namespaced by feature-slug
+    // so two features planning the same behavior id never collide on one
+    // flat file (the registry is per-feature; the flat layout made feature
+    // N+1's gen an FR-008 refusal against feature N's artifacts).
+    final snakeId = _toSnakeCase(behavior.id);
+    _validateFeatureSegment(featureName);
+    var testPath = '$cwd/test/tdd/$featureName/${snakeId}_test.dart';
+    var subjectPath = '$cwd/lib/tdd/$featureName/${snakeId}_subject.dart';
+    // Issue #1574: the RECORD carries the portable project-relative POSIX
+    // form — the same form run_driver_core.dart records (commit af40f686b).
+    // Composing the record straight from the machine-absolute `cwd` leaked
+    // `/…` paths into committed registries (10 of 18 at the issue's census)
+    // and, in the `.specify/bugs/<slug>` lane, the registry's write-time
+    // canonicalization cannot relativize them — the #1397 corruption was
+    // still being written. The absolute locals above stay the I/O form
+    // (every writer, preflight stat and import anchor resolves against
+    // them); only the recorded form changes.
+    //
+    // Issue #1979: the recorded form is composed AFTER the legacy-flat
+    // adoption below, because that path may re-point the pair at the
+    // flat layout — the record must carry the paths the pair really
+    // occupies.
+    late final String recordTestPath;
+    late final String recordSubjectPath;
+    late final String runnableTestName;
+
+    // Issue #1805: refuse when the recorded artifacts.json entry for this
+    // behavior id carries a different source_criterion than the plan's —
+    // a positional U-id remap would otherwise regenerate the old behavior
+    // under the id silently.
+    //
+    // Issue #1979: the prior record is hoisted out of the guard — the
+    // legacy-flat adoption below reads it (no prior record = the pair is
+    // unowned = adoptable).
+    ArtifactRecord? prior;
+    try {
+      prior = await ArtifactRegistry(
+        featureDir: featureDir,
+      ).findRecord(behavior.id);
+      // Issue #1388: only refuse on a true positional U-id remap — i.e. when
+      // the base FR token changes. A traces drift that keeps the same base
+      // token (e.g. `FR-007` -> `FR-007, adaptive_layouts`) is a legitimate
+      // regeneration trigger, not a remap.
+      final priorBaseToken = prior?.sourceCriterion.split(',').first.trim();
+      final planBaseToken = behavior.sourceCriterion.split(',').first.trim();
+      if (prior != null && priorBaseToken != planBaseToken) {
+        stderr.writeln(
+          'zfa tdd gen: behavior ${behavior.id} criterion mismatch — '
+          'recorded criterion "${prior.sourceCriterion}" '
+          '(artifacts.json) != plan criterion "${behavior.sourceCriterion}"',
+        );
+        stderr.writeln('  id: ${behavior.id}');
+        stderr.writeln('  recorded criterion: ${prior.sourceCriterion}');
+        stderr.writeln('  plan criterion: ${behavior.sourceCriterion}');
+        stderr.writeln(
+          '   --> fix: reconcile the positional U-id mapping — rotate '
+          'the affected artifacts.json records and their test/subject '
+          'pairs to the new ids, then re-run `zfa tdd plan $featureName`.',
+        );
+        // Issue #1979: the house pattern (spec 048) — a refusal signals
+        // through exitCode + return, so the machine-readable verdict
+        // stays the final stdout line (bug #840). The throw escaped the
+        // recovery contract: the command died with NO verdict line at
+        // all, so the recovery tooling could not read the refusal.
+        _printVerdict(
+          behaviorId: behavior.id,
+          verdict: 'refused',
+          reason:
+              'criterion mismatch — recorded criterion '
+              '"${prior.sourceCriterion}" (artifacts.json) != plan '
+              'criterion "${behavior.sourceCriterion}"',
+          featureName: featureName,
+          featureDisplay: featureDisplay,
+          kind: effectiveBehavior.kind.name,
+        );
+        exitCode = 1;
+        return 'refused';
+      }
+    } on Exception {
+      // fail open on unreadable registry
+    }
+
+    // Issue #1979: the LEGACY FLAT layout (the pre-#827 shape —
+    // `test/tdd/<id>_test.dart` + `lib/tdd/<id>_subject.dart`) is still
+    // what `zfa tdd doctor` scans, and the doctor's prescription for a
+    // flat orphan is `--adopt`. Adopt mode therefore also looks at the
+    // flat candidates: when no registry record claims the behavior and a
+    // flat candidate exists, the pair is adopted IN PLACE — the flat
+    // candidate's own directory, so the adopted half's relative subject
+    // import keeps resolving and the missing half is generated beside it
+    // (never in a second directory). Without this the doctor's
+    // prescription was a dead end: gen wrote a FRESH namespaced pair and
+    // left the orphan behind.
+    //
+    // Review follow-up (PR #1988):
+    //  - The FLAT pair is adopted IN PLACE whenever the behavior is
+    //    unrecorded and a flat candidate exists — even when a namespaced
+    //    pair sits next to it. The doctor's prescription names the FLAT
+    //    files, so adopting the NAMESPACED pair instead left the reported
+    //    drift exactly where it was: every later doctor run reported the
+    //    identical drift, forever.
+    //  - A RECORDED behavior keeps the layout its record names: a
+    //    flat-recorded pair is re-pointed at the flat paths, so the
+    //    ownership preflight compares like with like (without this a
+    //    re-gen of an adopted flat pair refused with a path mismatch —
+    //    the recorded flat paths vs. the computed namespaced ones).
+    final flatTestPath = '$cwd/test/tdd/${snakeId}_test.dart';
+    final flatSubjectPath = '$cwd/lib/tdd/${snakeId}_subject.dart';
+    final flatTestPresent = File(flatTestPath).existsSync();
+    final flatSubjectPresent = File(flatSubjectPath).existsSync();
+    final namespacedPairPresent =
+        File(testPath).existsSync() && File(subjectPath).existsSync();
+    if (prior != null &&
+        _recordsFlatLayout(prior, flatTestPath, flatSubjectPath, cwd)) {
+      // The RECORD names the flat layout — honor it on EVERY later run,
+      // adopted or not. The computed namespaced paths would otherwise
+      // mismatch the recorded flat ones, and the ownership preflight
+      // would refuse the pair as a path disagreement (CodeRabbit's
+      // finding on this head): the recorded flat pair exists on disk, so
+      // that refusal had nothing to resolve.
+      testPath = flatTestPath;
+      subjectPath = flatSubjectPath;
+    } else if (adopt &&
+        !dryRun &&
+        prior == null &&
+        (flatTestPresent || flatSubjectPresent)) {
+      if (namespacedPairPresent && !(flatTestPresent && flatSubjectPresent)) {
+        // A HALF of the flat pair next to a COMPLETE namespaced pair:
+        // adopting the flat half would fork the behavior into two pairs
+        // (the missing flat half would have to be generated beside it).
+        // The orphan is surfaced instead of silently resolved — the
+        // doctor keeps naming it until it is removed.
+        _printVerdict(
+          behaviorId: behavior.id,
+          verdict: 'flat-orphan',
+          reason:
+              'the unowned flat candidate '
+              '${flatTestPresent ? flatTestPath : flatSubjectPath} '
+              'sits next to the complete namespaced pair '
+              '(${p.relative(testPath, from: cwd)}, '
+              '${p.relative(subjectPath, from: cwd)}) — adopting the '
+              'flat half alone would split the pair; remove the flat '
+              'residue (or migrate it) so one pair owns the behavior',
+          featureName: featureName,
+          featureDisplay: featureDisplay,
+          kind: behavior.kind.name,
+        );
+        exitCode = 1;
+        return 'flat-orphan';
+      }
+      // The flat pair is adopted IN PLACE — the doctor's prescription
+      // names these files, so they are the ones that become owned.
+      testPath = flatTestPath;
+      subjectPath = flatSubjectPath;
+    }
+
+    // Issue #1574: the RECORD carries the portable project-relative POSIX
+    // form — the same form run_driver_core.dart records (commit af40f686b).
+    // Composing the record straight from the machine-absolute `cwd` leaked
+    // `/…` paths into committed registries (10 of 18 at the issue's census)
+    // and, in the `.specify/bugs/<slug>` lane, the registry's write-time
+    // canonicalization cannot relativize them — the #1397 corruption was
+    // still being written. The absolute locals above stay the I/O form
+    // (every writer, preflight stat and import anchor resolves against
+    // them); only the recorded form changes.
+    recordTestPath = p.relative(testPath, from: cwd).replaceAll(r'\', '/');
+    recordSubjectPath = p
+        .relative(subjectPath, from: cwd)
+        .replaceAll(r'\', '/');
+    // Bug #871: the composite third segment is the PURE description —
+    // the id is embedded exactly once (segment 2). The old
+    // `'$testPath::$id::$id — $description'` double-embed leaked an
+    // `<id> — ` prefix into every consumer that extracts the description
+    // segment, and the tdd planner's capitalized-trace fallback then
+    // captured the id as the entity name (`make A1` instead of
+    // `make Todo`). The generated test's name (BehaviorTestWriter) is
+    // the same pure description, so `--plain-name` matching agrees.
+    // Issue #1574: the first segment is the RELATIVE recorded form.
+    runnableTestName =
+        '$recordTestPath::${behavior.id}::${behavior.description}';
+
+    // Issue #831: platform behaviors drive a platform channel through
+    // the certified fake + committed scenario written by
+    // `zfa tdd fake <channel> --behavior <id>`. Both must exist BEFORE
+    // any gen artifact is written — a refusal happens at this boundary,
+    // with the exact remedy, never a half-written pair.
+    PlatformHarnessContext? platformContext;
+    if (effectiveBehavior.kind == BehaviorKind.platform) {
+      platformContext = _resolvePlatformContext(
+        cwd: cwd,
+        featureDir: featureDir,
+        featureName: featureName,
+        featureRef: featureRef,
+        snakeId: snakeId,
+        behaviorId: behavior.id,
+      );
+    }
+
+    final registry = ArtifactRegistry(featureDir: featureDir);
+
+    // The feature's declared i18n key contract (issue #965): the key is
+    // the contract, the literal is the anchor. A malformed `key:` token
+    // refuses BEFORE any artifact is written (errors-are-an-API — the
+    // same gate the #938 preflight sets). Keyed surfaces make the paired
+    // widget test boot the slang test shell and assert resolved keys.
+    final I18nKeyTable i18nKeys;
+    try {
+      i18nKeys = await I18nKeyTable.loadForFeature(featureDir);
+    } on I18nKeyContractParseException catch (error) {
+      print('zfa tdd gen: ${error.message}');
+      _printVerdict(
+        behaviorId: behavior.id,
+        verdict: 'refused',
+        reason: 'malformed i18n key contract (issue #965)',
+        featureName: featureName,
+        featureDisplay: featureDisplay,
+        kind: effectiveBehavior.kind.name,
+      );
+      exitCode = 1;
+      return 'refused';
+    }
+    final i18nImport = i18nKeys.isEmpty
+        ? null
+        : I18nScaffold.accessorImport(
+            projectRoot: cwd,
+            fromDir: p.dirname(testPath),
+          );
+
+    // Issue #1388: the gen reuse fingerprint — sha256 over the resolved
+    // lane-plan traces cell + the spec's declared-routing surface (its
+    // Layer Contracts section, never the whole `spec.md`: prose that
+    // declares no routing is not a routing change). Every record gen
+    // writes arms it, so the NEXT gen can tell whether the declared
+    // routing changed since the owned pair was generated. Without it the
+    // reuse decision is blind to routing changes that do not alter the
+    // rendered bytes (a traces cell gaining a no-signature contract row
+    // — the 004-login-ui `adaptive_layouts` shape), and the recovery
+    // loop the guard-only stop prescribes (add traces → re-plan →
+    // re-gen) dead-ends at the re-gen step with verdict=reused.
+    final genFingerprint = GenReuseFingerprint.forFeature(
+      featureDir: featureDir,
+      tracesCell: behavior.sourceCriterion,
+    );
+
+    // Build the proposed record, then preflight ownership without changing
+    // the registry. The record is appended only after both writes succeed.
+    // Issue #1574: the recorded paths are the portable project-relative
+    // form (recordTestPath/recordSubjectPath), never the machine-absolute
+    // I/O form.
+    var record = ArtifactRecord(
+      behaviorId: behavior.id,
+      feature: featureName,
+      sourceCriterion: behavior.sourceCriterion,
+      testPath: recordTestPath,
+      subjectPath: recordSubjectPath,
+      runnableTestName: runnableTestName,
+      testOwnership: dryRun ? Ownership.planned : Ownership.created,
+      subjectOwnership: dryRun ? Ownership.planned : Ownership.created,
+      createdAt: DateTime.now().toUtc().toIso8601String(),
+      genFingerprint: genFingerprint,
+    );
+
+    // Bug #840: adopt mode tracks which unowned files were verified and
+    // kept, and which halves this invocation created — the transactional
+    // cleanup must NEVER delete an adopted file (gen did not create it).
+    final adoptedPaths = <String>[];
+    final createdPaths = <String>[];
+
+    // Bug #835: the golden-fixture lane paths for an ffi behavior (null
+    // for every other kind), surfaced in the structured output + verdict.
+    GoldenHarnessPaths? goldenPaths;
+
+    var adoptConflict = false;
+    // Issue #1495: set when the repair path dropped a stale record — the
+    // surviving halves are then reconciled exactly like adopted files
+    // (kept, never rewritten, protected from the transactional cleanup)
+    // and the flow reports verdict `repaired` with an action=repair
+    // audit line.
+    var repairConflict = false;
+    try {
+      record = await bounded(
+        registry.preflight(record, dryRun: dryRun),
+        'ownership preflight',
+      );
+    } on OwnershipConflict catch (e) {
+      final repairable =
+          repair &&
+          !dryRun &&
+          e.direction == OwnershipConflictDirection.ownedButMissing;
+      if (repairable) {
+        final stale = await bounded(
+          registry.findRecord(behavior.id),
+          'repair: registry lookup',
+        );
+        if (stale == null) {
+          // Honest fallback: the conflict claimed ownership that the
+          // registry no longer shows. Nothing to drop — refuse with the
+          // actionable text below (never silently proceed).
+        } else {
+          // Drop the stale record BEFORE the shape checks so every
+          // refusal below leaves a RESOLVABLE state: once the record is
+          // gone, a surviving half degrades to the documented
+          // exists-unowned direction (--adopt) instead of a dead end.
+          await bounded(
+            registry.dropRecords({behavior.id}),
+            'repair: drop stale record',
+          );
+          // Issue #1495, same discipline as --adopt (bug #840): a
+          // surviving half is kept ONLY when it matches the generated
+          // shape (provenance header + behavior id) — never blindly.
+          for (final (role, path, shaped) in [
+            ('test', testPath, matchesGeneratedTestShape),
+            ('subject', subjectPath, matchesGeneratedSubjectShape),
+          ]) {
+            final file = File(path);
+            if (!await bounded(file.exists(), 'repair: stat $role')) continue;
+            final content = await bounded(
+              file.readAsString(),
+              'repair: read $role',
+            );
+            if (!shaped(content, behavior.id)) {
+              _printVerdict(
+                behaviorId: behavior.id,
+                verdict: 'refused',
+                reason:
+                    '$role file "$path" survived the gone pair but does not '
+                    'match the generated $role shape (provenance header + '
+                    'behavior_id) — the stale registry record was dropped, '
+                    'so the file is now unowned: delete it (or restore the '
+                    'generated artifact) and re-run '
+                    '`zfa tdd gen ${behavior.id} --repair --feature '
+                    '$featureRef`',
+              );
+              // Issue #1495 review: the stale record was already dropped
+              // above — trace the mutation even though this run refuses
+              // (the post-flow audit call is gated on repairConflict,
+              // which this early return never sets). `kept` = survivors
+              // verified so far; nothing was regenerated.
+              await bounded(
+                _auditRepair(
+                  featureDir,
+                  featureName,
+                  behavior.id,
+                  adoptedPaths,
+                  const [],
+                ),
+                'repair: audit log (refused after drop)',
+              );
+              // House pattern (spec 048): signal through exitCode and
+              // return, so the JSON verdict stays the final stdout line.
+              exitCode = 1;
+              return 'refused';
+            }
+            adoptedPaths.add(path);
+          }
+          print(
+            'note: dropped the stale registry record for "${behavior.id}" '
+            '— the registry owned the missing file(s), nothing on disk to '
+            'clobber; regenerating (issue #1495)',
+          );
+          repairConflict = true;
+        }
+      }
+      if (!repairConflict) {
+        if (!adopt || dryRun) {
+          // Bug #874: consult ALL feature registries before calling the
+          // conflicting file unowned. Another feature's artifact is
+          // foreign-owned — the verdict names the owner and the migrate
+          // fix; adopting it into a second registry would corrupt
+          // ownership.
+          final foreignOwner = await bounded(
+            foreignOwnerOf(cwd, [e.path], excludeFeature: featureName),
+            'ownership preflight: cross-registry lookup',
+          );
+          if (foreignOwner != null) {
+            // Issue #1573: prescribe the flag form migrate-paths parses.
+            final migrateFix = 'zfa tdd migrate-paths --feature $foreignOwner';
+            _printVerdict(
+              behaviorId: behavior.id,
+              verdict: 'foreign-owned',
+              reason:
+                  'the conflicting file is owned by feature "$foreignOwner" '
+                  '— never adopt another feature\'s artifacts; run '
+                  '`$migrateFix` to move the owning feature\'s artifacts '
+                  'to the namespaced layout',
+            );
+            exitCode = 1;
+            stderr.writeln(
+              'zfa tdd gen: foreign-owned — the conflicting file is owned '
+              'by feature $foreignOwner',
+            );
+            // House pattern (spec 048): signal through exitCode + return,
+            // so the machine-readable verdict stays the final stdout line
+            // (bug #840). The throw used to escape the command and the
+            // runner appended its own error line AFTER the verdict.
+            return 'foreign-owned';
+          }
+          // Issue #1495: the refusal names the command that RESOLVES this
+          // drift direction — never the command that refused. --adopt is
+          // the resolution for files-without-records (#840); --repair is
+          // the resolution for records-without-files.
+          final remedyFix = switch (e.direction) {
+            OwnershipConflictDirection.ownedButMissing =>
+              'zfa tdd gen ${behavior.id} --repair --feature $featureRef',
+            OwnershipConflictDirection.existsUnowned =>
+              'zfa tdd gen ${behavior.id} --adopt --feature $featureRef',
+            OwnershipConflictDirection.pathMismatch =>
+              'zfa tdd doctor $featureRef',
+          };
+          _printVerdict(
+            behaviorId: behavior.id,
+            verdict: 'refused',
+            reason: 'ownership conflict: $e — resolving command: $remedyFix',
+          );
+          exitCode = 1;
+          stderr.writeln(
+            'zfa tdd gen: ownership conflict — $e '
+            '--> fix: $remedyFix',
+          );
+          // House pattern (spec 048): signal through exitCode + return, so
+          // the machine-readable verdict stays the final stdout line.
+          return 'refused';
+        }
+        adoptConflict = true;
+      }
+    }
+
+    if (adoptConflict) {
+      // Bug #840 adoption: verify every existing unowned file against the
+      // generated shape before registering anything. A prior registry
+      // record means the conflict is a registry/paths disagreement, not
+      // unowned files — there is nothing to adopt.
+      final prior = await bounded(
+        registry.findRecord(behavior.id),
+        'adopt: registry lookup',
+      );
+      if (prior != null) {
+        _printVerdict(
+          behaviorId: behavior.id,
+          verdict: 'refused',
+          reason:
+              'a registry record for "${behavior.id}" already exists — '
+              'nothing unowned to adopt',
+        );
+        exitCode = 1;
+        // House pattern (spec 048): signal through exitCode + return, so
+        // the machine-readable verdict stays the final stdout line.
+        return 'refused';
+      }
+      // Bug #874: the existing file(s) may be another feature's recorded
+      // artifact. Consult ALL feature registries before calling anything
+      // unowned — a foreign-owned file is refused with the migrate hint,
+      // never registered into a second registry. (House pattern: the
+      // refusal returns so the JSON verdict stays the final stdout line.)
+      final existingConflicts = [
+        if (File(testPath).existsSync()) testPath,
+        if (File(subjectPath).existsSync()) subjectPath,
+      ];
+      final adoptForeignOwner = await bounded(
+        foreignOwnerOf(cwd, existingConflicts, excludeFeature: featureName),
+        'adopt: cross-registry lookup',
+      );
+      if (adoptForeignOwner != null) {
+        // Issue #1573: prescribe the flag form migrate-paths parses.
+        final migrateFix = 'zfa tdd migrate-paths --feature $adoptForeignOwner';
+        _printVerdict(
+          behaviorId: behavior.id,
+          verdict: 'foreign-owned',
+          reason:
+              'the conflicting file is owned by feature '
+              '"$adoptForeignOwner" — never adopt another feature\'s '
+              'artifacts; run `$migrateFix` to move the owning '
+              'feature\'s artifacts to the namespaced layout',
+        );
+        exitCode = 1;
+        return 'foreign-owned';
+      }
+      for (final (role, path, shaped) in [
+        ('test', testPath, matchesGeneratedTestShape),
+        ('subject', subjectPath, matchesGeneratedSubjectShape),
+      ]) {
+        final file = File(path);
+        if (!await bounded(file.exists(), 'adopt: stat $role')) continue;
+        final content = await bounded(file.readAsString(), 'adopt: read $role');
+        if (!shaped(content, behavior.id)) {
+          _printVerdict(
+            behaviorId: behavior.id,
+            verdict: 'refused',
+            reason:
+                '$role file "$path" exists unowned but does not match the '
+                'generated $role shape (provenance header + behavior_id)',
+          );
+          // House pattern (spec 048): signal through exitCode and return,
+          // so the JSON verdict stays the final stdout line (bug #840).
+          exitCode = 1;
+          return 'refused';
+        }
+        adoptedPaths.add(path);
+      }
+      print(
+        'note: adopting ${adoptedPaths.length} unowned file(s) for '
+        '"${behavior.id}" (bug #840)',
+      );
+    }
+
+    // Write a new pair transactionally from the command's perspective. Any
+    // writer or registry failure removes artifacts created by this attempt
+    // (never the adopted files — bug #840).
+    //
+    // Writer dispatch (issue #841): theme-kind behaviors get the
+    // theme-harness pair (four-proof widget test + subject contract);
+    // every other kind gets the plain-function pair (spec 044).
+    // Issue #1351: Flutter hosts get the flutter_test import surface in
+    // the unit/acceptance templates (plain `package:test` does not
+    // resolve under flutter_test).
+    final flutterTest = await _isFlutterProject(cwd);
+    if (record.testOwnership != Ownership.reused && !dryRun) {
+      final adoptTest = adoptedPaths.contains(testPath);
+      final adoptSubject = adoptedPaths.contains(subjectPath);
+      final writers = _writersFor(
+        behavior,
+        platformContext: platformContext,
+        widgetShell: widgetShell,
+        i18nKeys: i18nKeys,
+        i18nImport: i18nImport,
+        i18nExpansion: i18nExpansion,
+        contractShape: contractShape,
+        scenarioExample: scenarioExample,
+        flutterTest: flutterTest,
+        // Issue #1518: the guard-only warning's branched remedy needs the
+        // seam context (real write path).
+        projectRoot: cwd,
+        featureDir: featureDir,
+        // Issue #1920: the SKIN lane's adaptive slots drive the widget
+        // harness (resolved from THIS feature's spec).
+        adaptiveSlots: await _adaptiveSlotsFor(
+          featureDir: featureDir,
+          behaviorId: behavior.id,
+        ),
+      );
+      try {
+        if (!adoptTest) {
+          await bounded(
+            writers.writeTest(
+              behavior: effectiveBehavior,
+              testPath: testPath,
+              subjectPath: subjectPath,
+              golden: goldenGate,
+            ),
+            'write test file',
+          );
+          createdPaths.add(testPath);
+        }
+        if (!adoptSubject) {
+          await bounded(
+            writers.writeSubject(
+              behavior: effectiveBehavior,
+              subjectPath: subjectPath,
+            ),
+            'write subject file',
+          );
+          createdPaths.add(subjectPath);
+        }
+        // #807 receipt: record newly created files for the provenance
+        // ledger so `zfa proof check` recognises gen outputs.
+        try {
+          final receipts = NuanceReceipts(
+            featureDir: featureDir,
+            projectRoot: cwd,
+          );
+          for (final path in createdPaths) {
+            await receipts.record(
+              file: p.relative(path, from: cwd),
+              reason: 'generated by zfa tdd gen',
+              adapter: 'gen',
+            );
+          }
+        } catch (_) {
+          // receipt recording is best-effort; don't break the main flow
+        }
+        // Bug #835: an ffi behavior also gets the GOLDEN FIXTURE lane —
+        // the marked integration-tier test + the golden fixtures. Same
+        // transactional attempt: a failure later in this block removes
+        // what THIS invocation created. Only newly created pairs get the
+        // lane (a reused pair keeps its recorded golden data — the
+        // writer itself never overwrites an existing file either).
+        if (behavior.kind == BehaviorKind.ffi) {
+          final golden = await bounded(
+            const GoldenHarnessWriter().write(
+              behavior: behavior,
+              projectRoot: cwd,
+              featureName: featureName,
+              snakeId: snakeId,
+            ),
+            'write golden fixture lane',
+          );
+          createdPaths.addAll(golden.createdFiles);
+          goldenPaths = golden;
+        }
+        // Issue #969 T003: the pair (and any golden-lane files) becomes
+        // self-certifying — digest-bound proof.v1 receipts so
+        // `zfa proof check` and the verify preflight gate recognise
+        // every generated artifact.
+        await TddGenerationReceipts.writeBestEffort(
+          projectRoot: cwd,
+          command: 'tdd gen',
+          target: behavior.id,
+          feature: featureName,
+          files: {for (final path in createdPaths) path: 'create'},
+        );
+        record = await bounded(registry.append(record), 'registry append');
+      } catch (error, stackTrace) {
+        // Transactional cleanup: remove what THIS attempt created. The
+        // timeout path is included by construction — the deadline fires
+        // inside the flow, so _GenFlowTimeout is caught here like any
+        // other failure (the pre-hardening #748 wrapper-level .timeout()
+        // bypassed this catch entirely and could leave an orphan file
+        // that poisons the next run with an FR-008 ownership conflict).
+        for (final path in createdPaths) {
+          await _deleteIfCreated(path);
+        }
+        if (error is _GenFlowTimeout) {
+          // The timed-out stage's underlying I/O cannot be cancelled and
+          // may complete shortly after the deadline fired, re-creating an
+          // orphan file AFTER the cleanup above. One grace pass
+          // re-deletes; the abandoned continuation cannot reach the
+          // registry append because every subsequent stage re-checks the
+          // expired deadline and aborts before starting. Residual
+          // window: an I/O completing after this pass — accepted, and
+          // strictly narrower than pre-hardening, which had no cleanup
+          // at all.
+          await Future<void>.delayed(const Duration(milliseconds: 100));
+          for (final path in createdPaths) {
+            await _deleteIfCreated(path);
+          }
+        }
+        Error.throwWithStackTrace(error, stackTrace);
+      }
+      if (repairConflict) {
+        await bounded(
+          _auditRepair(
+            featureDir,
+            featureName,
+            behavior.id,
+            adoptedPaths,
+            createdPaths,
+          ),
+          'repair: audit log',
+        );
+      } else if (adoptedPaths.isNotEmpty) {
+        await bounded(
+          _auditAdopt(featureDir, featureName, behavior.id, adoptedPaths),
+          'adopt: audit log',
+        );
+      }
+    }
+
+    // Binary-change detection (bug #683): a `reused/reused` preflight only
+    // proves the stub on disk was owned by SOME zfa binary — not by the
+    // CURRENT one. After a rebuild that changes what the writers render,
+    // the stale stub silently regressed the resumed pipeline (make ran the
+    // test against the old stub). Option B (lenient): when the subject on
+    // disk is still an UnimplementedError stub, compare its content against
+    // what the current binary would render; regenerate the pair when they
+    // differ, stay silent when they match. A subject that no longer
+    // contains UnimplementedError has PROGRESSED (func scaffolding or a
+    // real implementation) and must never be clobbered.
+    //
+    // Issue #1320: a regeneration whose CAUSE is the traces cell gaining
+    // a contract token since the owned artifact was generated (the cell
+    // now resolves a declared signature while the owned test is still the
+    // guard-only pair) reports `verdict=regenerated` instead of `reused`
+    // — the stale-guard re-gen is the command-surfaced remedy the issue
+    // names, and a bare `reused` verdict hid it.
+    //
+    // Issue #1388: the byte-compare above is blind to declared-routing
+    // changes that do NOT alter the rendered bytes (a traces cell gaining
+    // a no-signature contract row — a layout-surface/entity/dependency
+    // row), and a pair whose subject progressed past the stub stage
+    // exits the staleness path early by design (never clobber real
+    // work). The reuse fingerprint closes both holes: a stored
+    // fingerprint that differs from the current one (the lane-plan
+    // traces cell or spec.md changed since generation) FORCES the
+    // re-render past the byte-equality short-circuit — and when the
+    // machinery still declines (progressed subject, ffi harness), reuse
+    // is REFUSED with the actual escape hatch (`zfa tdd reset
+    // <feature>`) instead of silently reusing a pair that predates the
+    // routing change.
+    var staleness = (
+      regenerated: false,
+      contractDrift: false,
+      fingerprintDrift: false,
+    );
+    if (record.testOwnership == Ownership.reused &&
+        record.subjectOwnership == Ownership.reused &&
+        !dryRun) {
+      // Issue #1388: the fingerprint gate. Records written before the
+      // fingerprint existed carry none — the gate stays open for them
+      // (the field arms on the next created/regenerated record; never
+      // retro-invalidate a shipped registry).
+      final fingerprintDrift =
+          record.genFingerprint != null &&
+          record.genFingerprint != genFingerprint;
+      if (fingerprintDrift) {
+        final forced = await _regenerateStaleStub(
+          behavior: effectiveBehavior,
+          featureName: featureName,
+          testPath: testPath,
+          subjectPath: subjectPath,
+          golden: goldenGate,
+          platformContext: platformContext,
+          widgetShell: widgetShell,
+          i18nKeys: i18nKeys,
+          i18nImport: i18nImport,
+          i18nExpansion: i18nExpansion,
+          contractShape: contractShape,
+          scenarioExample: scenarioExample,
+          bounded: bounded,
+          flutterTest: flutterTest,
+          // Issue #1518: the staleness mirror renders through the same
+          // writers and PRINTS the same warning — it gets the same seam
+          // context so one gen output never carries two different
+          // remedies.
+          projectRoot: cwd,
+          featureDir: featureDir,
+          // Issue #1388: the routing changed since generation — the
+          // byte-equality short-circuit must not keep the stale pair.
+          forceRebuild: true,
+        );
+        staleness = (
+          regenerated: forced.regenerated,
+          contractDrift: forced.contractDrift,
+          fingerprintDrift: true,
+        );
+        if (staleness.regenerated) {
+          // The pair now reflects the current routing: refresh the
+          // stored digest so the drift fires once per change and
+          // stable reuse resumes (FR-006 idempotency for the
+          // unchanged class).
+          await bounded(
+            registry.refreshGenFingerprint(
+              behaviorId: behavior.id,
+              genFingerprint: genFingerprint,
+            ),
+            'registry fingerprint refresh',
+          );
+          record = record.copyWithGenFingerprint(genFingerprint);
+        } else {
+          // The regeneration machinery declined: the subject progressed
+          // past the stub stage (real implementation — never clobbered)
+          // or the pair is an ffi harness (never auto-regenerated).
+          // Refuse the reuse honestly and name the escape hatch the
+          // issue's workaround had to discover by hand.
+          final reason =
+              'the owned pair for "$behaviorId" predates a '
+              'declared-routing change (reuse fingerprint drifted: the '
+              "lane-plan traces cell or the spec's Layer Contracts "
+              'routing surface changed since generation) and gen cannot '
+              'auto-regenerate it — the subject has progressed past the '
+              'stub stage or the pair is an ffi harness, and regenerating '
+              'would clobber real work (issue #1388)';
+          print('zfa tdd gen: reuse refused — $reason.');
+          if (unscopedBatch) {
+            // Issue #1975: an unscoped `--all` batch scans EVERY feature,
+            // so this refused row may belong to a feature the caller is
+            // not repairing. Prescribing `zfa tdd reset <feature>` there
+            // points a destructive remedy at an unrelated feature — the
+            // batch names the SCOPING LEVER instead; a scoped run then
+            // names that feature's own remedy. The refusing feature is
+            // named as CONTEXT only: the caller repairs THEIR feature,
+            // and scoping to the refusing one would re-enter the scoped
+            // path (and its destructive remedy) one command later.
+            print(
+              '   --> fix: the refused row belongs to $featureName — this '
+              'batch scans EVERY feature, so re-run with `--feature <the '
+              'feature you are repairing>` to scope it; `--feature '
+              '$featureName` scopes to the refusing feature itself (its '
+              "own remedy applies then). Do not reset $featureName on its "
+              'behalf (issue #1975).',
+            );
+          } else {
+            print(
+              '   --> fix: zfa tdd reset $featureName — drop the '
+              "feature's registry-owned artifacts, re-run "
+              '`zfa tdd plan $featureName` + `zfa tdd gen $behaviorId`, '
+              'then re-apply the implementation.',
+            );
+          }
+          _printVerdict(
+            behaviorId: behavior.id,
+            verdict: 'refused',
+            reason: reason,
+            featureName: featureName,
+            featureDisplay: featureDisplay,
+            kind: effectiveBehavior.kind.name,
+          );
+          exitCode = 1;
+          return 'refused';
+        }
+      } else {
+        final checked = await _regenerateStaleStub(
+          behavior: effectiveBehavior,
+          featureName: featureName,
+          testPath: testPath,
+          subjectPath: subjectPath,
+          golden: goldenGate,
+          platformContext: platformContext,
+          widgetShell: widgetShell,
+          i18nKeys: i18nKeys,
+          i18nImport: i18nImport,
+          i18nExpansion: i18nExpansion,
+          contractShape: contractShape,
+          scenarioExample: scenarioExample,
+          bounded: bounded,
+          flutterTest: flutterTest,
+          // Issue #1518: the staleness mirror renders through the same
+          // writers and PRINTS the same warning — it gets the same seam
+          // context so one gen output never carries two different
+          // remedies.
+          projectRoot: cwd,
+          featureDir: featureDir,
+        );
+        staleness = (
+          regenerated: checked.regenerated,
+          contractDrift: checked.contractDrift,
+          fingerprintDrift: false,
+        );
+      }
+    }
+
+    // Print the structured result. Use `print` (not `stdout.writeln`) so
+    // the CliRunner's runCapturing zone can capture it.
+    if (staleness.regenerated) {
+      print(
+        staleness.contractDrift
+            ? 'note: traces cell gained a contract token since generation '
+                  '— pair regenerated (issue #1320)'
+            : staleness.fingerprintDrift
+            ? 'note: declared routing changed since the owned pair was '
+                  "generated (traces cell or the spec's Layer Contracts) "
+                  '— pair regenerated (issue #1388)'
+            : 'note: binary updated, stub regenerated',
+      );
+    }
+    print(
+      'behavior_id: ${record.behaviorId}\n'
+      'source_criterion: ${record.sourceCriterion}\n'
+      'kind: ${effectiveBehavior.kind.name}\n'
+      'test_path: ${record.testPath}\n'
+      'subject_path: ${record.subjectPath}\n'
+      'runnable_test_name: ${record.runnableTestName}\n'
+      'ownership: ${record.testOwnership.name}/${record.subjectOwnership.name}',
+    );
+    if (goldenPaths != null) {
+      print(
+        'golden_test_path: ${goldenPaths.laneTestPath}\n'
+        'golden_fixtures_dir: ${goldenPaths.fixturesDir}',
+      );
+    }
+    // Bug #840: the machine-readable JSON verdict — the final stdout line
+    // on every gen path. Issue #1495: a repair run reports `repaired`
+    // (the stale record was dropped + the pair regenerated) ahead of the
+    // adopted/created tokens.
+    final verdictToken = repairConflict
+        ? 'repaired'
+        : adoptedPaths.isNotEmpty
+        ? 'adopted'
+        : dryRun
+        ? 'planned'
+        : staleness.regenerated &&
+              (staleness.contractDrift || staleness.fingerprintDrift)
+        ? 'regenerated'
+        : record.testOwnership == Ownership.reused
+        ? 'reused'
+        : 'created';
+    _printVerdict(
+      behaviorId: record.behaviorId,
+      kind: effectiveBehavior.kind.name,
+      golden: goldenGate,
+      verdict: verdictToken,
+      // Issue #1574's discipline: the verdict carries the PORTABLE
+      // project-relative form — the same form the registry record
+      // written moments later carries (recordTestPath /
+      // recordSubjectPath). The machine-absolute form leaked
+      // `/var/folders/…` paths into every terminal, log and pasted
+      // report; with this PR the verdict is the DEFAULT output, so the
+      // leak reached everything the command prints.
+      adopted: adoptedPaths
+          .map((path) => p.relative(path, from: cwd).replaceAll(r'\', '/'))
+          .toList(),
+      created: createdPaths
+          .map((path) => p.relative(path, from: cwd).replaceAll(r'\', '/'))
+          .toList(),
+      featureName: featureName,
+      featureDisplay: featureDisplay,
+      repaired: repairConflict,
+      goldenTestPath: goldenPaths?.laneTestPath,
+      goldenFixturesDir: goldenPaths?.fixturesDir,
+    );
+    // Spec 069 T002: the token feeds the batch's created/reused counts.
+    return verdictToken;
+  }
+
+  /// Whether [record] names the LEGACY FLAT layout — both recorded paths
+  /// resolve to the flat candidates. The recorded form may be
+  /// project-relative or machine-absolute; both resolve against the
+  /// project root (issue #1397's discipline), never the process CWD.
+  bool _recordsFlatLayout(
+    ArtifactRecord record,
+    String flatTestPath,
+    String flatSubjectPath,
+    String cwd,
+  ) =>
+      _sameResolvedPath(record.testPath, flatTestPath, cwd) &&
+      _sameResolvedPath(record.subjectPath, flatSubjectPath, cwd);
+
+  /// Whether the recorded path [recorded] resolves to [absolute].
+  bool _sameResolvedPath(String recorded, String absolute, String cwd) =>
+      p.equals(normalizeArtifactPath(cwd, recorded), p.normalize(absolute));
+
+  /// Emit the machine-readable JSON verdict (bug #840): the LAST stdout
+  /// line, parseable by the recovery tooling, with the adopted/created
+  /// split and the audit-log location for adopt runs.
+  ///
+  /// Issue #1979: without [--json] the command prints the human-readable
+  /// `key=value` summary AND THEN the raw JSON verdict — the recovery
+  /// commands' contract (bug #840's verification record: "every command's
+  /// final stdout line is a parseable JSON object"). `zfa tdd doctor`
+  /// already kept that shape; gen and reset had drifted to the text-only
+  /// summary, so the recovery tooling could not parse their verdict.
+  ///
+  /// Issue #969: under --json in SINGLE mode the verdict folds into the
+  /// wrapper's envelope context (ONE final machine line); in --all batch
+  /// mode each behavior keeps its own envelope line as mid-stream
+  /// progress above the final batch envelope.
+  void _printVerdict({
+    required String behaviorId,
+    required String verdict,
+    String? reason,
+    List<String> adopted = const [],
+    List<String> created = const [],
+    String? featureName,
+    // Issue #1471: the feature's display reference (the real directory,
+    // `specs/<name>` or `.specify/bugs/<slug>`) for the audit-log path —
+    // [featureName] stays the namespacing label.
+    String? featureDisplay,
+    // Bug #830: the effective subject kind and whether a golden baseline
+    // hook was requested — additive fields, the recovery tooling parses
+    // only the keys it knows.
+    String? kind,
+    bool golden = false,
+    // Issue #1495: a repair run — the audit_log detail is emitted for the
+    // repair (not only for adoptions).
+    bool repaired = false,
+    String? goldenTestPath,
+    String? goldenFixturesDir,
+  }) {
+    if (!_jsonMode) {
+      print(
+        'gen: behavior=$behaviorId verdict=$verdict'
+        '${kind != null ? ' kind=$kind' : ''}'
+        '${reason != null ? ' reason="$reason"' : ''}'
+        '${adopted.isNotEmpty ? ' adopted=${adopted.length}' : ''}'
+        '${created.isNotEmpty ? ' created=${created.length}' : ''}',
+      );
+      // Issue #1979: the raw JSON verdict — the LAST stdout line (bug
+      // #840's recovery-tooling contract, the shape `zfa tdd doctor`
+      // still emits). The text summary above stays for the human reader.
+      print(
+        jsonEncode({
+          'command': 'gen',
+          'feature': ?featureName,
+          'behavior': behaviorId,
+          'verdict': verdict,
+          'reason': ?reason,
+          'kind': ?kind,
+          if (golden) 'golden': true,
+          if (adopted.isNotEmpty) 'adopted': adopted,
+          if (created.isNotEmpty) 'created': created,
+          if ((adopted.isNotEmpty || repaired) && featureDisplay != null)
+            'audit_log': p.join(featureDisplay, 'tdd', 'audit.log'),
+          'golden_test': ?goldenTestPath,
+          'golden_fixtures': ?goldenFixturesDir,
+        }),
+      );
+      return;
+    }
+    final batchMode = argResults?['all'] as bool? ?? false;
+    if (!batchMode) {
+      _verdict
+        ..feature = featureName ?? _verdict.feature
+        ..details['behavior'] = behaviorId
+        ..details['verdict'] = verdict;
+      if (reason != null) _verdict.details['reason'] = reason;
+      if (kind != null) _verdict.details['kind'] = kind;
+      if (golden) _verdict.details['golden'] = true;
+      if (adopted.isNotEmpty) _verdict.details['adopted'] = adopted;
+      if (created.isNotEmpty) _verdict.details['created'] = created;
+      if ((adopted.isNotEmpty || repaired) && featureDisplay != null) {
+        _verdict.details['audit_log'] = p.join(
+          featureDisplay,
+          'tdd',
+          'audit.log',
+        );
+      }
+      if (goldenTestPath != null) {
+        _verdict.details['golden_test'] = goldenTestPath;
+      }
+      if (goldenFixturesDir != null) {
+        _verdict.details['golden_fixtures'] = goldenFixturesDir;
+      }
+      if (verdict == 'refused' || verdict == 'foreign-owned') {
+        _verdict.outcome = VerdictOutcome.fail;
+      }
+      return;
+    }
+    VerdictEnvelope.emit(
+      command: 'gen',
+      outcome: (verdict == 'refused' || verdict == 'foreign-owned')
+          ? VerdictOutcome.fail
+          : VerdictOutcome.pass,
+      details: <String, Object?>{
+        'behavior': behaviorId,
+        'verdict': verdict,
+        'reason': ?reason,
+        'kind': ?kind,
+        if (golden) 'golden': true,
+        if (adopted.isNotEmpty) 'adopted': adopted,
+        if (created.isNotEmpty) 'created': created,
+        if ((adopted.isNotEmpty || repaired) && featureDisplay != null)
+          'audit_log': p.join(featureDisplay, 'tdd', 'audit.log'),
+        'golden_test': ?goldenTestPath,
+        'golden_fixtures': ?goldenFixturesDir,
+      },
+    );
+  }
+
+  /// Writer selection by behavior kind (issue #841, issue #831, issue
+  /// #1007): theme-kind behaviors get the theme-harness pair
+  /// (`ThemeHarnessTestWriter` emitting the four-proof widget test —
+  /// ZfaTheme assertions under both ThemeModes, hardcoded-color audit,
+  /// golden baselines, switch latency — and `ThemeHarnessSubjectWriter`
+  /// emitting the subject contract); platform-kind behaviors (issue
+  /// #831) get the platform-harness pair (certified-fake channel test +
+  /// platform-channel subject stub) built from the resolved
+  /// [PlatformHarnessContext]; contract-kind behaviors (issue #1007) get
+  /// the CONTRACT pair — `ContractTestWriter` emitting the contract test
+  /// scaffold that enumerates the contract's cases and
+  /// `ContractSubjectWriter` emitting the contract seam (NOT an
+  /// implementation test); every other kind gets the plain-function pair
+  /// (spec 044). All pairs share the same `write` signatures so the
+  /// transactional flow and the staleness re-render treat them
+  /// identically.
+  static _GenWriterPair _writersFor(
+    Behavior behavior, {
+    PlatformHarnessContext? platformContext,
+    WidgetAppShell widgetShell = WidgetAppShell.zuraffaapp,
+    I18nKeyTable i18nKeys = I18nKeyTable.empty,
+    String? i18nImport,
+    List<String> i18nExpansion = const [],
+    UnitContractShape? contractShape,
+    ScenarioExample? scenarioExample,
+    bool flutterTest = false,
+    String? projectRoot,
+    String? featureDir,
+    bool omitVacuousMarker = false,
+    List<String> adaptiveSlots = const <String>[],
+  }) {
+    if (behavior.kind == BehaviorKind.theme) {
+      return (
+        writeTest: const ThemeHarnessTestWriter().write,
+        writeSubject: const ThemeHarnessSubjectWriter().write,
+      );
+    }
+    if (behavior.kind == BehaviorKind.platform && platformContext != null) {
+      return (
+        writeTest: PlatformHarnessTestWriter(context: platformContext).write,
+        writeSubject: PlatformHarnessSubjectWriter(
+          context: platformContext,
+        ).write,
+      );
+    }
+    if (behavior.kind == BehaviorKind.contract) {
+      // Issue #1513: the contract lane honors the host runner like the
+      // unit/acceptance lanes do (#1351) — a `const ContractTestWriter()`
+      // here hardcoded `package:test`, dead at `verify-red` on Flutter
+      // hosts (`Couldn't resolve the package 'test'`). The stale-stub
+      // re-render path inherits the fix: it threads the same flag into
+      // this dispatch.
+      //
+      // Issue #1751: both contract writers resolve the declared entity
+      // return against the registry at `projectRoot` — the SAME lift the
+      // unit lane's `UnitContractShape.ofResolved` applies — so a
+      // declared entity/collection return renders verbatim (import
+      // included) and the paired test asserts it, instead of the pair
+      // asserting nothing about the declared outcome.
+      return (
+        writeTest: ContractTestWriter(
+          flutterTest: flutterTest,
+          cwd: projectRoot,
+        ).write,
+        writeSubject: ContractSubjectWriter(cwd: projectRoot).write,
+      );
+    }
+    return (
+      writeTest: BehaviorTestWriter(
+        widgetShell: widgetShell,
+        i18nKeys: i18nKeys,
+        i18nImport: i18nImport,
+        i18nExpansion: i18nExpansion,
+        flutterTest: flutterTest,
+        // Issue #1259: the contract-derived shape rides ONLY the
+        // plain-function pair (unit lane); every other lane keeps its
+        // own subject contract.
+        contractShape: contractShape,
+        // Issue #1651: the scenario-derived assertions ride the same
+        // unit-lane surface — every other kind ignores the example.
+        scenarioExample: behavior.kind == BehaviorKind.unit
+            ? scenarioExample
+            : null,
+        // Issue #1518: the seam context the gen-time guard-only
+        // warning's branched remedy resolves the hand-delta seam from
+        // (the real write AND the staleness mirror print the SAME
+        // wording).
+        projectRoot: projectRoot,
+        featureDir: featureDir,
+        omitVacuousMarker: omitVacuousMarker,
+        // Issue #1920: a SKIN lane declaring adaptive_slots gives the
+        // widget template its per-slot harness (foundation import,
+        // skin-event print, in-body release).
+        adaptiveSlots: adaptiveSlots,
+      ).write,
+      writeSubject: SubjectWriter(contractShape: contractShape).write,
+    );
+  }
+
+  /// Issue #1920: the SKIN lane's declared `adaptive_slots` for
+  /// [behaviorId], resolved from the feature's `spec.md`.
+  ///
+  /// Only a SKIN lane that lists the behavior contributes — a slot
+  /// declaration on some other lane's row never leaks into this pair.
+  /// Fail-open (empty list) on a missing/unreadable/malformed spec: the
+  /// conformance gate re-surfaces the real declaration problem, and gen
+  /// keeps emitting the legacy template exactly as before (the same
+  /// best-effort posture `run_command.dart` applies to conformance-mode
+  /// detection).
+  static Future<List<String>> _adaptiveSlotsFor({
+    required String featureDir,
+    required String behaviorId,
+  }) async {
+    try {
+      final specFile = File(p.join(featureDir, 'spec.md'));
+      if (!await specFile.exists()) return const <String>[];
+      final lanes = SpecParser().parseLanes(await specFile.readAsString());
+      final slots = <String>[];
+      for (final lane in lanes) {
+        if (lane.lane.trim().toUpperCase() != 'SKIN') continue;
+        if (!lane.behaviorIds.contains(behaviorId)) continue;
+        for (final slot in lane.adaptiveSlots) {
+          if (!slots.contains(slot)) slots.add(slot);
+        }
+      }
+      return slots;
+    } catch (_) {
+      return const <String>[];
+    }
+  }
+
+  /// The acceptance scenario example the declared unit contract's test
+  /// derives its assertions from (issue #1651): the FIRST scenario in
+  /// the feature's spec whose prose names the declared method. Fail-open
+  /// — an unreadable spec or an unparsable shape keeps the legacy
+  /// declared surface (the typed `isA<T>()` fallback); the read rides
+  /// the shared [DeclaredRouting.scenariosFailOpen] shim (review fix:
+  /// one fail-open posture for gen, make, and the driver).
+  static ScenarioExample? _scenarioExampleFor({
+    required String cwd,
+    required String featureName,
+    required String? featureDir,
+    required Signature signature,
+  }) {
+    final dir = featureDir ?? p.join(cwd, 'specs', featureName);
+    return ScenarioResolver.firstForTarget(
+      DeclaredRouting.scenariosFailOpen(dir),
+      target: signature.name,
+    );
+  }
+
+  /// Whether the host project runs on the Flutter test runner (issue
+  /// #1351): a pubspec with a `flutter:` dependency means the plain
+  /// `test` package is not resolvable and generated tests must import
+  /// `flutter_test`. Parses the pubspec YAML and checks the
+  /// `dependencies: flutter:` key directly instead of substring-matching,
+  /// which avoids false positives from "flutter" appearing in comments
+  /// (issue #1458) while still surfacing malformed pubspecs to the caller.
+  static Future<bool> _isFlutterProject(String cwd) async {
+    final pubspec = File(p.join(cwd, 'pubspec.yaml'));
+    if (!await pubspec.exists()) return false;
+    dynamic doc;
+    try {
+      doc = loadYaml(await pubspec.readAsString());
+    } on YamlException catch (e) {
+      throw FormatException(
+        'pubspec.yaml at ${pubspec.path} is not valid YAML: $e',
+      );
+    }
+    if (doc is! YamlMap) {
+      throw FormatException(
+        'pubspec.yaml at ${pubspec.path} did not parse to a Map',
+      );
+    }
+    final dependencies = doc['dependencies'];
+    if (dependencies == null) return false;
+    if (dependencies is! YamlMap) {
+      throw FormatException(
+        'pubspec.yaml at ${pubspec.path} has a non-map dependencies value',
+      );
+    }
+    return dependencies.containsKey('flutter');
+  }
+
+  /// The enclosing project's `pubspec.yaml` for [fromPath], or null when no
+  /// ancestor carries one (fixture trees). The stale-stub mirror seeds its
+  /// root with this file so the render there resolves the same `package:`
+  /// subject import the real `gen` writes (issue #1513 follow-up).
+  static File? _enclosingPubspec(String fromPath) {
+    var dir = p.dirname(fromPath);
+    for (var i = 0; i < 24; i++) {
+      final candidate = File(p.join(dir, 'pubspec.yaml'));
+      if (candidate.existsSync()) return candidate;
+      final parent = p.dirname(dir);
+      if (parent == dir) break;
+      dir = parent;
+    }
+    return null;
+  }
+
+  /// Resolves the widget template's app shell (issue #912 defect 2):
+  /// the explicit `--widget-shell` flag wins over the `.zfa.json`
+  /// `tdd.widgetShell` project default; the fallback is ZuraffaApp.
+  static WidgetAppShell _resolveWidgetShell(dynamic args, String cwd) {
+    final flag = args?['widget-shell'] as String?;
+    if (flag != null && flag.isNotEmpty) {
+      return WidgetAppShell.parse(flag);
+    }
+    final config = ZfaConfig.load(projectRoot: cwd);
+    final configured = config?.tddWidgetShell;
+    if (configured != null) return WidgetAppShell.parse(configured);
+    return WidgetAppShell.zuraffaapp;
+  }
+
+  /// Resolves the expansion locales for the optional i18n tier (issue
+  /// #965): the explicit `--i18n-expansion` flag wins over the `.zfa.json`
+  /// `tdd.i18nExpansion` project default; the fallback is no tier.
+  static List<String> _resolveI18nExpansion(dynamic args, String cwd) {
+    final flag = args?['i18n-expansion'] as String?;
+    final raw = (flag != null && flag.isNotEmpty)
+        ? flag
+        : ZfaConfig.load(projectRoot: cwd)?.tddI18nExpansion;
+    if (raw == null || raw.trim().isEmpty) return const [];
+    return raw
+        .split(',')
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList(growable: false);
+  }
+
+  /// Resolve the platform-harness context for a platform-kind behavior
+  /// (issue #831): the committed scenario + certified fake written by
+  /// `zfa tdd fake <channel> --behavior <id>` must BOTH exist. A missing
+  /// artifact or a schema violation is an honest refusal BEFORE any gen
+  /// artifact is written, naming the exact remedy command.
+  PlatformHarnessContext _resolvePlatformContext({
+    required String cwd,
+    required String featureDir,
+    required String featureName,
+    required String featureRef,
+    required String snakeId,
+    required String behaviorId,
+  }) {
+    // Issue #1471: the REAL relative location of the feature directory —
+    // the runtime path the generated test loads the scenario from, and
+    // the location the refusal messages must name.
+    final featureDisplay = TddFeaturePaths.displayDir(
+      cwd: cwd,
+      dir: featureDir,
+    );
+    final scenarioDisplay = p.join(
+      featureDisplay,
+      'tdd',
+      'scenarios',
+      '$snakeId.json',
+    );
+    final scenarioPath = p.join(
+      featureDir,
+      'tdd',
+      'scenarios',
+      '$snakeId.json',
+    );
+    final scenarioFile = File(scenarioPath);
+    if (!scenarioFile.existsSync()) {
+      stderr.writeln(
+        'zfa tdd gen: platform behavior "$behaviorId" has no committed '
+        'scenario at $scenarioDisplay. Generate the scenario + certified fake '
+        'with `zfa tdd fake <channel> --behavior $behaviorId --feature '
+        '$featureRef`, commit the scenario as intent, then re-run gen '
+        '(issue #831 — fakes replay committed intent, they are not '
+        'agent-written).',
+      );
+      throw StateError(
+        'zfa tdd gen: platform behavior "$behaviorId" has no committed '
+        'scenario — run `zfa tdd fake <channel> --behavior $behaviorId '
+        '--feature $featureRef` first (issue #831)',
+      );
+    }
+    final ChannelScenario scenario;
+    try {
+      final decoded =
+          jsonDecode(scenarioFile.readAsStringSync()) as Map<String, Object?>;
+      scenario = ChannelScenario.fromJson(decoded);
+    } on ChannelScenarioException catch (e) {
+      stderr.writeln(
+        'zfa tdd gen: scenario at $scenarioPath violates the schema: $e '
+        '(issue #831).',
+      );
+      throw StateError('zfa tdd gen: scenario schema violation — $e');
+    } on FormatException catch (e) {
+      stderr.writeln(
+        'zfa tdd gen: scenario at $scenarioPath is not valid JSON: $e',
+      );
+      throw StateError('zfa tdd gen: scenario is not valid JSON — $e');
+    }
+    final fakePath = '$cwd/test/tdd/$featureName/fakes/${snakeId}_fake.dart';
+    if (!File(fakePath).existsSync()) {
+      stderr.writeln(
+        'zfa tdd gen: platform behavior "$behaviorId" has a committed '
+        'scenario but no certified fake at test/tdd/$featureName/fakes/'
+        '${snakeId}_fake.dart. Re-run `zfa tdd fake <channel> --behavior '
+        '$behaviorId --feature $featureRef` to regenerate it (issue '
+        '#831).',
+      );
+      throw StateError(
+        'zfa tdd gen: platform behavior "$behaviorId" has no certified '
+        'fake — run `zfa tdd fake <channel> --behavior $behaviorId '
+        '--feature $featureRef` first (issue #831)',
+      );
+    }
+    return PlatformHarnessContext(
+      scenario: scenario,
+      slug: snakeId,
+      fakeImport: 'fakes/${snakeId}_fake.dart',
+      scenarioRef: scenarioDisplay,
+    );
+  }
+
+  /// Append the adoption audit record (bug #840): one JSONL line per
+  /// adoption in `specs/<feature>/tdd/audit.log`.
+  Future<void> _auditAdopt(
+    String featureDir,
+    String featureName,
+    String behaviorId,
+    List<String> adoptedPaths,
+  ) async {
+    final auditFile = File(p.join(featureDir, 'tdd', 'audit.log'));
+    await auditFile.parent.create(recursive: true);
+    final line = jsonEncode({
+      'at': DateTime.now().toUtc().toIso8601String(),
+      'action': 'adopt',
+      'feature': featureName,
+      'behavior': behaviorId,
+      'paths': adoptedPaths,
+    });
+    final sink = auditFile.openWrite(mode: FileMode.append);
+    sink.writeln(line);
+    await sink.flush();
+    await sink.close();
+  }
+
+  /// Append the repair audit record (issue #1495): one JSONL line per
+  /// repair in `specs/<feature>/tdd/audit.log` — the same discipline as
+  /// the #840 adoption line. Records what was dropped and how the pair
+  /// was re-materialized (kept surviving halves vs regenerated halves).
+  Future<void> _auditRepair(
+    String featureDir,
+    String featureName,
+    String behaviorId,
+    List<String> keptPaths,
+    List<String> createdPaths,
+  ) async {
+    final auditFile = File(p.join(featureDir, 'tdd', 'audit.log'));
+    await auditFile.parent.create(recursive: true);
+    final line = jsonEncode({
+      'at': DateTime.now().toUtc().toIso8601String(),
+      'action': 'repair',
+      'feature': featureName,
+      'behavior': behaviorId,
+      'dropped_record': true,
+      'kept': keptPaths,
+      'created': createdPaths,
+    });
+    final sink = auditFile.openWrite(mode: FileMode.append);
+    sink.writeln(line);
+    await sink.flush();
+    await sink.close();
+  }
+
+  /// Detect a stub written by an OLDER binary (bug #683) and regenerate
+  /// the pair when the current binary would render different content.
+  /// Every awaited stage runs under the caller's shared [bounded]
+  /// deadline (bug #744) — the staleness re-render is part of the bounded
+  /// flow, not an unbounded tail.
+  ///
+  /// Option B (lenient):
+  /// - the subject on disk no longer contains `UnimplementedError` → it
+  ///   progressed past the stub stage (func scaffolding / implementation);
+  ///   return false without touching anything;
+  /// - the on-disk pair matches what the current binary would render →
+  ///   return false and stay silent (FR-006 idempotency preserved);
+  /// - otherwise the stub is stale → rewrite the pair with the current
+  ///   writers, returning true so the caller prints the
+  ///   `binary updated, stub regenerated` note. Ownership stays
+  ///   `reused/reused`: the registry record is unchanged.
+  ///
+  /// Byte-comparison covers BOTH test and subject files (the writers are
+  /// both a function of the generating binary — bug #683 covers a test
+  /// half drift too). The current render is produced into a temp mirror
+  /// under `<tmp>/test/tdd/<feature-slug>` + `<tmp>/lib/tdd/<feature-slug>`
+  /// (the same namespaced structure as the real pair, bug #827) so the
+  /// test's relative subject import resolves to a sibling on disk,
+  /// byte-identical to a real `gen`. If the partial rewrite fails after
+  /// touching one file, both files are restored to their pre-attempt bytes
+  /// so a failed
+  /// regeneration never leaves less on disk than before.
+  ///
+  /// Issue #1320: the second field distinguishes the regeneration CAUSE.
+  /// `contractDrift` is true when the current render resolves a declared
+  /// signature ([contractShape] non-null) while the owned test on disk is
+  /// still the guard-only pair — the traces cell gained a contract token
+  /// since generation — so the caller reports `verdict=regenerated` and
+  /// prints the #1320 note instead of the binary-drift wording.
+  Future<({bool regenerated, bool contractDrift})> _regenerateStaleStub({
+    required Behavior behavior,
+    required String featureName,
+    required String testPath,
+    required String subjectPath,
+    required bool golden,
+    required Future<T> Function<T>(Future<T> stage, String stageName) bounded,
+    PlatformHarnessContext? platformContext,
+    WidgetAppShell widgetShell = WidgetAppShell.zuraffaapp,
+    I18nKeyTable i18nKeys = I18nKeyTable.empty,
+    String? i18nImport,
+    List<String> i18nExpansion = const [],
+    UnitContractShape? contractShape,
+    ScenarioExample? scenarioExample,
+    bool flutterTest = false,
+    String? projectRoot,
+    String? featureDir,
+
+    /// Issue #1388: the reuse fingerprint drifted — the declared routing
+    /// changed since the owned pair was generated. The byte-equality
+    /// short-circuit must NOT keep the on-disk pair in that case: the
+    /// pair is re-rendered and rewritten even when the current binary
+    /// would produce identical bytes (the drift is the ROUTING's, not
+    /// the render's — a no-signature contract row, or a declaration
+    /// added to the spec's Layer Contracts surface that no behavior's
+    /// traces cell resolves, changes nothing the writers can see), so
+    /// the verdict honestly reports `regenerated` and the stored
+    /// fingerprint refreshes. Every other guard stays: ffi harnesses are
+    /// never auto-regenerated, progressed subjects are never clobbered,
+    /// and a failed rewrite still rolls back.
+    bool forceRebuild = false,
+  }) async {
+    // Bug #835: an ffi harness is NEVER auto-regenerated. Its contract
+    // seams are the implementer's wiring point — partial wiring (the
+    // constants edited, a seam implemented) still contains
+    // UnimplementedError, so the byte-compare below would clobber real
+    // work (the same shape as the entity overwrite hazard). A stale
+    // harness is self-consistent with its contract test (both generated
+    // together), so the honest-red semantics survive untouched.
+    if (behavior.kind == BehaviorKind.ffi) {
+      return (regenerated: false, contractDrift: false);
+    }
+    final subjectFile = File(subjectPath);
+    if (!await subjectFile.exists()) {
+      return (regenerated: false, contractDrift: false);
+    }
+    final onDiskSubject = await bounded(
+      subjectFile.readAsString(),
+      'staleness: read on-disk subject',
+    );
+    // A progressed artifact is never clobbered by the staleness check.
+    if (!onDiskSubject.contains('UnimplementedError')) {
+      return (regenerated: false, contractDrift: false);
+    }
+
+    // Render the expected pair into a temp mirror (no real paths touched).
+    // Bug #827: the mirror must reproduce the REAL relative test→subject
+    // structure, not a hardcoded flat `test/tdd` + `lib/tdd` layout — the
+    // rendered test imports its subject through a relative path computed
+    // from the two paths, and a depth mismatch would make the byte
+    // comparison report a false staleness (or mask a real one) for every
+    // namespaced artifact.
+    //
+    // Writer dispatch by kind (issue #841): the mirror must render what
+    // THIS binary would really write for the behavior's kind.
+    final mirror = await Directory.systemTemp.createTemp('zfa_gen_stale_');
+    try {
+      // Issue #1513 follow-up: the mirror needs the target project's
+      // package identity, or `packageSubjectImportFor` returns null inside
+      // it (no pubspec in any ancestor) and every stale re-render downgrades
+      // a `package:` subject import back to the lint-hostile relative shape
+      // — permanently, since the reverted file then matches the mirror.
+      // The mirror reproduces the real `test/tdd/<feature>/` +
+      // `lib/tdd/<feature>/` layout, so seeding its root with the enclosing
+      // pubspec makes the byte-compare context-consistent.
+      final enclosingPubspec = _enclosingPubspec(testPath);
+      if (enclosingPubspec != null) {
+        await bounded(
+          enclosingPubspec.copy(p.join(mirror.path, 'pubspec.yaml')),
+          'staleness: seed mirror pubspec',
+        );
+      }
+      // Issue #1920: the feature dir the SKIN lane's adaptive slots are
+      // resolved from. Every current caller passes it; a direct library
+      // caller without it falls back to the canonical specs path (and the
+      // resolver fails open when the spec is not there).
+      final slotFeatureDir =
+          featureDir ??
+          (projectRoot == null
+              ? null
+              : p.join(projectRoot, 'specs', featureName));
+      final writers = _writersFor(
+        behavior,
+        platformContext: platformContext,
+        widgetShell: widgetShell,
+        i18nKeys: i18nKeys,
+        i18nImport: i18nImport,
+        i18nExpansion: i18nExpansion,
+        contractShape: contractShape,
+        scenarioExample: scenarioExample,
+        flutterTest: flutterTest,
+        // Issue #1518: the mirror's warning prints the SAME branched
+        // remedy as the real write (one wording per gen output).
+        projectRoot: projectRoot,
+        featureDir: featureDir,
+        omitVacuousMarker: true,
+        // Issue #1920: the mirror must render the SAME slot-aware harness
+        // as the real write, or every slot-declaring pair reports false
+        // staleness forever.
+        adaptiveSlots: slotFeatureDir == null
+            ? const <String>[]
+            : await _adaptiveSlotsFor(
+                featureDir: slotFeatureDir,
+                behaviorId: behavior.id,
+              ),
+      );
+      final mirroredTest = p.join(
+        mirror.path,
+        'test',
+        'tdd',
+        featureName,
+        p.basename(testPath),
+      );
+      final mirroredSubject = p.join(
+        mirror.path,
+        'lib',
+        'tdd',
+        featureName,
+        p.basename(subjectPath),
+      );
+      await bounded(
+        writers.writeTest(
+          behavior: behavior,
+          testPath: mirroredTest,
+          subjectPath: mirroredSubject,
+          golden: golden,
+        ),
+        'staleness: render current pair (test)',
+      );
+      await bounded(
+        writers.writeSubject(behavior: behavior, subjectPath: mirroredSubject),
+        'staleness: render current pair (subject)',
+      );
+      final expectedTest = await bounded(
+        File(mirroredTest).readAsString(),
+        'staleness: read rendered test',
+      );
+      final expectedSubject = await bounded(
+        File(mirroredSubject).readAsString(),
+        'staleness: read rendered subject',
+      );
+      final onDiskTest = await bounded(
+        File(testPath).readAsString(),
+        'staleness: read on-disk test',
+      );
+      if (!forceRebuild &&
+          expectedSubject == onDiskSubject &&
+          expectedTest == onDiskTest) {
+        return (regenerated: false, contractDrift: false);
+      }
+      // Issue #1320: the drift cause — the cell gained a contract token
+      // (a declared shape resolves now) while the owned test is still the
+      // guard-only pair.
+      final contractDrift =
+          contractShape != null && contentIsVacuousGreen(onDiskTest);
+
+      // Rewrite the real pair; roll back if either write fails so the
+      // on-disk state is exactly what it was before this attempt.
+      try {
+        await bounded(
+          File(testPath).writeAsString(expectedTest),
+          'staleness: rewrite test file',
+        );
+        await bounded(
+          File(subjectPath).writeAsString(expectedSubject),
+          'staleness: rewrite subject file',
+        );
+      } catch (error) {
+        // Best-effort rollback: restore the pre-attempt bytes. If even
+        // the rollback fails (e.g. permissions flipped mid-flight), let
+        // the original error propagate so the caller sees a real failure.
+        // A bounded rollback past an expired deadline aborts before the
+        // write starts (the flow is dead anyway; no unbounded I/O).
+        try {
+          await bounded(
+            File(testPath).writeAsString(onDiskTest),
+            'staleness: roll back test file',
+          );
+          await bounded(
+            File(subjectPath).writeAsString(onDiskSubject),
+            'staleness: roll back subject file',
+          );
+        } catch (_) {
+          // Ignore rollback errors; surface the original failure.
+        }
+        rethrow;
+      }
+      return (regenerated: true, contractDrift: contractDrift);
+    } finally {
+      if (await mirror.exists()) await mirror.delete(recursive: true);
+    }
+  }
+
+  Future<void> _deleteIfCreated(String path) async {
+    final file = File(path);
+    if (await file.exists()) {
+      await file.delete();
+    }
+  }
+
+  /// Resolve a behavior id (e.g. `A1`, `B-003` or `U1`) by scanning feature
+  /// `test-list.md` files through the shared [TestListReader] — the single
+  /// format contract (bug #617). If [featureFlag] is set, only that feature
+  /// is scanned. Otherwise, all features are scanned and the first match in
+  /// alphabetical order wins, with a preference for
+  /// `044-test-tdd-generation` (the feature this command lives under).
+  ///
+  /// Returns a null behavior when no row matches; a malformed list surfaces
+  /// as a [TestListReadException] (honest stop naming the line, FR-011).
+  Future<(Behavior?, String, String)> _resolveBehavior(
+    String cwd,
+    String behaviorId,
+    String? featureFlag,
+  ) async {
+    if (featureFlag != null && featureFlag.isNotEmpty) {
+      // Issue #1471: the reference may name a bug directory
+      // (`.specify/bugs/<slug>`) that lives OUTSIDE `specs/`, so resolve it
+      // through the shared resolver (pin included) instead of hardcoding
+      // `<cwd>/specs/<ref>`. The returned featureName is the resolved NAME
+      // (a plain basename) — artifact namespacing stays single-segment.
+      final resolved = TddFeaturePaths.resolveWithPin(
+        projectRoot: cwd,
+        featureRef: featureFlag,
+      );
+      final featureDir = resolved.dir;
+      final testListFile = File('$featureDir/tdd/test-list.md');
+      if (await testListFile.exists()) {
+        final behavior = await _findRow(featureDir, resolved.name, behaviorId);
+        if (behavior != null) return (behavior, featureDir, resolved.name);
+      }
+      return (null, '', '');
+    }
+
+    final specsDir = Directory('$cwd/specs');
+    if (!await specsDir.exists()) return (null, '', '');
+
+    // No --feature given: scan all feature dirs and reject ambiguous IDs.
+    final matches = <(Behavior, String, String)>[];
+    final dirs = <Directory>[];
+    await for (final entity in specsDir.list()) {
+      if (entity is Directory) dirs.add(entity);
+    }
+    dirs.sort((a, b) => p.basename(a.path).compareTo(p.basename(b.path)));
+    for (final entity in dirs) {
+      final featureName = p.basename(entity.path);
+      final testListFile = File('${entity.path}/tdd/test-list.md');
+      if (!await testListFile.exists()) continue;
+      final behavior = await _findRow(entity.path, featureName, behaviorId);
+      if (behavior != null) {
+        matches.add((behavior, entity.path, featureName));
+      }
+    }
+    if (matches.isEmpty) return (null, '', '');
+    if (matches.length > 1) {
+      final features = matches.map((m) => m.$3).join(', ');
+      stderr.writeln(
+        'zfa tdd gen: ambiguous behavior id "$behaviorId" found in '
+        'multiple features: $features. Use --feature to disambiguate.',
+      );
+      throw StateError(
+        'zfa tdd gen: ambiguous behavior id "$behaviorId" in $features',
+      );
+    }
+    return matches.first;
+  }
+
+  /// First row with [behaviorId] in the feature's test list, mapped onto
+  /// [Behavior] via the shared reader's contract.
+  Future<Behavior?> _findRow(
+    String featureDir,
+    String featureName,
+    String behaviorId,
+  ) async {
+    final rows = await TestListReader(featureDir).read();
+    for (final row in rows) {
+      if (row.id != behaviorId) continue;
+      return Behavior(
+        id: row.id,
+        feature: featureName,
+        kind: row.kind,
+        description: row.description,
+        sourceCriterion: row.traces,
+        target: row.target,
+        persistence: row.persistence,
+        golden: row.golden,
+        finderKinds: row.finderKinds,
+      );
+    }
+    return null;
+  }
+
+  /// Validate the required fields (FR-002).
+  List<String> _missingRequiredFields(Behavior b) {
+    final missing = <String>[];
+    if (b.id.isEmpty) missing.add('behavior id');
+    if (b.description.isEmpty) missing.add('description');
+    if (b.sourceCriterion.isEmpty) missing.add('source criterion');
+    if (b.target.isEmpty) missing.add('target');
+    return missing;
+  }
+
+  /// Issue #1420: the signature gen derives from the declared routing
+  /// decision — the resolved signature verbatim when the decision carries
+  /// one (the contract lane, byte-identical to the pre-#1420 seam), or the
+  /// synthesized declared ENTITY-surface signature `<Entity>() -> <Entity>`
+  /// when the decision is the row-only entity class: surface
+  /// `entityPipeline`, an entity name, no signature (a Key Entities trace —
+  /// entity rows declare no methods, `_qualifiedTraces` passes them through
+  /// row-only by design). Null for every other decision (undeclared rows,
+  /// storage/dependency surfaces): the legacy prose fallback keeps them.
+  ///
+  /// The synthesized signature is a DECLARATION, not an invention (#920):
+  /// the spec declares the entity as the behavior's surface, and the
+  /// contract-shape machinery (SPEC 1489) serves the mechanically
+  /// assertable declared surface — `isA<Entity>()` when the entity exists
+  /// on disk, the traced `zfa:tdd: vacuous-guard` hand-delta seam (the
+  /// #1308/#1320 entity path) when it does not. Richer entity-VALUE
+  /// assertions are the author's hand step; gen never invents them.
+  static Signature? _declaredSignatureForGen(RoutingDecision? decision) {
+    if (decision == null) return null;
+    final signature = decision.signature;
+    if (signature != null) return signature;
+    final entity = decision.entityName;
+    if (decision.surface == GenerationSurface.entityPipeline &&
+        entity != null &&
+        entity.isNotEmpty &&
+        // The spec's Key Entities name must be a Dart identifier for the
+        // synthesized `<Entity>() -> <Entity>` to be well-formed (`Share
+        // Attachment`, `Shared-Attachment` are not) — [Signature._shape]
+        // requires the identifier grammar for parsed rows, which this
+        // direct construction would otherwise bypass. A non-identifier
+        // name returns null: the legacy prose fallback keeps the row
+        // (same degradation class as an entity absent from disk) instead
+        // of a silently malformed signature.
+        Signature.isValidIdentifierName(entity)) {
+      return Signature(name: entity, parameters: const [], returnType: entity);
+    }
+    return null;
+  }
+
+  String _toSnakeCase(String s) {
+    final out = StringBuffer();
+    var lastWasSeparator = false;
+    for (var i = 0; i < s.length; i++) {
+      final c = s[i];
+      if (c == '-' || c == ' ' || c == '_' || c == ':') {
+        // Issue #1007: `:` folds too — the `contract:A1` ids plan writes
+        // must map to portable file names (`contract_a1_test.dart`, never
+        // `contract:a1_test.dart` — a Windows-illegal path). Consecutive
+        // separators collapse to ONE underscore (the run driver's
+        // disk-layout check `_snakeCase` already folds runs — this aligns
+        // gen with it; every canonical id shape `[A|U]\d+` is unchanged).
+        if (!lastWasSeparator) out.write('_');
+        lastWasSeparator = true;
+      } else if (c.toUpperCase() == c && c.toLowerCase() != c && i > 0) {
+        if (!lastWasSeparator) out.write('_');
+        out.write(c.toLowerCase());
+        lastWasSeparator = false;
+      } else {
+        out.write(c.toLowerCase());
+        lastWasSeparator = false;
+      }
+    }
+    return out.toString();
+  }
+
+  /// The feature name lands inside the artifact path (bug #827): keep it a
+  /// single plain directory segment (mirrors compose/make/verify-red's
+  /// `--feature` validation) so a hostile or malformed feature name cannot
+  /// escape the `test/tdd/<feature-slug>/` namespace. Issue #1471: the gate
+  /// is the shared resolver's supported-shape check, so the check stays in
+  /// lockstep with `TddFeaturePaths` — the name handed here is always the
+  /// resolver's plain basename, so the message below is reachable only for
+  /// a truly unsupported reference.
+  void _validateFeatureSegment(String feature) {
+    if (!TddFeaturePaths.isSupportedRef(feature)) {
+      throw StateError(
+        'zfa tdd gen: invalid feature "$feature": expected a single spec '
+        'directory name such as 044-test-tdd-generation, not a path.',
+      );
+    }
+  }
+
+  /// Bug #1272 — the test-list resolution contract: [featureRef] must
+  /// resolve to `<projectRoot>/specs/<feature>/tdd/test-list.md` INSIDE
+  /// the resolved project root. Returns the rejection message, or null
+  /// when the reference is acceptable.
+  ///
+  /// Two rejections, both BEFORE any test-list read:
+  ///
+  /// 1. CONTAINMENT (the remediation's letter): the reference's
+  ///    normalization must stay inside `<projectRoot>/specs` — the
+  ///    parser never walks above the project root and never reads a
+  ///    sibling directory (`example/specs/`, `.worktrees/`, `corpus/`).
+  ///    Issue #1471: the bug extension's `.specify/bugs/<slug>` pin is the
+  ///    exception — its test list lives OUTSIDE `specs/`, so containment is
+  ///    checked against the PROJECT ROOT instead.
+  /// 2. SEGMENT SHAPE (the house contract): a path-shaped reference that
+  ///    stays inside the root (`specs/001-login-ui`) is still rejected —
+  ///    a feature reference is ONE spec directory name, the same
+  ///    contract verify/make/refactor/compose/verify-red and the run
+  ///    driver already enforce. The bug pin shape above is the sole
+  ///    exemption.
+  static String? testListScopeRejection(String projectRoot, String featureRef) {
+    // Issue #1471: a bug feature's canonical reference is its REAL
+    // directory (`.specify/bugs/<slug>`), which the shared resolver maps to
+    // that same directory. Only this pin shape is exempt from the
+    // single-segment contract, and its containment is checked against the
+    // PROJECT ROOT (the bug tree), not `<root>/specs`.
+    final isBugRef =
+        featureRef.startsWith('.specify/bugs/') &&
+        TddFeaturePaths.isSupportedRef(featureRef);
+    final boundary = isBugRef
+        ? p.normalize(projectRoot)
+        : p.normalize(p.join(projectRoot, 'specs'));
+    final resolved = isBugRef
+        ? p.normalize(
+            TddFeaturePaths.resolve(
+              projectRoot: projectRoot,
+              featureRef: featureRef,
+            ).dir,
+          )
+        : p.normalize(p.join(projectRoot, 'specs', featureRef));
+    if (resolved != boundary && !resolved.startsWith('$boundary/')) {
+      return '--feature "$featureRef" resolves outside the project root '
+          '($projectRoot): $resolved — the test list is read strictly '
+          'from <project>/specs/<feature>/tdd/test-list.md, never a '
+          'test-list.md outside the project root.';
+    }
+    final pathShaped =
+        featureRef.contains('/') ||
+        featureRef.contains(r'\') ||
+        featureRef == '.' ||
+        featureRef == '..' ||
+        featureRef.isEmpty;
+    if (!isBugRef && pathShaped) {
+      return 'invalid --feature "$featureRef": expected a single spec '
+          'directory name such as 001-login-ui, not a path.';
+    }
+    return null;
+  }
+}
+
+/// The wall-clock deadline shared by every awaited stage of one gen flow
+/// (bug #744 — the budget, enforced INSIDE the flow so the transactional
+/// cleanup and the stage-boundary aborts work as designed).
+class _FlowDeadline {
+  _FlowDeadline(this.budget) : _startedAt = DateTime.now();
+
+  /// The total budget the flow was given.
+  final Duration budget;
+
+  final DateTime _startedAt;
+
+  /// Time left before the budget expires (never negative). A zero
+  /// remaining budget makes [Future.timeout] fire immediately, so an
+  /// abandoned continuation aborts at its next stage boundary.
+  Duration remaining() {
+    final left = budget - DateTime.now().difference(_startedAt);
+    return left.isNegative ? Duration.zero : left;
+  }
+
+  /// Whether the budget has already been exhausted.
+  bool get expired => remaining() == Duration.zero;
+}
+
+/// Thrown from INSIDE the gen flow when a stage outlives the shared
+/// deadline (bug #744 hardening). Throwing inside — not from a wrapper —
+/// is the point: the flow's transactional cleanup (remove what this
+/// attempt created) runs before the classification surfaces, so a
+/// timed-out gen cannot leave an orphan artifact that would poison the
+/// next run with an FR-008 ownership conflict.
+class _GenFlowTimeout implements Exception {
+  _GenFlowTimeout(this.stage);
+
+  /// The flow stage that outlived the budget.
+  final String stage;
+
+  @override
+  String toString() => 'gen flow timed out at the "$stage" stage';
+}
+
+/// The kind-selected writer pair for one gen flow (issue #841): the two
+/// writer tear-offs, so the write path and the staleness re-render share
+/// one dispatch decision. Both theme-harness writers expose the same
+/// `write` signatures as the plain-function pair.
+typedef _GenWriterPair = ({
+  Future<void> Function({
+    required Behavior behavior,
+    required String testPath,
+    required String subjectPath,
+    bool golden,
+  })
+  writeTest,
+  Future<void> Function({
+    required Behavior behavior,
+    required String subjectPath,
+  })
+  writeSubject,
+});

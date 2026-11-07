@@ -1,0 +1,317 @@
+/// ArtifactRecord — durable row in `specs/<feature>/tdd/artifacts.json`
+/// linking a behavior id to its paired test + subject (spec
+/// 044-test-tdd-generation, FR-005, FR-007).
+///
+/// One [ArtifactRecord] per behavior id. The registry is append-only by
+/// `gen`: a second `gen` for the same behavior is a no-op that returns
+/// [Ownership.reused] for both artifacts without modifying the registry
+/// (FR-006).
+library;
+
+import 'dart:convert';
+
+import 'ownership.dart';
+
+/// The persisted link between a behavior id and its paired test+subject
+/// artifacts.
+class ArtifactRecord {
+  /// The behavior id, e.g. `B-003`. Unique within a feature.
+  final String behaviorId;
+
+  /// The feature this record belongs to (e.g. `044-test-tdd-generation`).
+  final String feature;
+
+  /// The criterion this behavior traces to (e.g. `FR-007`, `AC-1`).
+  final String sourceCriterion;
+
+  /// Absolute or repo-relative path to the test file.
+  final String testPath;
+
+  /// Absolute or repo-relative path to the subject file.
+  final String subjectPath;
+
+  /// The runnable test name in `file::group::test` form, suitable for
+  /// `dart test --plain-name "<test-name>"`.
+  ///
+  /// The third segment is the behavior's PURE description (bug #871): gen
+  /// used to double-embed the behavior id here (`file::id::id — desc`),
+  /// leaking an `<id> — ` prefix into every consumer that extracts the
+  /// description segment. Records written by older binaries may still
+  /// carry the echo; [descriptionSegment] and [plainTestName] strip it so
+  /// legacy and clean registries parse identically.
+  final String runnableTestName;
+
+  /// The description segment of the composite [runnableTestName]
+  /// (`file::id::description`), with the record's OWN `<behaviorId> — `
+  /// echo prefix removed when present (bug #871).
+  ///
+  /// Falls back to [behaviorId] when the composite carries no description
+  /// segment (fewer than three `::`-separated parts) — the pre-#871
+  /// contract of the command-side `_descriptionFor` helpers this getter
+  /// replaces. A description that merely CONTAINS another id-shaped token
+  /// is never rewritten: only the exact own-id prefix is stripped, once.
+  String get descriptionSegment {
+    final parts = runnableTestName.split('::');
+    var desc = parts.length >= 3 ? parts[2] : behaviorId;
+    final echo = '$behaviorId \u2014 ';
+    if (desc != behaviorId && desc.startsWith(echo)) {
+      desc = desc.substring(echo.length);
+    }
+    return desc;
+  }
+
+  /// The runnable plain-name for `--plain-name` matching: the LAST
+  /// `::`-segment of [runnableTestName], with the record's OWN
+  /// `<behaviorId> — ` echo prefix removed when present (bug #871).
+  ///
+  /// `--plain-name` is a literal SUBSTRING matcher, so the stripped name
+  /// matches both pair shapes a #871 transition can produce: a legacy
+  /// on-disk test named `<id> — desc` (echo ⊃ name) and a re-rendered
+  /// test named `desc` (equal).
+  String get plainTestName {
+    final segments = runnableTestName.split('::');
+    final last = segments.isEmpty || segments.last.isEmpty
+        ? runnableTestName
+        : segments.last;
+    final echo = '$behaviorId \u2014 ';
+    if (last != behaviorId && last.startsWith(echo)) {
+      return last.substring(echo.length);
+    }
+    return last;
+  }
+
+  /// Ownership status of the test file when this record was created/updated.
+  final Ownership testOwnership;
+
+  /// Ownership status of the subject file when this record was created/updated.
+  final Ownership subjectOwnership;
+
+  /// ISO-8601 UTC timestamp when this record was first created.
+  final String createdAt;
+
+  /// The gen reuse fingerprint at generation time (issue #1388): sha256
+  /// over the resolved lane-plan traces cell + the feature's spec.md
+  /// (see `GenReuseFingerprint`). Gen gates the reuse path on it: a
+  /// stored fingerprint that differs from the current one invalidates
+  /// the reuse. Null for records written by pre-#1388 binaries — the
+  /// gate stays open for them (no retro-invalidation); the field arms
+  /// on the next created/regenerated record.
+  final String? genFingerprint;
+
+  /// The behavior's ORIGINAL scenario description, persisted when a
+  /// #1778 rebind rewrites [runnableTestName] (review of PR #2013): a
+  /// rebind copies the corrected title into the composite, so the
+  /// description segment — the #964 kind gate's source — becomes the
+  /// title, and the next invocation would judge the title instead of
+  /// the recorded scenario (a presence-only red certifies against a
+  /// route-outcome scenario). The first invocation's in-memory
+  /// pre-rebind record protects only THAT run; this field is the
+  /// durable half. Null for records never rebound — the gate reads the
+  /// description segment as before.
+  final String? recordedScenario;
+
+  const ArtifactRecord({
+    required this.behaviorId,
+    required this.feature,
+    required this.sourceCriterion,
+    required this.testPath,
+    required this.subjectPath,
+    required this.runnableTestName,
+    required this.testOwnership,
+    required this.subjectOwnership,
+    required this.createdAt,
+    this.genFingerprint,
+    this.recordedScenario,
+  });
+
+  /// Copy with new ownership values (used for idempotent repeat).
+  ArtifactRecord copyWithOwnership({
+    required Ownership testOwnership,
+    required Ownership subjectOwnership,
+  }) => ArtifactRecord(
+    behaviorId: behaviorId,
+    feature: feature,
+    sourceCriterion: sourceCriterion,
+    testPath: testPath,
+    subjectPath: subjectPath,
+    runnableTestName: runnableTestName,
+    testOwnership: testOwnership,
+    subjectOwnership: subjectOwnership,
+    createdAt: createdAt,
+    genFingerprint: genFingerprint,
+    recordedScenario: recordedScenario,
+  );
+
+  /// Copy with a rebound `runnableTestName` (issue #1778): when a
+  /// hand-implemented test's title changes, the recorded runnable name is
+  /// re-bound to the corrected title without regenerating the artifact.
+  ArtifactRecord copyWithRunnableTestName(String runnableTestName) =>
+      ArtifactRecord(
+        behaviorId: behaviorId,
+        feature: feature,
+        sourceCriterion: sourceCriterion,
+        testPath: testPath,
+        subjectPath: subjectPath,
+        runnableTestName: runnableTestName,
+        testOwnership: testOwnership,
+        subjectOwnership: subjectOwnership,
+        createdAt: createdAt,
+        genFingerprint: genFingerprint,
+        recordedScenario: recordedScenario,
+      );
+
+  /// Copy with the gen reuse fingerprint refreshed (issue #1388): gen
+  /// calls this after a fingerprint-driven regeneration so the stored
+  /// digest matches the routing state the pair now reflects — the drift
+  /// fires once per routing change, then stable reuse resumes.
+  ArtifactRecord copyWithGenFingerprint(String? genFingerprint) =>
+      ArtifactRecord(
+        behaviorId: behaviorId,
+        feature: feature,
+        sourceCriterion: sourceCriterion,
+        testPath: testPath,
+        subjectPath: subjectPath,
+        runnableTestName: runnableTestName,
+        testOwnership: testOwnership,
+        subjectOwnership: subjectOwnership,
+        createdAt: createdAt,
+        genFingerprint: genFingerprint,
+        recordedScenario: recordedScenario,
+      );
+
+  /// Copy with the rebind-scope recorded scenario set or cleared
+  /// (review of PR #2013): the registry writes the PRE-rebind scenario
+  /// next to the rebound name so the #964 kind gate keeps judging the
+  /// recorded scenario on every later invocation.
+  ArtifactRecord copyWithRecordedScenario(String? recordedScenario) =>
+      ArtifactRecord(
+        behaviorId: behaviorId,
+        feature: feature,
+        sourceCriterion: sourceCriterion,
+        testPath: testPath,
+        subjectPath: subjectPath,
+        runnableTestName: runnableTestName,
+        testOwnership: testOwnership,
+        subjectOwnership: subjectOwnership,
+        createdAt: createdAt,
+        genFingerprint: genFingerprint,
+        recordedScenario: recordedScenario,
+      );
+
+  /// The scenario description the #964 kind gate certifies against
+  /// (review of PR #2013): the rebind-persisted [recordedScenario] when
+  /// present, else the [descriptionSegment] — null when the composite
+  /// carries no description segment, so the caller falls back to the
+  /// legacy test header instead of analyzing the bare behavior id
+  /// (which derives no assertion classes and would pass the gate
+  /// vacuously).
+  String? get gateScenario {
+    final persisted = recordedScenario?.trim();
+    if (persisted != null && persisted.isNotEmpty) return persisted;
+    final parts = runnableTestName.split('::');
+    if (parts.length < 3) return null;
+    final desc = descriptionSegment.trim();
+    return desc.isEmpty ? null : desc;
+  }
+
+  /// Equality is by behavior id within a feature (FR-007).
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ArtifactRecord &&
+          other.behaviorId == behaviorId &&
+          other.feature == feature);
+
+  @override
+  int get hashCode => Object.hash(behaviorId, feature);
+
+  @override
+  String toString() =>
+      'ArtifactRecord(behaviorId: $behaviorId, feature: $feature, '
+      'sourceCriterion: $sourceCriterion, test: $testPath, '
+      'subject: $subjectPath, ownership: $testOwnership/$subjectOwnership)';
+
+  /// Serializes to a JSON map (for `artifacts.json`). `gen_fingerprint`
+  /// is emitted only when present — untouched legacy registries stay
+  /// byte-stable through load/save cycles (issue #1388). The same
+  /// opt-in discipline keeps `recorded_scenario` (PR #2013 review) out
+  /// of every never-rebounded record.
+  Map<String, dynamic> toJson() => {
+    'behavior_id': behaviorId,
+    'feature': feature,
+    'source_criterion': sourceCriterion,
+    'test_path': testPath,
+    'subject_path': subjectPath,
+    'runnable_test_name': runnableTestName,
+    'test_ownership': testOwnership.name,
+    'subject_ownership': subjectOwnership.name,
+    'created_at': createdAt,
+    if (genFingerprint != null) 'gen_fingerprint': genFingerprint,
+    if (recordedScenario != null) 'recorded_scenario': recordedScenario,
+  };
+
+  /// Deserializes from a JSON map. Throws [FormatException] if the JSON
+  /// is malformed (missing fields, non-string values, unknown ownership).
+  factory ArtifactRecord.fromJson(Map<String, dynamic> json) {
+    String requireString(dynamic value, String field) {
+      if (value is! String || value.isEmpty) {
+        throw FormatException(
+          'ArtifactRecord: expected non-empty string for "$field", '
+          'got ${value.runtimeType}',
+        );
+      }
+      return value;
+    }
+
+    Ownership requireOwnership(dynamic value, String field) {
+      final str = requireString(value, field);
+      try {
+        return Ownership.values.byName(str);
+      } on ArgumentError {
+        throw FormatException(
+          'ArtifactRecord: unknown ownership "$str" for "$field". '
+          'Expected one of: ${Ownership.values.map((e) => e.name).join(', ')}',
+        );
+      }
+    }
+
+    return ArtifactRecord(
+      behaviorId: requireString(json['behavior_id'], 'behavior_id'),
+      feature: requireString(json['feature'], 'feature'),
+      sourceCriterion: requireString(
+        json['source_criterion'],
+        'source_criterion',
+      ),
+      testPath: requireString(json['test_path'], 'test_path'),
+      subjectPath: requireString(json['subject_path'], 'subject_path'),
+      runnableTestName: requireString(
+        json['runnable_test_name'],
+        'runnable_test_name',
+      ),
+      testOwnership: requireOwnership(json['test_ownership'], 'test_ownership'),
+      subjectOwnership: requireOwnership(
+        json['subject_ownership'],
+        'subject_ownership',
+      ),
+      createdAt: requireString(json['created_at'], 'created_at'),
+      // Optional (issue #1388): pre-#1388 registries carry no
+      // gen_fingerprint; a malformed (non-string) value refuses —
+      // errors-are-an-API for every field that IS present.
+      genFingerprint: json['gen_fingerprint'] == null
+          ? null
+          : requireString(json['gen_fingerprint'], 'gen_fingerprint'),
+      // Optional for the same reason (PR #2013 review): pre-rebind-scope
+      // registries carry no recorded_scenario.
+      recordedScenario: json['recorded_scenario'] == null
+          ? null
+          : requireString(json['recorded_scenario'], 'recorded_scenario'),
+    );
+  }
+
+  /// Serializes to a JSON string (for `artifacts.json`).
+  String toJsonString() => jsonEncode(toJson());
+
+  /// Deserializes from a JSON string.
+  static ArtifactRecord fromJsonString(String json) =>
+      ArtifactRecord.fromJson(jsonDecode(json) as Map<String, dynamic>);
+}

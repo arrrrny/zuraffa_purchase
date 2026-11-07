@@ -1,0 +1,602 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:path/path.dart' as p;
+
+import '../utils/file_utils.dart';
+import '../utils/project_flavor.dart';
+import '../core/context/file_system.dart';
+
+/// Unified v5 configuration for Zuraffa.
+class ZfaConfig {
+  static const String fixedDomainRoot = 'lib/src/domain';
+  static const String fixedEntityOutput = '$fixedDomainRoot/entities';
+  static const List<String> defaultAdaptiveLayoutTargets = <String>[
+    'mobile',
+    'tablet',
+    'desktop',
+    'macos',
+  ];
+
+  /// Issue #1496: the clean-architecture stack is the DEFAULT tier — a
+  /// fresh `zfa config init` project must scaffold a runnable slice on a
+  /// bare `zfa make <Entity>` instead of resolving zero plugins ("No
+  /// active plugins to run."). The opt-in tier (presentation extras,
+  /// storage backends, tooling lanes) stays false and is enabled per
+  /// project via .zfa.json, `--with=<plugin>`, or a preset.
+  static const Map<String, bool> _builtinPluginDefaults = {
+    'repository': true,
+    'provider': true,
+    'usecase': true,
+    'presenter': true,
+    'controller': true,
+    'view': false,
+    'feature': false,
+    'state': false,
+    'observer': false,
+    'test': true,
+    'gym': false,
+    'mock': true,
+    'di': true,
+    'datasource': true,
+    'service': false,
+    'route': true,
+    'cache': true,
+    'sqlite': false,
+    'gql': false,
+    'graphql': false,
+    'skin': false,
+    'method_append': true,
+    'xray': false,
+    // 029-agent-plugin-mcp-wrappers: the AgentPlugin is dormant by
+    // default. Activation happens via `zfa make Foo --agent` (flag
+    // surfaces through plan_resolver._selectionFromOptions) or via
+    // .zfa.json `plugins.defaults.agent: true`. The explicit flag
+    // always wins over the config default (FR-003).
+    'agent': false,
+  };
+
+  /// Plugin ids accepted in `.zfa.json` `plugins` registrations. Exposed for
+  /// `zfa doctor`'s config check (issue #793) so staleness detection cannot
+  /// drift from this source of truth.
+  static final Set<String> builtinPluginIds = _builtinPluginDefaults.keys
+      .toSet();
+
+  final Map<String, bool> pluginDefaults;
+  final Set<String> disabledPlugins;
+  final Map<String, List<String>> customPresets;
+  final Map<String, List<String>> customAliases;
+  final Map<String, dynamic> uiDefaults;
+  final bool jsonByDefault;
+  final bool compareByDefault;
+  final bool filterByDefault;
+  final bool buildByDefault;
+  final bool formatByDefault;
+  final bool entityFirst;
+  final bool zorphyOnly;
+  final String domainRoot;
+
+  /// Spec 030: raw `features:`/`flavors:` sections of .zfa.json, preserved
+  /// verbatim across save() cycles so other commands (plugin enable, init)
+  /// never clobber the feature-flag declaration. Parsed/validated by
+  /// FeatureFlagConfig (lib/src/feature_flags/) — ZfaConfig only carries
+  /// them round-trip.
+  final Object? rawFeatures;
+  final Object? rawFlavors;
+
+  /// Issue #912 defect 2: raw `tdd:` section of .zfa.json, preserved
+  /// verbatim across save() cycles. `tddWidgetShell` reads the widget
+  /// template's app shell from it (new config surface, documented on
+  /// `zfa tdd gen --widget-shell`).
+  final Object? rawTdd;
+
+  ZfaConfig({
+    Map<String, bool>? pluginDefaults,
+    Set<String>? disabledPlugins,
+    Map<String, List<String>>? customPresets,
+    Map<String, List<String>>? customAliases,
+    Map<String, dynamic>? uiDefaults,
+    this.jsonByDefault = true,
+    this.compareByDefault = true,
+    this.filterByDefault = false,
+    this.buildByDefault = false,
+    this.formatByDefault = false,
+    this.entityFirst = true,
+    this.zorphyOnly = true,
+    this.domainRoot = fixedDomainRoot,
+    bool? diByDefault,
+    bool? routeByDefault,
+    bool? mockByDefault,
+    bool? testByDefault,
+    bool? gqlByDefault,
+    bool? graphqlByDefault,
+    bool? appendByDefault,
+    bool? cacheByDefault,
+    this.rawFeatures,
+    this.rawFlavors,
+    this.rawTdd,
+  }) : pluginDefaults = Map.unmodifiable({
+         ..._builtinPluginDefaults,
+         ...?pluginDefaults,
+         ..._namedDefaultOverrides(
+           diByDefault: diByDefault,
+           routeByDefault: routeByDefault,
+           mockByDefault: mockByDefault,
+           testByDefault: testByDefault,
+           gqlByDefault: gqlByDefault,
+           graphqlByDefault: graphqlByDefault,
+           appendByDefault: appendByDefault,
+           cacheByDefault: cacheByDefault,
+         ),
+       }),
+       disabledPlugins = Set.unmodifiable(disabledPlugins ?? const <String>{}),
+       customPresets = Map.unmodifiable(_normalizeNamedLists(customPresets)),
+       customAliases = Map.unmodifiable(_normalizeNamedLists(customAliases)),
+       uiDefaults = Map.unmodifiable(uiDefaults ?? const <String, dynamic>{});
+
+  bool get diByDefault => isPluginEnabledByDefault('di');
+  bool get routeByDefault => isPluginEnabledByDefault('route');
+  bool get mockByDefault => isPluginEnabledByDefault('mock');
+  bool get mockJsonByDefault => isPluginEnabledByDefault('mock');
+  bool get testByDefault => isPluginEnabledByDefault('test');
+  bool get gymByDefault => isPluginEnabledByDefault('gym');
+  bool get gqlByDefault => isPluginEnabledByDefault('graphql');
+  bool get graphqlByDefault => isPluginEnabledByDefault('graphql');
+  bool get appendByDefault => isPluginEnabledByDefault('method_append');
+  bool get xrayByDefault => isPluginEnabledByDefault('xray');
+  bool get cacheByDefault => isPluginEnabledByDefault('cache');
+  bool get sqliteByDefault => isPluginEnabledByDefault('sqlite');
+  bool get adaptiveLayoutsByDefault =>
+      uiDefaults['adaptiveLayouts'] == true ||
+      uiDefaults['adaptive_layouts'] == true;
+  bool get platformShellsByDefault =>
+      uiDefaults['platformShells'] == true ||
+      uiDefaults['platform_shells'] == true;
+  List<String> get adaptiveLayoutTargets {
+    final raw =
+        uiDefaults['layoutTargets'] ??
+        uiDefaults['layout_targets'] ??
+        uiDefaults['adaptiveLayoutTargets'];
+    if (raw is List) {
+      final values = raw
+          .map((item) => item.toString().trim().toLowerCase())
+          .where((item) => item.isNotEmpty)
+          .toList(growable: false);
+      if (values.isNotEmpty) {
+        return values;
+      }
+    }
+    return defaultAdaptiveLayoutTargets;
+  }
+
+  String get adaptivePreset =>
+      (uiDefaults['adaptivePreset'] ?? uiDefaults['adaptive_preset'])
+          ?.toString() ??
+      'adaptive-feature';
+
+  /// Issue #912 defect 2: the widget template's app shell from
+  /// `.zfa.json` `tdd.widgetShell` (`zuraffaapp` | `materialapp`), or null
+  /// when unset/unknown (the caller applies the zuraffaapp default).
+  String? get tddWidgetShell {
+    final tdd = rawTdd;
+    if (tdd is! Map) return null;
+    for (final key in const ['widgetShell', 'widget_shell']) {
+      final value = tdd[key]?.toString();
+      if (value == 'zuraffaapp' || value == 'materialapp') return value;
+    }
+    return null;
+  }
+
+  /// `.zfa.json` `tdd.i18nExpansion` (issue #965): the expansion locales
+  /// for the widget lane's optional i18n tier (e.g. `"de"` or `"de,fr"`,
+  /// a JSON string or array), or null when unset (no expansion tier).
+  String? get tddI18nExpansion {
+    final tdd = rawTdd;
+    if (tdd is! Map) return null;
+    for (final key in const ['i18nExpansion', 'i18n_expansion']) {
+      final value = tdd[key];
+      if (value is String && value.trim().isNotEmpty) return value.trim();
+      if (value is List && value.isNotEmpty) {
+        final joined = value
+            .map((e) => e.toString().trim())
+            .where((e) => e.isNotEmpty)
+            .join(',');
+        if (joined.isNotEmpty) return joined;
+      }
+    }
+    return null;
+  }
+
+  // Backward-compatible accessors while the rest of the codebase migrates.
+  bool get zorphyByDefault => true;
+  String get defaultEntityOutput => fixedEntityOutput;
+
+  /// Issue #1149 (kill list): the gql plugin was deleted and `--with=gql`
+  /// aliases to `graphql` for one deprecation cycle. A config file that
+  /// still carries the legacy `gql` key (`.zfa.json` `gqlByDefault` /
+  /// pluginDefaults['gql']) keeps enabling the surviving graphql plugin
+  /// during that cycle. Builtins always populate both keys, so the legacy
+  /// key acts as an explicit opt-IN fallback (`true` wins).
+  bool isPluginEnabledByDefault(String pluginId) {
+    if (pluginId == 'graphql') {
+      return pluginDefaults['graphql'] == true || pluginDefaults['gql'] == true;
+    }
+    return pluginDefaults[pluginId] ?? false;
+  }
+
+  ZfaConfig copyWith({
+    Map<String, bool>? pluginDefaults,
+    Set<String>? disabledPlugins,
+    Map<String, List<String>>? customPresets,
+    Map<String, List<String>>? customAliases,
+    Map<String, dynamic>? uiDefaults,
+    bool? jsonByDefault,
+    bool? compareByDefault,
+    bool? filterByDefault,
+    bool? buildByDefault,
+    bool? formatByDefault,
+    bool? entityFirst,
+    bool? zorphyOnly,
+    String? domainRoot,
+    Object? rawFeatures,
+    Object? rawFlavors,
+    Object? rawTdd,
+  }) {
+    return ZfaConfig(
+      pluginDefaults: pluginDefaults ?? this.pluginDefaults,
+      disabledPlugins: disabledPlugins ?? this.disabledPlugins,
+      customPresets: customPresets ?? this.customPresets,
+      customAliases: customAliases ?? this.customAliases,
+      uiDefaults: uiDefaults ?? this.uiDefaults,
+      jsonByDefault: jsonByDefault ?? this.jsonByDefault,
+      compareByDefault: compareByDefault ?? this.compareByDefault,
+      filterByDefault: filterByDefault ?? this.filterByDefault,
+      buildByDefault: buildByDefault ?? this.buildByDefault,
+      formatByDefault: formatByDefault ?? this.formatByDefault,
+      entityFirst: entityFirst ?? this.entityFirst,
+      zorphyOnly: zorphyOnly ?? this.zorphyOnly,
+      domainRoot: domainRoot ?? this.domainRoot,
+      rawFeatures: rawFeatures ?? this.rawFeatures,
+      rawFlavors: rawFlavors ?? this.rawFlavors,
+      rawTdd: rawTdd ?? this.rawTdd,
+    );
+  }
+
+  static String configKeyForPlugin(String pluginId) {
+    const overrides = {
+      'method_append': 'appendByDefault',
+      'graphql': 'graphqlByDefault',
+    };
+    return overrides[pluginId] ?? '${pluginId}ByDefault';
+  }
+
+  static String? pluginIdForConfigKey(String key) {
+    const explicit = {
+      'appendByDefault': 'method_append',
+      'gqlByDefault': 'graphql',
+      'graphqlByDefault': 'graphql',
+    };
+    final explicitMatch = explicit[key];
+    if (explicitMatch != null) {
+      return explicitMatch;
+    }
+    if (!key.endsWith('ByDefault')) {
+      return null;
+    }
+    final prefix = key.substring(0, key.length - 'ByDefault'.length);
+    if (prefix.isEmpty) {
+      return null;
+    }
+    return '${prefix[0].toLowerCase()}${prefix.substring(1)}';
+  }
+
+  static ZfaConfig? load({String? projectRoot}) {
+    final root = projectRoot ?? Directory.current.path;
+    final configFile = File(p.join(root, '.zfa.json'));
+
+    if (!configFile.existsSync()) {
+      return null;
+    }
+
+    try {
+      final content = configFile.readAsStringSync();
+      final json = jsonDecode(content) as Map<String, dynamic>;
+      return ZfaConfig.fromJson(json);
+    } catch (_) {
+      return ZfaConfig();
+    }
+  }
+
+  /// Issue #1596 review: [load] collapses "no `.zfa.json`" and "`.zfa.json`
+  /// exists but could not be parsed" onto the same result, so a write path
+  /// cannot tell that it is about to replace a file it failed to read —
+  /// dropping the user's `presets`, `aliases`, `ui`, `features` and `tdd`
+  /// sections in favour of generated defaults. Write paths call this before
+  /// persisting and refuse with the CLI's standard `--> fix:` guidance when it
+  /// returns non-null.
+  static String? unparseableConfigMessage({String? projectRoot}) {
+    final root = projectRoot ?? Directory.current.path;
+    final configFile = File(p.join(root, '.zfa.json'));
+    if (!configFile.existsSync()) return null;
+    try {
+      if (jsonDecode(configFile.readAsStringSync()) is Map<String, dynamic>) {
+        return null;
+      }
+    } catch (_) {
+      // Falls through to the refusal below.
+    }
+    return '❌ Refusing to overwrite ${configFile.path}: the existing '
+        '.zfa.json could not be parsed, and saving would replace it with '
+        'defaults (dropping its presets/aliases/ui/features/tdd sections).\n'
+        '   --> fix: repair or delete ${configFile.path}, then re-run.';
+  }
+
+  factory ZfaConfig.fromJson(Map<String, dynamic> json) {
+    final plugins = _map(json['plugins']);
+    final planning = _map(json['planning']);
+    final entity = _map(json['entity']);
+    final defaults = <String, bool>{
+      ..._legacyPluginDefaults(json),
+      ..._boolMap(plugins['defaults']),
+    };
+
+    return ZfaConfig(
+      pluginDefaults: defaults,
+      disabledPlugins: _stringSet(
+        plugins['disabled'] ?? json['disabledPlugins'],
+      ),
+      customPresets: _normalizeNamedLists(
+        _listMap(planning['presets'] ?? json['presets']),
+      ),
+      customAliases: _normalizeNamedLists(
+        _listMap(planning['aliases'] ?? json['aliases']),
+      ),
+      uiDefaults: _map(json['ui']),
+      jsonByDefault:
+          (entity['jsonByDefault'] ?? json['jsonByDefault']) != false,
+      compareByDefault:
+          (entity['compareByDefault'] ?? json['compareByDefault']) != false,
+      filterByDefault:
+          entity['filterByDefault'] == true || json['filterByDefault'] == true,
+      buildByDefault: json['buildByDefault'] == true,
+      formatByDefault: json['formatByDefault'] == true,
+      entityFirst: entity['entityFirst'] != false,
+      zorphyOnly: true,
+      domainRoot: fixedDomainRoot,
+      rawFeatures: json['features'],
+      rawFlavors: json['flavors'],
+      rawTdd: json['tdd'],
+    );
+  }
+
+  static Future<void> save(ZfaConfig config, {String? projectRoot}) async {
+    final root = projectRoot ?? Directory.current.path;
+    final configFile = File(p.join(root, '.zfa.json'));
+
+    final flavor = await detectProjectFlavor(root, FileSystem.create());
+    final mockingImport = flavor == ProjectFlavor.flutter
+        ? 'package:zuraffa_flutter/zuraffa_flutter.dart'
+        : 'package:zuraffa/mock.dart';
+
+    const encoder = JsonEncoder.withIndent('  ');
+    final content = encoder.convert(
+      config.toJson(mockingImport: mockingImport),
+    );
+    await FileUtils.writeFile(configFile.path, content, 'config', force: true);
+  }
+
+  Map<String, dynamic> toJson({String? mockingImport}) => {
+    // Canonical zuraffa-native mocking signature. Propagated by `zfa init` so
+    // static tooling (e.g. speckit-tdd-setup) can detect that a zuraffa app uses
+    // built-in mocks (MockDataSource, MockData, mock providers, throwing doubles)
+    // with no third-party double library, by grepping `.zfa.json` for this block
+    // or generated code for `package:zuraffa/mock.dart` / `zuraffaMockLibrary`.
+    'mocking': <String, dynamic>{
+      'library': 'zuraffa-native',
+      'import': mockingImport ?? 'package:zuraffa_flutter/zuraffa_flutter.dart',
+      'marker': 'zuraffaMockLibrary',
+      'mockSources': <String>[
+        'mockDataSource',
+        'mockData',
+        'mockProvider',
+        'throwingDataSource',
+      ],
+    },
+    'plugins': {
+      'defaults': _sortedBoolMap(pluginDefaults),
+      'disabled': disabledPlugins.toList()..sort(),
+    },
+    'planning': {
+      'presets': _sortedListMap(customPresets),
+      'aliases': _sortedListMap(customAliases),
+    },
+    'ui': {
+      ...uiDefaults,
+      'adaptiveLayouts': adaptiveLayoutsByDefault,
+      'platformShells': platformShellsByDefault,
+      'layoutTargets': adaptiveLayoutTargets,
+      'adaptivePreset': adaptivePreset,
+    },
+    'entity': {
+      'entityFirst': entityFirst,
+      'jsonByDefault': jsonByDefault,
+      'compareByDefault': compareByDefault,
+      'filterByDefault': filterByDefault,
+    },
+    'buildByDefault': buildByDefault,
+    'formatByDefault': formatByDefault,
+    // Spec 030: preserved verbatim (parsed/validated by FeatureFlagConfig).
+    if (rawFeatures != null) 'features': rawFeatures,
+    if (rawFlavors != null) 'flavors': rawFlavors,
+    // Issue #912: the tdd section round-trips verbatim so
+    // `tdd.widgetShell` (and future tdd keys) survive save() cycles.
+    if (rawTdd != null) 'tdd': rawTdd,
+  };
+
+  static Future<void> init({String? projectRoot, bool minimal = false}) async {
+    final root = projectRoot ?? Directory.current.path;
+    final configFile = File(p.join(root, '.zfa.json'));
+
+    if (configFile.existsSync()) {
+      print('ℹ️  Configuration file already exists: ${configFile.path}');
+      // Issue #1496 item 6 (PR #1579 review): a config whose
+      // plugins.defaults entries are all `false` is almost certainly an
+      // artifact of the pre-fix `config init`, not a deliberate all-off
+      // choice — the map is exactly what the old defaults wrote. Report
+      // it instead of silently accepting it as intent.
+      final existingDefaults = load(projectRoot: root)?.pluginDefaults;
+      if (existingDefaults != null &&
+          existingDefaults.isNotEmpty &&
+          existingDefaults.values.every((enabled) => !enabled)) {
+        print('   ⚠️  plugins.defaults is all-false — the pre-#1496 default,');
+        print('      most likely, rather than an explicit opt-out.');
+        print(
+          '      Enable the stack with `zfa config set <plugin>ByDefault true`',
+        );
+        print(
+          '      (e.g. repositoryByDefault, usecaseByDefault, diByDefault)',
+        );
+        print('      or keep the all-off behavior deliberately.');
+      }
+      return;
+    }
+
+    // Issue #1496: `--minimal` keeps the pre-#1496 all-off map for teams
+    // who opt every default out and select plugins per command.
+    await save(minimal ? ZfaConfig.minimal() : ZfaConfig(), projectRoot: root);
+    print('✅ Created configuration file: ${configFile.path}');
+    if (minimal) {
+      print('   Minimal mode: every plugin defaults off — pass');
+      print('   --preset=crud or --with=<plugin> to select plugins.');
+    } else {
+      print(
+        '   Clean-architecture stack (di, datasource, repository, usecase,',
+      );
+      print(
+        '   mock, test, method_append, route, provider, presenter, controller,',
+      );
+      print('   cache) is enabled by default; a bare `zfa make` scaffolds it.');
+      print('   Opt-in plugins (view, state, sqlite, graphql, ...) stay off —');
+      print('   enable them with --with=<plugin> or `zfa config set`.');
+    }
+    print('   Canonical generation defaults now live under plugins.defaults.');
+    print(
+      '   v5 uses fixed generation paths under lib/src/domain and lib/src/domain/entities.',
+    );
+    print(
+      '   Adaptive layout scaffolding can be enabled under ui.adaptiveLayouts with targets from ui.layoutTargets.',
+    );
+  }
+
+  /// Issue #1496: the all-off config — the pre-#1496 default map, now the
+  /// explicit `zfa config init --minimal` surface. Every builtin plugin is
+  /// written `false` so plan resolution selects only what the command line
+  /// (or preset) names.
+  factory ZfaConfig.minimal() {
+    return ZfaConfig(
+      pluginDefaults: {for (final id in _builtinPluginDefaults.keys) id: false},
+    );
+  }
+
+  static Map<String, bool> _namedDefaultOverrides({
+    bool? diByDefault,
+    bool? routeByDefault,
+    bool? mockByDefault,
+    bool? testByDefault,
+    bool? gqlByDefault,
+    bool? graphqlByDefault,
+    bool? appendByDefault,
+    bool? cacheByDefault,
+  }) {
+    final overrides = <String, bool>{};
+    if (diByDefault case final value?) overrides['di'] = value;
+    if (routeByDefault case final value?) overrides['route'] = value;
+    if (mockByDefault case final value?) overrides['mock'] = value;
+    if (testByDefault case final value?) overrides['test'] = value;
+    if (gqlByDefault case final value?) {
+      overrides['graphql'] = (overrides['graphql'] ?? false) || value;
+    }
+    if (graphqlByDefault case final value?) {
+      overrides['graphql'] = (overrides['graphql'] ?? false) || value;
+    }
+    if (appendByDefault case final value?) {
+      overrides['method_append'] = value;
+    }
+    if (cacheByDefault case final value?) overrides['cache'] = value;
+    return overrides;
+  }
+
+  static Map<String, bool> _legacyPluginDefaults(Map<String, dynamic> json) {
+    final defaults = <String, bool>{};
+    for (final entry in json.entries) {
+      final pluginId = pluginIdForConfigKey(entry.key);
+      if (pluginId != null && entry.value is bool) {
+        if (pluginId == 'graphql') {
+          defaults[pluginId] =
+              (defaults[pluginId] ?? false) || (entry.value as bool);
+        } else {
+          defaults[pluginId] = entry.value as bool;
+        }
+      }
+    }
+    return defaults;
+  }
+
+  static Map<String, bool> _boolMap(dynamic value) {
+    if (value is! Map) return const {};
+    return value.map(
+      (key, dynamic rawValue) => MapEntry(key.toString(), rawValue == true),
+    );
+  }
+
+  static Map<String, dynamic> _map(dynamic value) {
+    if (value is Map<String, dynamic>) return value;
+    if (value is Map) {
+      return value.map(
+        (key, dynamic rawValue) => MapEntry(key.toString(), rawValue),
+      );
+    }
+    return const <String, dynamic>{};
+  }
+
+  static Map<String, List<String>> _listMap(dynamic value) {
+    if (value is! Map) return const {};
+    return value.map((key, dynamic rawValue) {
+      final items = rawValue is List
+          ? rawValue.map((item) => item.toString()).toList(growable: false)
+          : <String>[];
+      return MapEntry(key.toString(), items);
+    });
+  }
+
+  static Map<String, List<String>> _normalizeNamedLists(
+    Map<String, List<String>>? value,
+  ) {
+    if (value == null) return const {};
+    final normalized = <String, List<String>>{};
+    for (final entry in value.entries) {
+      normalized[entry.key] = entry.value
+          .map((item) => item.trim())
+          .where((item) => item.isNotEmpty)
+          .toList(growable: false);
+    }
+    return normalized;
+  }
+
+  static Set<String> _stringSet(dynamic value) {
+    if (value is! List) return const {};
+    return value.map((item) => item.toString()).toSet();
+  }
+
+  static Map<String, bool> _sortedBoolMap(Map<String, bool> value) {
+    final keys = value.keys.toList()..sort();
+    return {for (final key in keys) key: value[key] ?? false};
+  }
+
+  static Map<String, List<String>> _sortedListMap(
+    Map<String, List<String>> value,
+  ) {
+    final keys = value.keys.toList()..sort();
+    return {for (final key in keys) key: value[key] ?? const <String>[]};
+  }
+}

@@ -1,0 +1,24 @@
+// Copyright 2013 The Flutter Authors
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+#import <StoreKit/StoreKit.h>
+
+// StoreKit 1 is intentionally used as the fallback on iOS < 15 and macOS < 12,
+// where StoreKit 2 is unavailable. Suppress its deprecation warnings.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+
+NS_ASSUME_NONNULL_BEGIN
+typedef void (^ProductRequestCompletion)(SKProductsResponse *_Nullable response,
+                                         NSError *_Nullable errror);
+/// A protocol that wraps SKRequest.
+@protocol FLTRequestHandlerProtocol <NSObject>
+
+/// Wrapper for SKRequest's start
+/// https://developer.apple.com/documentation/storekit/skrequest/1385534-start
+- (void)startProductRequestWithCompletionHandler:(ProductRequestCompletion)completion;
+@end
+NS_ASSUME_NONNULL_END
+
+#pragma clang diagnostic pop

@@ -1,0 +1,1210 @@
+library;
+
+import 'src/core/failure_hooks.dart';
+import 'src/core/failure_reporter.dart';
+import 'src/core/failure_reporter_registry.dart';
+import 'src/core/hook.dart';
+import 'src/core/hook_registry.dart';
+import 'src/core/otel_log_exporter.dart';
+import 'src/core/retry_policy.dart';
+import 'src/core/zuraffa_bridge_facade.dart';
+import 'src/core/module/contracts.dart';
+
+/// Zuraffa
+///
+/// A comprehensive Clean Architecture framework for Dart and Flutter applications
+/// with Result-based error handling, dependency injection, and minimal boilerplate.
+///
+/// ## Overview
+///
+/// This package provides the building blocks for implementing Clean Architecture
+/// in Flutter applications:
+
+///
+/// - **StreamUseCase**: Reactive operations that emit multiple values over time
+/// - **SyncUseCase**: Synchronous operations that return immediately without async
+/// - **BackgroundUseCase**: CPU-intensive operations that run on a separate isolate
+/// - **OsBackgroundTask**: OS-scheduled periodic background tasks via workmanager
+/// - **Controller**: Manages UI state and coordinates with UseCases
+/// - **Presenter**: Optional orchestration layer for complex business flows
+/// - **Result**: Type-safe success/failure handling
+/// - **AppFailure**: Sealed failure hierarchy for exhaustive error handling
+///
+/// ## Quick Start
+///
+/// ```dart
+/// // 1. Create a UseCase
+/// class GetUserUseCase extends UseCase<User, String> {
+///   final UserRepository _repository;
+///   GetUserUseCase(this._repository);
+///
+///   @override
+///   Future<User> execute(String userId, CancelToken? cancelToken) async {
+///     return _repository.getUser(userId);
+///   }
+/// }
+///
+/// // 2. Use it in a Controller
+/// class UserController extends Controller {
+///   final GetUserUseCase _getUser;
+///
+///   UserState _state = const UserState();
+///   UserState get state => _state;
+///
+///   UserController(UserRepository repo) : _getUser = GetUserUseCase(repo);
+///
+///   Future<void> loadUser(String id) async {
+///     _setState(_state.copyWith(isLoading: true));
+///     (await _getUser(id)).fold(
+///       (user) => _setState(_state.copyWith(user: user, isLoading: false)),
+///       (failure) => _setState(_state.copyWith(error: failure, isLoading: false)),
+///     );
+///   }
+///
+///   void _setState(UserState newState) {
+///     _state = newState;
+///     refreshUI();
+///   }
+/// }
+///
+/// // 3. Create a View
+/// class UserPage extends CleanView {
+///   @override
+///   State<UserPage> createState() => _UserPageState();
+/// }
+///
+/// class _UserPageState extends CleanViewState<UserPage, UserController, void> {
+///   _UserPageState() : super(UserController(getIt<UserRepository>()));
+///
+///   @override
+///   Widget get view {
+///     return Scaffold(
+///       key: globalKey,
+///       body: ControlledWidgetBuilder<UserController>(
+///         builder: (context, controller) {
+///           if (controller.state.isLoading) {
+///             return const CircularProgressIndicator();
+///           }
+///           return Text(controller.state.user?.name ?? 'No user');
+///         },
+///       ),
+///     );
+///   }
+/// }
+/// ```
+///
+/// ## Error Handling
+///
+/// All operations return `Result<T, AppFailure>` for type-safe error handling:
+///
+/// ```dart
+/// final result = await getUserUseCase('user-123');
+///
+/// // Pattern matching with fold
+/// result.fold(
+///   (user) => showUser(user),
+///   (failure) => showError(failure),
+/// );
+///
+/// // Or use switch expression
+/// switch (failure) {
+///   case NotFoundFailure():
+///     showNotFound();
+///   case NetworkFailure():
+///     showOfflineMessage();
+///   case UnauthorizedFailure():
+///     navigateToLogin();
+///   default:
+///     showGenericError();
+/// }
+/// ```
+
+import 'package:logging/logging.dart';
+
+// ============================================================
+// Core - Error Handling & Utilities
+// ============================================================
+
+/// Re-exported essential packages so users don't need separate dependencies
+export 'package:get_it/get_it.dart';
+export 'package:hive_ce/hive_ce.dart';
+
+/// Result type for type-safe success/failure handling
+export 'src/core/result.dart';
+
+/// Failure types for error classification
+export 'src/core/failure.dart';
+
+/// VM Service extension bridge — exposes UseCases as dart:developer extensions
+export 'src/core/api_bridge.dart';
+
+/// Endpoint metadata model for the API bridge
+export 'src/core/api_endpoint.dart';
+
+/// Cancellation token for cooperative cancellation
+export 'src/core/cancel_token.dart';
+
+/// Parameter types for UseCases
+///
+/// Includes:
+/// - [NoParams] - For UseCases that don't need parameters
+/// - [Params] - Generic map-based parameters
+/// - [QueryParams] - For querying a single entity
+/// - [ListQueryParams] - For querying lists with filtering, sorting, pagination
+/// - [CreateParams] - For creating entities
+/// - [UpdateParams] - For updating entities
+/// - [DeleteParams] - For deleting entities
+/// - [InitializationParams] - For repository/data source initialization
+/// - [Settings] - Custom settings
+/// - [Credentials] - Authentication credentials
+export 'src/core/params/index.dart';
+
+/// Partial type for partial updates
+export 'src/core/partial.dart';
+
+/// Loggable mixin for logging capabilities
+export 'src/core/loggable.dart';
+
+/// FailureHandler mixin for handling failures
+export 'src/core/failure_handler.dart';
+
+/// CachePolicy abstraction for cache expiration strategies
+export 'src/core/cache_policy.dart';
+
+/// Concrete cache policy implementations (Daily, AppRestart, TTL)
+export 'src/core/cache_policies.dart';
+
+/// Persistence test harness — Hive CE temp-box lifecycle, test clock
+/// (advanceTime), corruption drills and the registrar gate for tests of
+/// Hive-backed behaviors (bug #833).
+export 'src/testing/persistence_test_harness.dart';
+
+/// FetchStrategy abstraction for pluggable data-fetching pipelines
+export 'src/core/fetch_strategy.dart';
+
+/// StrategyPlugin — generates FetchStrategy skeletons for a domain
+export 'src/plugins/strategy/strategy_plugin.dart';
+
+/// SyncStrategy abstraction for offline-first synchronization
+export 'src/core/sync_strategy.dart';
+export 'src/core/sync_status.dart';
+export 'src/core/sync_operation.dart';
+export 'src/core/sync_metadata.dart';
+export 'src/core/sync_direction.dart';
+export 'src/core/sync_config.dart';
+
+/// Sync runtime infrastructure (used by generated sync code)
+export 'src/plugins/sync/builders/sync_metadata_store.dart';
+export 'src/plugins/sync/builders/push_only_sync_strategy.dart';
+export 'src/plugins/sync/builders/bidirectional_sync_strategy.dart';
+
+/// Abstract failure reporter contract
+export 'src/core/failure_report_queue.dart' show FailureReportQueue;
+export 'src/core/failure_report_store.dart' show FailureReportStore;
+export 'src/core/failure_reporter.dart';
+export 'src/core/failure_reporter_registry.dart' show FailureReporterRegistry;
+export 'src/core/retry_policies.dart'
+    show ExponentialBackoffRetryPolicy, FixedIntervalRetryPolicy, NoRetryPolicy;
+export 'src/core/retry_policy.dart' show ReportRetryPolicy;
+
+/// Artifact publisher — general-purpose hook system for publishing
+/// artifacts (HTML, images, files) for any reason (failure, scan, debug).
+export 'src/core/artifact_publisher.dart'
+    show ArtifactPublisher, ArtifactHook, ArtifactContext;
+
+/// UseCase Hook system — intercept any UseCase at pre/success/failure phases
+export 'src/core/hook.dart'
+    show Hook, HookPhase, HookContext, HookErrorPolicy, HookVetoException;
+export 'src/core/hook_registry.dart' show HookRegistry;
+
+/// Failure hooks — backward-compatible layer delegating to ArtifactPublisher.
+export 'src/core/failure_hooks.dart'
+    show FailureHook, FailureHookManager, FailureContext;
+
+/// Lightweight S3-compatible MinIO client with AWS Signature V4.
+
+/// Unified TDD journal (spec 1113, issue #1113): the one machine-
+/// parseable record of run-engine then run-skin. `JournalReader` is the
+/// ONE canonical read API any tool (theater, status, prove, simulate)
+/// consumes — journal entries, the refs-followed lane receipts, the
+/// cycle-log content, the per-behavior green evidence, and the derived
+/// one-line verdict.
+export 'src/plugins/tdd/services/journal.dart'
+    show
+        JournalReader,
+        JournalWriter,
+        JournalEntry,
+        JournalStepError,
+        JournalSchema,
+        JournalException,
+        FeatureJournal,
+        JournalVerdict,
+        JournalBehavior,
+        journalFileFingerprint;
+
+export 'src/core/generation/generation_context.dart';
+export 'src/core/context/file_system.dart';
+export 'src/core/context/context_store.dart';
+export 'src/core/context/progress_reporter.dart';
+export 'src/core/ast/ast_helper.dart';
+export 'src/core/ast/file_parser.dart';
+export 'src/core/ast/ast_modifier.dart';
+export 'src/core/ast/node_finder.dart';
+export 'src/core/ast/append_executor.dart';
+export 'src/core/ast/strategies/append_strategy.dart';
+export 'src/core/ast/strategies/method_append_strategy.dart';
+export 'src/core/ast/strategies/export_append_strategy.dart';
+export 'src/plugins/usecase/usecase_plugin.dart';
+export 'src/plugins/repository/repository_plugin.dart';
+export 'src/core/builder/code_builder_factory.dart';
+export 'src/core/builder/factories/usecase_factory.dart';
+export 'src/core/builder/factories/repository_factory.dart';
+export 'src/core/builder/factories/vpc_factory.dart';
+export 'src/core/builder/factories/route_factory.dart';
+export 'src/core/builder/patterns/common_patterns.dart';
+export 'src/core/builder/patterns/usecase_patterns.dart';
+export 'src/core/builder/patterns/repository_patterns.dart';
+export 'src/core/builder/patterns/vpc_patterns.dart';
+export 'src/core/builder/shared/spec_library.dart';
+// Hide the code-generation plugin interface to avoid naming collision with
+// the micro-frontend runtime contract (src/core/module/zuraffa_plugin.dart).
+// CLI commands and internal code can still import plugin_interface.dart directly.
+export 'src/core/plugin_system/plugin_interface.dart' hide ZuraffaPlugin;
+export 'src/core/plugin_system/plugin_lifecycle.dart';
+export 'src/core/plugin_system/plugin_registry.dart';
+
+// ============================================================
+// Benchmark Contract Library (feature 015-benchmark-plugin)
+// ============================================================
+
+/// The benchmark contract surface every Zuraffa app/plugin can implement —
+/// interface-only, decoupled from the benchmark plugin implementation
+/// (FR-015): scenarios depend only on these types, never on the runner or
+/// the plugin wiring. Pure-Dart (no Flutter dependency).
+export 'src/core/benchmark/benchmark_contract.dart';
+export 'src/core/benchmark/benchmark_result.dart';
+export 'src/core/benchmark/benchmark_registry.dart';
+export 'src/core/benchmark/benchmark_runner.dart';
+export 'src/core/benchmark/metric_collector.dart';
+export 'src/core/benchmark/baseline_store.dart';
+export 'src/core/benchmark/standard_metrics.dart';
+export 'src/core/benchmark/isolate_benchmark_runner.dart';
+
+export 'src/core/transaction/file_operation.dart';
+export 'src/core/transaction/generation_transaction.dart';
+export 'src/core/transaction/transaction_result.dart';
+export 'src/core/transaction/conflict_detector.dart';
+
+// ============================================================
+// Zorphy Integration - Type-safe filtering
+// ============================================================
+
+/// Re-export Zorphy's types and extensions for type-safe queries
+///
+/// This includes:
+/// - Filter operators: Eq, And, Or, Not, Gt, Gte, Lt, Lte, Contains, etc.
+/// - Field, Filter, Sort types
+/// - Iterable extensions for filter() and sort()
+export 'package:zorphy_annotation/zorphy_annotation.dart';
+
+// ============================================================
+// Domain - Business Logic
+// ============================================================
+
+/// UseCase base class for single-shot operations
+export 'src/domain/usecase.dart';
+
+/// StreamUseCase for reactive/streaming operations
+export 'src/domain/stream_usecase.dart';
+
+/// SyncUseCase for synchronous operations
+export 'src/domain/sync_usecase.dart';
+
+/// BackgroundUseCase for isolate-based operations
+export 'src/domain/background_usecase.dart';
+
+/// OsBackgroundTask for OS-scheduled background tasks wrapping workmanager
+export 'src/domain/os_background_task.dart';
+
+/// OsBackgroundTaskUseCase abstract base for OS background task use cases
+export 'src/domain/os_background_task_usecase.dart';
+
+/// Observer for callback-based stream listening (optional)
+export 'src/core/observer.dart';
+
+// ============================================================
+// Presentation - UI Layer
+// ============================================================
+
+/// Controller for state management
+
+/// Presenter for complex orchestration (optional)
+
+/// CleanView and CleanViewState base classes
+
+/// ResponsiveViewState for responsive layouts
+
+/// AdaptiveViewState for platform/device-aware layouts
+
+/// ControlledWidgetBuilder and variants
+
+// ============================================================
+// Platform-Aware Presentation
+// ============================================================
+
+/// Device and platform classification for adaptive layouts
+
+/// Adaptive application shells
+
+// ============================================================
+// Extensions
+// ============================================================
+
+/// Future extensions for Result conversion
+export 'src/extensions/future_extensions.dart';
+
+// ============================================================
+// Utilities
+// ============================================================
+
+/// Test utilities (matchers, observers)
+export 'src/utils/test_utils.dart';
+
+// ============================================================
+// V6 Reactive Signals
+// ============================================================
+
+/// Signal — zero-cost reactive primitive.
+export 'src/core/signals/signal.dart';
+
+/// SignalResult — reactive Result wrapper backed by Signal.
+export 'src/core/signals/signal_result.dart';
+
+/// ZuraffaUseCase — v6 UseCase contract with SignalResult return type.
+export 'src/core/usecase/zuraffa_usecase.dart';
+
+/// ZuraffaContext — lightweight correlation context carrier.
+export 'src/core/context/zuraffa_context.dart';
+
+/// TelemetryMesh — global trace/span coordinator and auto-instrumentation.
+export 'src/core/otel_log_exporter.dart' show OtelLogExporter;
+export 'src/core/trace_observer.dart' show TraceObserver;
+export 'src/simulation/simulation_adapters.dart'
+    show SpanSnapshot, SimulationSpanCapture;
+export 'src/core/telemetry/telemetry_mesh.dart';
+
+// ============================================================
+// V6 DDA (Decorator-Driven Architecture) — Compiler Pipeline
+// ============================================================
+
+/// DecoratorAST — parsed decorator annotation model.
+export 'src/dda/models/decorator_ast.dart';
+
+/// ZorphyContext — code_builder-based injection context.
+export 'src/dda/models/zorphy_context.dart';
+
+/// ZorphyDecoratorPlugin — abstract plugin contract.
+export 'src/dda/compiler/zorphy_decorator_plugin.dart';
+
+/// ASTScanner — finds @DecoratorName() across the project.
+export 'src/dda/compiler/ast_scanner.dart';
+
+/// PluginDiscovery — loads plugins from pubspec.yaml.
+export 'src/dda/compiler/plugin_discovery.dart';
+
+/// DecoratorDispatcher — routes annotations to handlers.
+export 'src/dda/compiler/decorator_dispatcher.dart';
+
+/// BuildPipeline — 6-stage build orchestrator.
+export 'src/dda/compiler/build_pipeline.dart';
+
+// ============================================================
+// V6 DI — Auto-Dependency Injection
+// ============================================================
+
+/// DependencyScope — lifecycle scopes for DI.
+export 'src/core/di/dependency_scope.dart';
+
+/// @Datasource annotation.
+export 'src/core/di/datasource.dart';
+
+/// @Repository annotation.
+export 'src/core/di/repository.dart';
+
+/// ZuraffaContainer — lightweight DI container.
+export 'src/core/di/zuraffa_container.dart';
+
+/// DIPlugin — DDA plugin for @Datasource/@Repository processing.
+export 'src/dda/plugins/di/di_plugin.dart';
+
+/// Route annotation — @ZfaRoute, ZuraffaRouteGuard, RouteParams base classes.
+export 'src/dda/plugins/route/route_annotation.dart';
+
+/// RouteDDAPlugin — DDA plugin for @Route annotation processing.
+export 'src/dda/plugins/route/route_plugin.dart';
+
+/// RouteGenerator — GoRouter configuration generation from @Route metadata.
+export 'src/dda/plugins/route/route_generator.dart';
+export 'src/dda/plugins/route/route_validator.dart';
+export 'src/dda/plugins/route/route_build_stage.dart';
+
+/// CacheStrategy enum, @Cacheable and @CacheInvalidate annotations.
+export 'src/dda/plugins/cache/cache_annotation.dart';
+
+/// CacheDDAPlugin — DDA plugin for @Cacheable/@CacheInvalidate processing.
+export 'src/dda/plugins/cache/cache_plugin.dart';
+
+/// CacheGenerator — generates zfa_cache.g.dart from @Cacheable metadata.
+export 'src/dda/plugins/cache/cache_generator.dart';
+export 'src/dda/plugins/middleware/middleware_annotation.dart';
+export 'src/dda/plugins/middleware/auth_plugin.dart';
+export 'src/dda/plugins/middleware/auth_generator.dart';
+export 'src/dda/plugins/middleware/retry_plugin.dart';
+export 'src/dda/plugins/middleware/retry_generator.dart';
+export 'src/dda/plugins/middleware/track_event_plugin.dart';
+export 'src/dda/plugins/middleware/track_event_generator.dart';
+
+/// DIGenerator — code_builder-based DI registration generation.
+export 'src/dda/plugins/di/di_generator.dart';
+
+// ============================================================
+// V6 State — Fragmented Signal Slices
+// ============================================================
+
+// SignalSlice — fine-grained reactive slice wrapping SignalResult.
+export 'src/state/slices/signal_slice.dart';
+
+// SlicePresenter — manages multiple slices with backward-compatible state.
+export 'src/state/presenter/slice_presenter.dart';
+// v6 state widgets (ControlledWidget, SignalBuilder, FragmentBuilder) and
+// their pure-Dart host machinery are owned solely by zuraffa_flutter and are
+// deliberately NOT exported here. Re-exporting same-named core copies makes
+// every Flutter package that depends on both packages fail `dart analyze`
+// with ambiguous_export (BUG-1173; spec 014 pure-dart-core-split).
+
+// StateMigrator — converts v5 .state.dart to v6 slice pattern.
+// The StateMigrator class is hidden from public API but remains accessible
+// to migration and doctor commands via direct import.
+export 'src/state/migration/state_migrator.dart' hide StateMigrator;
+
+// v5 -> v6 migration tooling
+export 'src/migration/migration.dart';
+
+// DomainState — auto-generated read-only slice container.
+export 'src/state/domain_state.dart';
+
+// ViewState — developer-editable transient UI state.
+export 'src/state/view_state.dart';
+
+// DualLayerPresenter — strict domain/view state separation.
+export 'src/state/presenter/dual_layer_presenter.dart';
+
+// StateGenerator — code_builder-based generation with preservation.
+export 'src/state/generator/state_generator.dart';
+
+// CacheObserver — observable cache for cross-view state sync.
+export 'src/state/cache/cache_observer.dart';
+
+// CacheBinding — binds SignalSlice to cache updates.
+export 'src/state/cache/cache_binding.dart';
+
+// CacheBindingPlugin — DDA plugin for @Cacheable processing.
+export 'src/state/generator/cache_binding_generator.dart';
+
+// ViewTemplateGenerator — generates ControlledWidget-based views.
+export 'src/state/generator/view_template_generator.dart';
+
+// ============================================================
+// V6 GraphQL Core
+// ============================================================
+
+// GraphQLType — polymorphic GraphQL type hierarchy.
+export 'src/graphql/types/graphql_type.dart';
+
+// SchemaParser — two-pass introspection JSON parser.
+export 'src/graphql/schema/schema_parser.dart';
+export 'src/graphql/codegen/codegen_types.dart';
+
+// SchemaCache — load/save schema.json with HTTP fetch stub.
+export 'src/graphql/cache/schema_cache.dart';
+
+// IntrospectionClient — throwing introspection fetch with detailed errors
+// (spec 037, FR-002). Injectable transport for offline tests.
+export 'src/graphql/introspection/introspection_client.dart';
+
+// SdlPrinter — GqlSchema → SDL document rendering (spec 037, FR-001).
+export 'src/graphql/sdl/sdl_printer.dart';
+
+// SchemaDiffer — breaking/non-breaking schema diff (spec 037, FR-003/004).
+export 'src/graphql/diff/schema_diff.dart';
+
+// DartTypeNamer — camelCase/PascalCase + reserved-word escapes (FR-007).
+export 'src/graphql/mapping/dart_type_namer.dart';
+
+// TypeMapper — GraphQL type to Dart type mapping.
+export 'src/graphql/mapping/type_mapper.dart';
+
+// DocumentBuilder — query/mutation/subscription document generation.
+export 'src/graphql/document/document_builder.dart';
+
+// The gql-based surfaces (document builder, documents generator, naming
+// utils, validator, file preserver) and the GraphQL client runtime
+// (client factory/provider, subscription streams) moved to
+// package:zuraffa_graphql (spec 1653) — import them from that package.
+
+// ============================================================
+// V6 GraphQL Codegen — Schema-to-Full-Stack Generation
+// ============================================================
+
+// EntityGenerator — GraphQL OBJECT types -> zorphy $Entity classes.
+export 'src/graphql/codegen/entity_generator.dart';
+
+// DtoGenerator — GraphQL INPUT types -> DTO classes.
+export 'src/graphql/codegen/dto_generator.dart';
+
+// UnionGenerator — GraphQL UNION types -> sealed class hierarchies.
+export 'src/graphql/codegen/union_generator.dart';
+
+// RepositoryGenerator — interface + impl delegating to datasource.
+export 'src/graphql/codegen/repository_generator.dart';
+
+// ErrorMappingConfig — .zfa.json graphql.errorMapping -> AppFailure mapping.
+export 'src/graphql/codegen/error_mapping_config.dart';
+
+// UnionResultHandler — union result -> AppFailure/SignalResult codegen.
+export 'src/graphql/codegen/union_result_handler.dart';
+
+// GraphQL introspection — fetch and parse remote schemas.
+export 'src/graphql/graphql_introspection_service.dart';
+export 'src/graphql/graphql_schema.dart';
+export 'src/graphql/graphql_schema_translator.dart';
+export 'src/graphql/graphql_entity_emitter.dart';
+
+// ============================================================
+// Micro-Frontend Module System (v6)
+// ============================================================
+
+/// Runtime contracts for the micro-frontend plugin architecture (Dart-only parts).
+/// [ZuraffaPlugin], [ZuraffaEngine], [ZuraffaDIContainer], and
+/// [ZuraffaRouteHandler] ship here.
+/// [ZuraffaRouteBuilder] (Widget-returning) and [ZuraffaAppRunner] are in zuraffa_flutter.
+export 'src/core/module/route_builder.dart';
+export 'src/core/module/di_container.dart';
+export 'src/core/module/engine.dart';
+export 'src/core/module/zuraffa_plugin.dart';
+export 'src/core/module/package_module.dart';
+
+// ============================================================
+// v6 Package SDK (spec 025 — issue #389)
+// ============================================================
+
+/// Package-SDK contracts for building reusable Zuraffa packages:
+/// [PackageMode] (the `zfa.package_mode` build.yaml marker),
+/// [PackageCompatibility] (consuming-app version gating), and
+/// [PackageAgentTools]/[PackageUseCaseTool] (namespaced agent tools).
+/// `zfa package create` scaffolds against this surface.
+export 'src/package/package_mode.dart';
+export 'src/package/package_compatibility.dart';
+export 'src/package/package_agent_tools.dart';
+export 'src/version.dart';
+
+// ============================================================
+// MCP Plugin (issue #369) — runtime tool exposure
+// ============================================================
+
+/// Runtime MCP tool contracts: [McpTool], [McpToolResult],
+/// [McpToolRegistry], [McpServerPlugin], [McpStdioServer], and
+/// [McpSseServer].
+/// Together they let a Zuraffa app expose its features as
+/// Model Context Protocol tools callable by AI agents.
+export 'src/core/module/mcp_tool.dart';
+export 'src/core/module/mcp_tool_registry.dart';
+export 'src/core/module/mcp_server_plugin.dart';
+export 'src/core/module/mcp_stdio_server.dart';
+export 'src/mcp/sse_server.dart' show McpSseServer;
+
+// ── Generic session plugin (spec #015) ────────────────────────────────
+// Pure-Dart session foundation shared by zuraffa and zuraffa_flutter:
+// presets, scoped container, portable serialization, pluggable
+// persistence. No Flutter/UI dependencies (SC-004).
+export 'src/session/session.dart';
+export 'src/session/session_preset.dart';
+export 'src/session/session_container.dart';
+export 'src/session/session_persistence.dart';
+export 'src/session/session_exception.dart';
+
+// ── Secure storage (ecosystem gap #1) ─────────────────────────────────
+// Typed at-rest key/value seam for tokens, receipts, and secrets: port +
+// in-memory default + codec + SecretStore convenience. No platform
+// dependencies — Keychain/Keystore adapters implement SecureStoragePort.
+export 'src/secure_storage/secure_storage.dart';
+export 'src/secure_storage/secure_storage_codec.dart';
+export 'src/secure_storage/secret_store.dart';
+
+// ── Built-in capability plugins (analysis §4) ─────────────────────────
+// Everyday device primitives the codegen plugins can assume: biometrics
+// (auth enabler), share/clipboard, and app update. Pure-Dart ports +
+// in-memory defaults; platform adapters implement them in apps.
+export 'src/biometrics/biometrics.dart';
+export 'src/biometrics/biometrics_service.dart';
+export 'src/share/share.dart';
+export 'src/share/share_service.dart';
+export 'src/clipboard/clipboard.dart';
+export 'src/clipboard/clipboard_service.dart';
+export 'src/app_update/app_update.dart';
+export 'src/app_update/app_update_service.dart';
+
+// ── Device + logging built-ins (analysis §4, completing the set) ──────
+export 'src/device/device.dart';
+export 'src/device/device_service.dart';
+export 'src/logging/structured_logging.dart';
+
+// ── i18n built-in (the final §4 recommendation) ──────────────────────
+// Locale negotiation, typed translation lookup with parameters and
+// CLDR pluralization, and live locale switching — pure Dart.
+export 'src/i18n/i18n.dart';
+export 'src/i18n/i18n_service.dart';
+
+// ── 018-cli-plugin — native, built-in, pure-Dart CLI plugin ───────────
+// Standardizes the CLI surface across all Zuraffa apps and lets apps
+// cross-reference, interact, and share commands via a shared registry.
+// Pure-Dart (FR-012): no package:flutter import anywhere in this subtree.
+export 'src/cli/standard/standard.dart';
+
+// ── Skin UI Vocabulary Authority (spec 024 — skin plugin) ────────────
+// The skin-side vocabulary surface used by `zfa make <Name> --ui` and the
+// skin plugin. (The agent-side ui_render plugin that also consumed this
+// vocabulary moved behind the dedicated agent barrel — issue #1344.)
+
+// NodeRegistry — the authoritative built-in + composite node vocabulary.
+export 'src/plugins/skin/vocabulary/ui_node_registry.dart';
+
+// VocabularySchemaExporter + UiRenderInputSchema (SC-004).
+export 'src/plugins/skin/vocabulary/vocabulary_schema_exporter.dart';
+
+// UiPayloadValidator — per-category payload diagnostics.
+export 'src/plugins/skin/vocabulary/payload_validator.dart';
+
+// CompositeScaffolder — zfa make <Name> --ui.
+export 'src/plugins/skin/vocabulary/composite_scaffolder.dart';
+
+// UiVocabularyExportCapability — MCP-discoverable export (FR-006).
+export 'src/plugins/skin/capabilities/ui_vocabulary_export_capability.dart';
+
+// ── Agent runtime — gated behind the dedicated barrel (issue #1344) ──
+// The agent runtime (ui_render, kernel, policy shell, runtime plugin —
+// formerly the specs 023/026/027/028 export sites) is NO LONGER
+// re-exported from the default barrel. Re-exporting it from here collided
+// with ecosystem packages such as zuraffa_agent, which declare their own
+// same-named domain entities (LlmClient, RiskTier, ToolResult, and the
+// wider agent-domain name class), producing ambiguous-import errors at
+// load time for every file importing both packages.
+//
+// Consumers who WANT the agent runtime import it explicitly:
+//
+//     import 'package:zuraffa/agent.dart';
+//
+// The dedicated barrel carries the exact export surface (including the
+// hide clauses arbitrating the kernel-vs-runtime and ui_render-vs-policy
+// same-name conflicts) that the default barrel used to expose. Direct
+// deep imports of the runtime's source files are unaffected. This is a
+// non-breaking narrowing of the default export surface — the same split
+// pattern as Flutter's material vs widgets libraries.
+
+// ============================================================
+// Framework Configuration
+// ============================================================
+
+/// Log levels for Zuraffa framework logging.
+enum ZuraffaLogLevel {
+  all,
+  finest,
+  finer,
+  fine,
+  config,
+  info,
+  warning,
+  severe,
+  shout,
+  off,
+}
+
+/// Application environment types.
+enum Environment {
+  /// Development environment, usually with detailed logging and debug tools.
+  development,
+
+  /// Staging environment, matches production configuration but with test data.
+  staging,
+
+  /// Production environment, optimized for performance and security.
+  production,
+}
+
+/// Global configuration and utilities for Zuraffa.
+class Zuraffa {
+  Zuraffa._();
+
+  static Environment _environment = Environment.development;
+  static bool _isDebugMode = true;
+
+  static bool _disableCache = false;
+
+  /// Whether the API bridge is active in profile mode.
+  ///
+  /// Defaults to false — profile mode is opt-in.
+  /// Set this to `true` before calling `ZuraffaApiBridge.init()` to enable
+  /// the bridge in profile builds. Has no effect in release or debug mode.
+  ///
+  /// Writing to this field also updates [ZuraffaBridgeFacade.enableApiInProfile]
+  /// so that ZuraffaApiBridge can read it without importing zuraffa.dart.
+  static bool get enableApiInProfile => ZuraffaBridgeFacade.enableApiInProfile;
+
+  static set enableApiInProfile(bool value) {
+    ZuraffaBridgeFacade.enableApiInProfile = value;
+  }
+
+  /// Get the current application environment.
+  static Environment get environment => _environment;
+
+  /// Returns true if the application is running in debug mode.
+  static bool get isDebugMode => _isDebugMode;
+
+  /// Returns true if caching is globally disabled.
+  ///
+  /// When true, all [CachePolicy.isValid] calls should return false,
+  /// forcing fresh data to be fetched from remote sources.
+  static bool get disableCache => _disableCache;
+
+  /// Globally disable or enable caching.
+  ///
+  /// Set this to `true` to bypass all caches (e.g., in debug mode
+  /// or when a remote config flag requests it).
+  static set disableCache(bool value) {
+    _disableCache = value;
+    Logger.root.info('Zuraffa cache disabled: $value');
+  }
+
+  /// Set the application environment and debug mode.
+  ///
+  /// typically called at the beginning of `main()`.
+  /// If [isDebugMode] is not provided, it defaults to true for development
+  /// and false for staging and production.
+  /// If [logLevel] is provided, it sets the logging level when [isDebugMode] is true.
+  static void setEnvironment(
+    Environment env, {
+    bool? isDebugMode,
+    ZuraffaLogLevel logLevel = ZuraffaLogLevel.all,
+  }) {
+    _environment = env;
+    _isDebugMode = isDebugMode ?? (env == Environment.development);
+    if (_isDebugMode || env == Environment.development) {
+      enableLogging(level: logLevel);
+    } else {
+      disableLogging();
+    }
+    Logger.root.info(
+      'Zuraffa environment set to: ${env.name} (isDebugMode: $_isDebugMode, logLevel: ${logLevel.name})',
+    );
+  }
+
+  static Level toLevel(ZuraffaLogLevel level) {
+    switch (level) {
+      case ZuraffaLogLevel.all:
+        return Level.ALL;
+      case ZuraffaLogLevel.finest:
+        return Level.FINEST;
+      case ZuraffaLogLevel.finer:
+        return Level.FINER;
+      case ZuraffaLogLevel.fine:
+        return Level.FINE;
+      case ZuraffaLogLevel.config:
+        return Level.CONFIG;
+      case ZuraffaLogLevel.info:
+        return Level.INFO;
+      case ZuraffaLogLevel.warning:
+        return Level.WARNING;
+      case ZuraffaLogLevel.severe:
+        return Level.SEVERE;
+      case ZuraffaLogLevel.shout:
+        return Level.SHOUT;
+      case ZuraffaLogLevel.off:
+        return Level.OFF;
+    }
+  }
+
+  /// Enable debug logging for the framework.
+  ///
+  /// Call this in your `main()` function to see detailed logs from
+  /// Controllers, UseCases, and other components.
+  ///
+  /// ## Example
+  /// ```dart
+  /// void main() {
+  ///   Zuraffa.enableLogging();
+  ///   runApp(MyApp());
+  /// }
+  ///
+  /// // With custom log level
+  /// void main() {
+  ///   Zuraffa.enableLogging(level: ZuraffaLogLevel.warning);
+  ///   runApp(MyApp());
+  /// }
+  /// ```
+  static void enableLogging({
+    ZuraffaLogLevel level = ZuraffaLogLevel.all,
+    void Function(LogRecord record)? onRecord,
+  }) {
+    Logger.root.level = toLevel(level);
+    Logger.root.onRecord.listen(onRecord ?? _defaultLogHandler);
+    Logger.root.info('Zuraffa logging enabled');
+  }
+
+  /// Disable logging.
+  static void disableLogging() {
+    Logger.root.level = toLevel(ZuraffaLogLevel.off);
+  }
+
+  // ============================================================
+  // Failure and Log Reporting
+  // ============================================================
+
+  /// Register a failure reporter.
+  ///
+  /// Failures from all UseCases and FailureHandlers will be
+  /// automatically reported to registered reporters.
+  ///
+  /// ## Example
+  /// ```dart
+  /// class MyCustomReporter extends FailureReporter {
+  ///   @override
+  ///   String get id => 'my-custom-reporter';
+  ///
+  ///   @override
+  ///   Future<void> reportBatch(List<FailureReport> reports) async {
+  ///     for (final report in reports) {
+  ///       await myHttpClient.post('/errors', body: {
+  ///         'type': report.failure.runtimeType.toString(),
+  ///         'message': report.failure.message,
+  ///       });
+  ///     }
+  ///   }
+  /// }
+  ///
+  /// void main() {
+  ///   Zuraffa.addFailureReporter(MyCustomReporter());
+  ///   runApp(MyApp());
+  /// }
+  /// ```
+  static Future<void> addFailureReporter(
+    FailureReporter reporter, {
+    ReportRetryPolicy? retryPolicy,
+    int? maxQueueSize,
+    int? maxBatchSize,
+    Duration? flushInterval,
+    bool persistFailures = false,
+  }) async {
+    if (retryPolicy != null ||
+        maxQueueSize != null ||
+        maxBatchSize != null ||
+        flushInterval != null ||
+        persistFailures) {
+      FailureReporterRegistry.instance.configure(
+        retryPolicy: retryPolicy,
+        maxQueueSize: maxQueueSize,
+        maxBatchSize: maxBatchSize,
+        flushInterval: flushInterval,
+        persistFailures: persistFailures,
+      );
+    }
+    await FailureReporterRegistry.instance.register(reporter);
+  }
+
+  /// Remove a failure reporter by ID.
+  static Future<void> removeFailureReporter(String id) async {
+    await FailureReporterRegistry.instance.unregister(id);
+  }
+
+  /// Flush all pending failure reports.
+  static Future<void> flushFailureReports() async {
+    await FailureReporterRegistry.instance.flush();
+  }
+
+  /// The remote log exporter wired by [OtelLogExporter]-based setups
+  /// (spec 1653: the exporter is vendor-free and stays in core; the
+  /// observability companion constructs and registers it).
+  static OtelLogExporter? _otelLogExporter;
+
+  /// Register a remote log exporter for disposal with
+  /// [disposeFailureReporters]. The observability companion calls this
+  /// from its enableOtelReporting equivalent.
+  static void registerOtelLogExporter(OtelLogExporter exporter) {
+    _otelLogExporter?.dispose();
+    _otelLogExporter = exporter;
+  }
+
+  /// Dispose all failure reporters and flush pending reports.
+  ///
+  /// Call this on app shutdown.
+  static Future<void> disposeFailureReporters() async {
+    await FailureReporterRegistry.instance.dispose();
+    await _otelLogExporter?.dispose();
+    _otelLogExporter = null;
+  }
+
+  // ============================================================
+  // Artifact Publisher
+  // ============================================================
+
+  /// Register an artifact hook that reacts to published artifacts.
+  ///
+  /// ## Example
+  /// ```dart
+  /// class AlertHook extends ArtifactHook {
+  ///   @override
+  ///   String get id => 'alert';
+  ///
+  ///   @override
+  ///   Future<void> onPublish(ArtifactContext context) async =>
+  ///       alertClient.send(
+  ///         channel: '#app-errors',
+  ///         text: 'Artifact from ${context.source}: ${context.label}',
+  ///       );
+  /// }
+  ///
+  /// Zuraffa.registerArtifactHook(AlertHook());
+  /// ```
+  static void registerArtifactHook(ArtifactHook hook) {
+    ArtifactPublisher.instance.register(hook);
+  }
+
+  /// Unregister an artifact hook by its [id].
+  static void unregisterArtifactHook(String id) {
+    ArtifactPublisher.instance.unregister(id);
+  }
+
+  /// Publish an artifact to all registered hooks (fire-and-forget).
+  ///
+  /// Use this anywhere in your app to publish artifacts — HTML from
+  /// failed scrapes, scanned product images, debug screenshots, etc.
+  ///
+  /// - [data]: The artifact payload (`String`, `Uint8List`, etc.)
+  /// - [contentType]: MIME type (e.g. `text/html`, `image/jpeg`)
+  /// - [reason]: Why this artifact is being published
+  /// - [source]: Which component published it (e.g. `'ParsingProvider'`)
+  /// - [label]: Human-readable label (e.g. `'NetworkFailure'`, `'barcode_scan'`)
+  /// - [metadata]: Additional context (task ID, URL, etc.)
+  ///
+  /// ## Examples
+  /// ```dart
+  /// // HTML from a failed operation
+  /// Zuraffa.publishArtifact(
+  ///   rawHtml,
+  ///   id: entityId,
+  ///   contentType: 'text/html; charset=utf-8',
+  ///   reason: 'failure',
+  ///   source: 'NetworkClient',
+  ///   label: 'RequestFailed',
+  ///   metadata: {'entityId': entity.id, 'url': request.url},
+  /// );
+  ///
+  /// // Scanned product image
+  /// Zuraffa.publishArtifact(
+  ///   imageBytes,
+  ///   id: scanId,
+  ///   contentType: 'image/jpeg',
+  ///   reason: 'scan',
+  ///   source: 'ImageCapture',
+  ///   label: 'product_scan',
+  ///   metadata: {'barcode': '1234567890'},
+  /// );
+  ///
+  /// // Debug snapshot
+  /// Zuraffa.publishArtifact(
+  ///   screenshotBytes,
+  ///   id: snapshotId,
+  ///   contentType: 'image/png',
+  ///   reason: 'debug',
+  ///   source: 'CheckpointTool',
+  ///   label: 'workflow_step_3',
+  /// );
+  /// ```
+  /// - [id]: Business entity ID for later lookup.
+  static void publishArtifact(
+    dynamic data, {
+    required String id,
+    required String contentType,
+    required String reason,
+    String? source,
+    String? label,
+    Map<String, dynamic> metadata = const {},
+    StackTrace? stackTrace,
+    List<String> pathSegments = const [],
+    String? traceId,
+    String? spanId,
+  }) {
+    ArtifactPublisher.instance.publishFireAndForget(
+      data,
+      id: id,
+      contentType: contentType,
+      reason: reason,
+      source: source,
+      label: label,
+      metadata: metadata,
+      stackTrace: stackTrace,
+      pathSegments: pathSegments,
+      traceId: traceId,
+      spanId: spanId,
+    );
+  }
+
+  /// Publish an artifact to all registered hooks (awaited).
+  ///
+  /// Same as [publishArtifact] but waits for all hooks to complete.
+  static Future<void> publishArtifactAwaited(
+    dynamic data, {
+    required String id,
+    required String contentType,
+    required String reason,
+    String? source,
+    String? label,
+    Map<String, dynamic> metadata = const {},
+    StackTrace? stackTrace,
+    List<String> pathSegments = const [],
+    String? traceId,
+    String? spanId,
+  }) async {
+    await ArtifactPublisher.instance.publish(
+      data,
+      id: id,
+      contentType: contentType,
+      reason: reason,
+      source: source,
+      label: label,
+      metadata: metadata,
+      stackTrace: stackTrace,
+      pathSegments: pathSegments,
+      traceId: traceId,
+      spanId: spanId,
+    );
+  }
+
+  // ============================================================
+  // Hooks (generic)
+  // ============================================================
+
+  /// Register a generic hook.
+  ///
+  /// Hooks intercept UseCase execution at pre/success/failure phases.
+  /// Multiple hooks can be registered simultaneously and all will fire.
+  ///
+  /// ## Example
+  /// ```dart
+  /// Zuraffa.registerHook(EngagementHook(repository));
+  /// ```
+  static void registerHook(Hook hook) {
+    HookRegistry.instance.register(hook);
+  }
+
+  /// Unregister a hook by ID.
+  static void unregisterHook(String id) {
+    HookRegistry.instance.unregister(id);
+  }
+
+  /// Enable/disable all hooks globally.
+  ///
+  /// Set to `false` to instantly disable all hooks (GDPR compliance,
+  /// debug mode, performance profiling).
+  static set hooksEnabled(bool value) {
+    HookRegistry.instance.isEnabled = value;
+  }
+
+  // ============================================================
+  // Interceptors (UseCase pipeline)
+  // ============================================================
+
+  /// Global interceptor registry for UseCase pipelines.
+  ///
+  /// Use [registerInterceptor] to add interceptors. The registry
+  /// is keyed by UseCase input type.
+  static final interceptorRegistry = InterceptorRegistry();
+
+  /// Register a UseCase interceptor for input type [In] and output
+  /// type [Out].
+  ///
+  /// Interceptors run in registration order. Each receives the
+  /// original request and a `next` function to continue the chain.
+  ///
+  /// ## Example
+  /// ```dart
+  /// Zuraffa.registerInterceptor<String, User>(
+  ///   InterceptorEntry(
+  ///     name: 'cache',
+  ///     handler: (request, next) {
+  ///       final cached = cache.get(request);
+  ///       if (cached != null) return SignalResult.success(cached);
+  ///       return next(request);
+  ///     },
+  ///   ),
+  /// );
+  /// ```
+  static void registerInterceptor<In, Out>(InterceptorEntry<In, Out> entry) {
+    interceptorRegistry.register<In, Out>(entry);
+  }
+
+  /// Clear all registered interceptors.
+  static void clearInterceptors() {
+    interceptorRegistry.clear();
+  }
+
+  // ============================================================
+  // Backward-compatible Failure Hooks
+  // ============================================================
+
+  /// Register a failure hook that reacts to errors.
+  ///
+  /// @deprecated Use [registerArtifactHook] with [ArtifactHook] instead.
+  static void registerFailureHook(FailureHook hook) {
+    FailureHookManager().register(hook);
+  }
+
+  /// Unregister a failure hook by its [id].
+  ///
+  /// @deprecated Use [unregisterArtifactHook] instead.
+  static void unregisterFailureHook(String id) {
+    FailureHookManager().unregister(id);
+  }
+
+  /// Dispose all artifact and failure hooks.
+  ///
+  /// Call this on app shutdown alongside [disposeFailureReporters].
+  static void disposeFailureHooks() {
+    ArtifactPublisher.instance.dispose();
+  }
+
+  static void _defaultLogHandler(LogRecord record) {
+    final emoji = _levelEmoji(record.level);
+    final message = '$emoji ${record.loggerName}: ${record.message}';
+
+    // ignore: avoid_print
+    print(message);
+
+    if (record.error != null) {
+      // ignore: avoid_print
+      print('  Error: ${record.error}');
+    }
+
+    if (record.stackTrace != null) {
+      // ignore: avoid_print
+      print('  Stack: ${record.stackTrace}');
+    }
+  }
+
+  static String _levelEmoji(Level level) {
+    if (level >= Level.SEVERE) return '🔴';
+    if (level >= Level.WARNING) return '🟠';
+    if (level >= Level.INFO) return '🔵';
+    if (level >= Level.FINE) return '⚪';
+    return '⚫';
+  }
+}

@@ -1,0 +1,1037 @@
+## 7.3.8 - 2026-11-07
+
+- Mono-version fleet alignment to 7.3.8; internal dependencies refreshed; xml override 7.1.0.
+
+## 7.3.7 - 2026-11-07
+
+- Mono-version fleet alignment to 7.3.7; internal dependencies refreshed; xml override 7.1.0.
+
+## 7.3.6 - 2026-11-02
+
+- Mono-version fleet alignment to 7.3.6; internal dependencies refreshed; xml override 7.1.0.
+
+## 7.3.2 - 2026-10-31
+
+Mono-version fleet alignment to 7.3.2: outbound send port lands in zuraffa_intents (shareText/shareFiles behind ShareIntentService); the whole family ships at one version.
+
+## [Unreleased]
+
+### Added
+- **Blocking (awaited) lifecycle hooks for the classic `UseCase` (issue
+  #2032)**: `Hook.blocking` (default `false`, honored only in the `pre`
+  phase) makes `UseCase.call` await the hook to completion BEFORE
+  `execute` begins; `Hook.blockingTimeout` abandons the wait (abandonment,
+  not cancellation — the hook's own future keeps running and its cleanup
+  stays its own responsibility); `Hook.onError` with
+  `HookErrorPolicy {continue_, veto}` decides whether a blocking hook's
+  failure is logged-and-proceeded (`continue_`, the default) or vetoes the
+  call (`veto` → `HookVetoException` → `Failure(hookFailure)`; `execute`
+  never runs and no later phase dispatches).
+  `HookRegistry.dispatchAwaited` runs blocking hooks sequentially in
+  priority order, each awaited (or abandoned at its timeout), degenerating
+  to plain `dispatch` when nothing blocking matches; non-blocking hooks
+  keep the fire-and-forget semantics everywhere else. A veto deliberately
+  skips the `success`/`failure` dispatches — a hook that acquires a
+  resource in `pre` (the telemetry span is the canonical example) must
+  release it itself on the veto path or not be paired with vetoing hooks.
+
+### Fixed
+- **Hook-dispatch containment (review of #2033)**: a throwing
+  `shouldTrigger` matcher is now contained per hook (warning log, reads
+  as "no match") in BOTH `HookRegistry.dispatch` and the new
+  `dispatchAwaited`, and `_fireAndForget` wraps `Hook.execute` in
+  `Future.sync` so a synchronously-throwing non-`async` override lands in
+  the existing `catchError` path instead of escaping. Previously one
+  broken matcher or sync-throwing hook silently disarmed every hook
+  ordered after it — including `HookErrorPolicy.veto` hooks — and a
+  throwing matcher could escape `UseCase.call` entirely from the
+  failure-phase dispatch. Regression tests pin both containments and that
+  a veto hook ordered after a broken hook still vetoes.
+
+## [7.3.0] - 2026-10-28
+
+### Removed
+- **nocterm is no longer a dependency of `zuraffa`** (issue #393, completes the
+  #1661 trim): the TUI runtime (screens, widgets, theme, key bindings, tty
+  guard, DI resolver, use-case bindings) and the `zfa tdd theater` replay TUI
+  moved to the new **`zuraffa_tui`** companion package. The `--with=tui` code
+  generator stays in core — it is pure string emission and imports no
+  nocterm — but the screens it emits now import `package:zuraffa_tui`, so
+  generated TUI projects add `zuraffa_tui: ^7.3.0` to their dependencies.
+  Consumers that only use the core (and every `zuraffa_session` consumer,
+  including `zikzak_inappwebview`) stop inheriting nocterm, `equatable ^2`
+  (which broke any app on equatable ^3), and ~25 transitive packages.
+
+### Fixed
+- `zfa tdd plan --migrate-spec` injects `**Type**` markers after the COMPLETE
+  scenario item, not after the header line (#2030): speckit-authored
+  `**Given/When/Then**` items span multiple lines and a marker written at
+  headerIndex+1 split the prose mid-sentence. Marker positions are computed
+  on the original lines in one walk and applied in a second pass; single-line
+  zuraffa-template rows keep their previous placement, and the emission stays
+  id-faithful and idempotent (regression test
+  `test/plugins/tdd/bug_2030_marker_after_complete_item_test.dart`).
+
+### Fleet
+- Mono-version release train: the whole zuraffa package family ships at the
+  same version (7.3.0), aligned by `scripts/update_fleet.sh` — every package
+  version, cross-family constraint, README install guide, and the
+  `dependency_overrides: xml: 7.1.0` policy move together.
+
+- `zfa tdd run` refuses a non-wired project before generating anything (#2021):
+  with no `.zfa.json`, `pubspec.yaml`, or `dart_test.yaml` at the project root
+  or any ancestor, the run now stops up front — `not zuraffa-wired` refusal,
+  `result=setup-error`, exit 1, journaled `preflight_red`, zero step spawns —
+  instead of scaffolding Dart tests/subjects into a TypeScript repo and dying
+  at `verify-red`. The wiring walk fails open for monorepos (an ancestor
+  marker counts), so Dart worktrees under a workspace parent keep running.
+
+### Changed
+- `Iterable<T>.query` fails closed (#2018): an empty iterable, an unmatched
+  filter, or a params-only query that matches nothing now throws
+  `NotFoundFailure` instead of returning an arbitrary element. Params-only
+  queries match the entity's JSON view (`toJsonLean()`/`toJson()`), so
+  `QueryParams(params: {'id': 'id 1'})` — the documented lookup — keeps
+  working.
+
+## [7.2.0] - 2026-10-20
+
+### Changed
+- Repository cleanup: removed obsolete v4/v5/v6 migration docs and stale references; updated README/AGENTS/CLI docs to v7.
+- Restored `mutation-test.xml` default config; removed orphaned 1417 mutation runner.
+- Documentation version references bumped to 7.2.0 across README and website docs.
+
+## [7.1.0] - 2026-10-12
+
+### Added
+- "Built with Zuraffa" showcase on the website, linking ZikZak (#1727).
+
+### Fixed
+- `zfa make --force` / `--revert` work again and no longer duplicate members in
+  generated providers (#1719).
+- VPC usecase references are consistently PascalCase with no suffix doubling, and
+  dry-run detects existing usecases (#1720).
+- Route-table test template: the 404 probe never attached the route (#1721).
+- Generated TDD artifacts are lint-clean and the build analyze gate filters info
+  severity (#1731).
+- `zfa tdd help` aligns multi-line descriptions (#1730).
+
+### Changed
+- `scripts/local_ci.sh` replays the GitHub Actions workflow against the local
+  toolchain (GitHub Actions is billing-blocked on the private repos), and the
+  agent misfire rule is documented in `AGENTS.md`.
+
+## [7.0.1] - 2026-09-23
+
+### Change
+- Release 7.0.1
+
+## [7.0.0] - 2026-09-15
+
+### Breaking — heavy integrations are now opt-in companion packages (issue #1661, spec 1653)
+
+Core zuraffa stays lean: `graphql`, `gql`, `minio` and `opentelemetry` are
+removed from the core manifest, and the core barrel no longer re-exports
+the heavy surfaces. A core-only consumer's resolved graph drops the entire
+GraphQL/S3/OpenTelemetry stacks (the reported +439-lockfile-line growth is
+gone). The capabilities remain available as opt-in plugins:
+
+```bash
+zfa plugin list               # capabilities + packages + states
+zfa plugin enable graphql     # persists capabilities.graphql, names the package
+```
+
+Migration map (old core symbol → new home):
+
+| Old core export | New home |
+| --- | --- |
+| `MinioClient` | `package:zuraffa_storage` |
+| `MinIOArtifactHook` / `MinIOUploadHook` | `package:zuraffa_storage` |
+| `Zuraffa.enableMinIOArtifacts` / `enableMinIOFailureArtifacts` | storage companion's `MinIOArtifactHook` via `Zuraffa.registerArtifactHook` |
+| `TelemetryHook` | `package:zuraffa_observability` |
+| `OtelTracer` | `package:zuraffa_observability` |
+| `OtelFailureReporter` | `package:zuraffa_observability` |
+| `Zuraffa.enableOtelReporting` | `package:zuraffa_observability` → `ZuraffaObservability.enableOtelReporting` |
+| `export 'package:opentelemetry/api.dart'` | import `package:opentelemetry` (via the observability companion) |
+| GraphQL client/gql/codegen classes (`GraphqlClientFactory`, `GraphqlClientProvider`, `SubscriptionStream`, `GraphqlDocumentBuilder`, `DocumentsDartGenerator`, `NamingUtils`, `GqlFilePreserver`, `GraphQLValidator`, `DatasourceGenerator`, `DiGenerator`, `SliceOrchestrator`, `GraphqlGenerateCommand`) | `package:zuraffa_graphql` |
+
+Retained in core: the light seams (`TraceObserver`, `Hook`/`HookContext`,
+failure-reporter registry, artifact publisher + `ArtifactHook`) and all
+pure-Dart GraphQL codegen helpers (schema parser, type mapper, entity/DTO/
+union/repository generators, schema cache/diff/SDL). `OtelLogExporter`
+stays in core (vendor-free); `Zuraffa.registerOtelLogExporter` replaces
+the removed private wiring.
+
+### Changed
+- `zorphy` and `zorphy_annotation` constraints updated to `^2.4.1`.
+
+## [6.3.0] - 2026-09-14
+
+### Changed
+- Updated zorphy and zorphy_annotation dependencies to 2.4.0 for enhanced stability and performance
+
+## [6.2.3] - 2026-09-11
+
+### Changed
+- Agent runtime gated behind `package:zuraffa/agent.dart`; no longer
+  re-exported from the default barrel (#1344). Migration: swap
+  `import 'package:zuraffa/zuraffa.dart';` for
+  `import 'package:zuraffa/agent.dart';` where agent symbols are used.
+
+### Fixed
+- `zfa tdd view` canonicalizes a MISSING subject file through its nearest
+  existing ancestor before the outside-root guard, so a symlinked project
+  root (macOS `/var/folders` → `/private/var/folders`) reports the
+  missing-subject refusal instead of "points outside the project root"
+  (#1603).
+- Generated `hide` combinators verify against the zuraffa barrel surface:
+  an unresolved barrel (target without a resolvable `zuraffa` entry at
+  generation time) drops the combinator entirely instead of emitting
+  unverified names — `hide Task, TaskPatch` no longer fails `zfa build`'s
+  own analyze gate with `undefined_hidden_name` warnings. The collector
+  also honors `show`/`hide` combinators on export lines and resolves
+  nested directory-relative barrels (#1530).
+- `zfa make` ensures `zuraffa: ^6.0.0` under the target pubspec's
+  `dependencies:` (offline-safe textual patch, idempotent,
+  comment-preserving) when the files it wrote import
+  `package:zuraffa/...` — the core package was never declared for
+  Flutter targets wiring only `zuraffa_flutter`/`zuraffa_ui`, so
+  generated imports fired `depend_on_referenced_packages` (#1530).
+- `green-with-failed-build` make receipts print the failed build output's
+  analyzer `warning -` lines verbatim (or an explicit no-warnings line) —
+  the tolerated class is never a quiet default (#1530).
+- `zfa tdd refactor` no longer deadlocks on a warnings-only analyze-gate
+  refusal: the pass registry's build gate is errors-only (warnings are the
+  `dart fix --apply` pass's input), the verdict is logged with its accurate
+  counts, and the `analyze-gate: warnings-blocking` profile opt-in restores
+  the legacy refusal (#1472). When the build pass's resolved zfa binary
+  provably reports a version other than the driving CLI's, it is bypassed
+  for the driving CLI's own entrypoint — and only then: an equal, unprovable,
+  or unresolvable version keeps the previous resolution, and the replacement
+  itself must prove the driving version too (#1472)
+- Contract-lane generated tests import `flutter_test` on Flutter hosts and
+  resolve the subject through a `package:` URI under `lib/`; the stale-stub
+  re-render keeps the package import instead of reverting to the relative
+  shape (#1513)
+
+## [6.2.2] - 2026-09-08
+
+### Added
+- Refresh stale lane plans on re-plan; split `--force` semantics (#1317)
+- Surface vacuous-green remedy in `tdd run`/`stop` messages and gen-time warnings (#1321)
+- Write contract-row names into plan traces cell (#1316)
+- Refresh proof receipts after the refactor pass (#1315)
+
+### Fixed
+- `tdd make` preflight validates `dependency_overrides` path targets; skip cache-retry on resolution errors (#1306)
+- Slice cut — derive sandbox pubspec deps from copied closure imports (#1305)
+- Exclude event-noun subjects from the UI-intent classifier (#1328)
+- Scan the full FR block for traces in `parseFrContractTraces` (#1332)
+- Refresh cycle-log receipt at run end (#1334)
+- Relativize audited paths against `projectRoot` in receipt preflight (#1314)
+- Anchor `.pubignore` `benchmark/` to root; add publish-time export guard (#1313)
+- `zfa proof check` no longer flags the sanctioned evidence appends the run driver writes to `tdd/cycle-log.md` after the verb receipts that cover it — append-only logs verify when the receipt keeps a content snapshot and the disk bytes are an untouched extension of it (#1327, follows up #1311)
+
+### Changed
+- TDD generation receipts (`tdd make`, `tdd verify-red`, …) keep small-text content snapshots — the same contract the core receipt writer applies — so append-aware proof verification and precise drift diffs work on the TDD cycle's own artifacts (#1327)
+
+## [6.2.1] - 2026-09-07
+
+### Fixed
+- TDD generation honors the spec-declared `[golden]` row tag — no `--golden` flag needed (#1261)
+
+### Chores
+- Untrack `pubspec.lock` files (already gitignored)
+- Add `.pubignore` to exclude `lib/tdd/` from published package
+
+## [6.2.0] - 2026-09-07
+
+### Added
+- **`zfa mock verify` / `--json` verdict / `--explain`** (B+ → A+ upgrade): fleshed-out explain output for the mock plugin
+- **`zfa usecase verify` / `--certify` / `--explain`** (A+ upgrade): verify gate, entity drift detection, certification
+- **`zfa test --explain`** (A- → A+ upgrade): human-readable explain output for the test plugin
+- **`zfa state verify` / receipts / `--explain` / config schema** (C+ → A+ upgrade): full verify gate for the state plugin
+- **`zfa provider --explain`** (B+ → A+ upgrade): comprehensive error handling and explain output
+- **`zfa setup` / `zfa scaffold` integrate `zuraffa_ui`** by default (replaces ShadApp)
+- **Skin contract system** (stages 1-4): typed model, strict parser, runtime binding, receipt enforcement
+- **`zfa make --skin`**: wire the auditor-wrap flag through make
+- **Contract tests** as a first-class `zfa tdd` kind
+- **`zfa tdd plan --migrate-spec`**: injects missing template version marker
+- **UI coverage ledger**: surface derivation, coverage gate, xray binding (22 subjects)
+- **Plugin merge contract**: route barrel, DI graph, conformance gate (21 subjects)
+- **Slice isolation**: sandbox scaffold, sync verifiers, merge gate (22 subjects)
+- **Dependency-table mocks**: certified mocks from declared rows
+- **`zuraffa_flutter` re-exports `go_router`**: generators never emit `package:go_router`
+- **Differential corpus gate**: directional — regressions fail, improvements pass
+
+### Fixed
+- Pre-seed corpus entries with non-vacuous tests
+- Strip `::behaviorId` suffix in orphanedGreenEvidence file check
+- Drop unused local variable in dry-run test
+- `zfa entity create` — reject primitive types as entity names
+- TDD engine — fix vacuous green detection
+- TDD reset done state phantom
+- Verdict envelope docstring literal references
+- Verdict envelope exclusion list
+- `zfa usecase verify` — register `--name` flag
+- `zfa slice` — usage-error exit 2 instead of lying zero
+- Orphaned green evidence file check
+
+### Changed
+- Hard cut to `zuraffa_ui` vocabulary (replaces `shadcn`)
+- `zfa tdd verify` — mutation testing audit + MutationVerifier service
+- Differential vector and corpus loader with ref runner
+
+## [Unreleased]
+
+### Added
+- **`zfa usecase verify` / `--certify` / `--explain` + entity drift gate
+  (SPEC 1119 — the usecase A+ upgrade)**: the usecase plugin gains the
+  A+ proof surface the rest of the fleet already carries:
+  - **`zfa usecase verify <Entity>`** (`UsecaseVerifyCommand`): re-runs
+    the per-method conformance gate against the generated
+    `*_usecase.dart` files — the expected shape is re-derived by driving
+    the REAL generator (`EntityUseCaseGenerator.buildUsecaseSource`,
+    grammar and gate share one derivation) and the on-disk file is
+    audited with the analyzer AST. Exit 0 when every signature matches;
+    exit 1 with `--> fix:` lines otherwise (missing_file / missing_class
+    / missing_method / signature_mismatch / parse_error). `--json`
+    emits ONE canonical `zuraffa.verdict.v1` envelope; knobs resolve
+    receipt-first with flag overrides (the service-verify resolution).
+  - **Entity drift detection** (issue #1034 pattern): the create
+    receipt binds the entity source hash (`spec.sha256`); verify exits 1
+    with the machine-stable `entity_drift` finding when the CURRENT
+    entity source diverges (edited or deleted after generation). No
+    receipt → the gate still audits via conventional file discovery and
+    reports `receiptBound: false` honestly.
+  - **`zfa usecase create --certify`** (mirrors mock's certify): after
+    generation the gate runs over the surface the run wired; exit 1
+    when generation succeeded but verify failed; the `--json` envelope
+    flips to `verdict: "fail"`; the receipt records the certification
+    outcome (`input.certification`).
+  - **`zfa usecase create --explain`**: the human-readable contract
+    block — which methods were generated, which variant each uses
+    (`Future<T>` / `Stream<T>` / `Future<void>`), which base class each
+    extends, which result/params type is bound, which exception type is
+    thrown (`CancelledException`); rides the additive `explain`
+    envelope key in `--json` mode (issue #1122 pattern).
+  - **Split (order 5)**: request resolution moves to one shared
+    `UsecaseCreateRequest` (was duplicated in the capability and the
+    command); the plugin surface is no longer one-capability-only —
+    `VerifyUsecaseCapability` ships the gate to the MCP/agent surface
+    (issue #996 provenance receipts). The per-method verdict shape on
+    create is UNCHANGED — extend, never break.
+- **`zfa skin drive` — the VM-service tapAnchor seam (issue #1112, part of
+  #1015)**: synthetic clicks (cliclick, CGEvent, AX press) never reach the
+  Flutter macOS view; the VM-service evaluate does. This ships the pilot's
+  driver as a framework feature:
+  - **Typed `TapResult`** (`lib/src/skin/tap_result.dart`, exported by
+    `package:zuraffa/skin.dart`): `found | disabled | notFound |
+    error(String)` with the canonical sub-agent JSON —
+    `{"result":"found","tapped":true}` … — byte-identical on every host OS.
+  - **Element-walk `debugTapAnchor`** in the emitted kit: the pilot-proved
+    walk (`WidgetsBinding.instance.rootElement` + `visitChildElements`)
+    finds the anchor by its `zfa:<id>` key and invokes the REAL `onPressed`
+    (kDebugMode-only); `debugTapAnchorJson` is the synchronous evaluate
+    facade the CLI drives; the old `Future<bool>` signature is superseded.
+  - **Generated per-view seam**: `zfa make/view --skin --anchor <id>`
+    (repeatable) emits one `SkinContractRow.anchorExists` row AND one
+    `Future<TapResult> debugTap<PascalAnchor>() => debugTapAnchor('zfa:<id>')`
+    per anchor — the function lookup is just `debugTap<PascalAnchor>()`.
+    Without anchors the output is unchanged.
+  - **`zfa skin drive --dart-uri=<vm-service-uri> --anchor=<zfa-key>`**:
+    connects over the plain `http(s)://` URI the runner prints (converts to
+    ws), orders the isolate's libraries kit-first, evaluates the seam, and
+    prints the TapResult JSON as the final stdout line (exit codes: found 0
+    / disabled 1 / notFound 2 / error 3). It auto-resumes a paused-at-start
+    isolate — the `flutter test --start-paused` widget-test-runner lane —
+    and polls until the anchor answers or `--timeout` elapses.
+    `vm_service: ^15.3.0` is a direct dependency (pure Dart; Constitution
+    VII holds).
+  - **Widget test bridge**: `zfa skin kit` (and `--skin` view generation)
+    also emits `test/skin/zfa_anchor_test_bridge.dart` — the target
+    project's `package:zuraffa_test` surface: `zfaAnchorTapped(tester,
+    zfaKey)` drives the same anchor-by-key lookup, then `pumpAndSettle`s
+    (safe: the test-tree anchor can't reschedule itself). The bridge
+    imports the kit through the app's `package:` URI — a relative import
+    would compile a SECOND kit library (two registries; found and fixed in
+    the scratch-app proof).
+  - Real Flutter proof: emitted kit + bridge in a scratch app —
+    `flutter analyze` clean, 7/7 seam widget tests; `zfa skin drive` proven
+    LIVE against a widget-test runner (`flutter test --start-paused`) —
+    exit 0, `{"result":"found","tapped":true}`, the real handler traced in
+    the runner's own log. Skin behaviors now drive through `debugTapAnchor`
+    exclusively; the repo carries zero synthetic-click code.
+
+- **Mock-first make-default (issue #1194, part of #908 P0)**: the `crud` and
+  `read-only` presets now bundle the `mock` plugin — the same default the
+  `engine` preset already had — so a fresh `zfa make <Entity> --preset=crud`
+  slice lands in the MOCKED tier: certified mock datasource behind the real
+  interface via the simulation-mode binding
+  (`registerLazySingleton<EntityDataSource>(() => EntityMockDataSource())`),
+  mock data seeds, and `registerSimulationBindings(getIt)` wired into
+  `di/index.dart`. The app boots on certified mocks with
+  `--dart-define=SIMULATION=true` on first run, before any real adapter is
+  written; swapping to REAL is `zfa tdd realize`'s job (companion issue).
+- **`--compile-only` opt-out flag** on `zfa make`: teams who want compile-only
+  slices (no mocked tier emitted) pass `--compile-only`; it drops the mock
+  plugin uniformly across every preset (crud, read-only, engine) and overrides
+  preset-implied or explicit `--mock`.
+- **Tier on the generation receipt**: every mocked-tier make run records
+  `tier: "MOCKED"` (or `tier: "COMPILE-ONLY"` under the opt-out) in the
+  proof.v1 receipt input, the run artifact, and the `--format=json` summary;
+  the run output names the tier and the swap command.
+- **Certified mocks by default**: a mocked-tier make run structurally
+  certifies the emitted mock (AST interface conformance + fixture digests of
+  the final on-disk bytes) and ships `.zfa/receipts/mock-<entity>.json` —
+  the same certification `zfa mock create --certify` computes — so a fresh
+  slice is demo-green without a separate certify step.
+
+### Fixed
+- `DiPlugin` default usecase vocabulary no longer emits
+  `toggle_<entity>_usecase_di.dart` for canonical
+  `zfa make <Entity> --preset=crud` runs: the default now matches the usecase
+  plugin's `['get', 'update']` (spec #972 FR-5). The stale `'toggle'` entry
+  emitted a DI file importing a usecase class that is never generated by
+  default, so fresh crud slices did not compile (surfaced by #1194's
+  simulation-boot test).
+- `zfa mock create --force` regenerates the whole generated pair: the
+  `<entity>_datasource.dart` interface is rewritten from the current
+  `--methods` together with the mock (the write path was
+  create-if-absent, so a `--methods` change left a stale interface
+  against a fresh mock — `Missing concrete implementation` — and
+  `--certify` dead-ended on the mismatched pair no matter how many times
+  `--force` re-ran). Non-force runs keep the create-if-absent contract;
+  revert precedence is unchanged (#1418).
+- The mock lane's generated `hide` combinators verify against the MOCK
+  barrel's own export surface (`package:zuraffa/mock.dart` — walked from
+  `lib/mock.dart`, honoring combinators, unioned with the zuraffa surface
+  under the bare re-export) instead of assuming the `zuraffa.dart`
+  surface: a name the mock barrel does not export is never hidden from
+  it, so `undefined_hidden_name` cannot fire from the mock lane's own
+  emission; the #942 collision hide is preserved (#1418).
+
+## [6.1.0] - 2026-08-28
+
+### Change
+- Release 6.1.0
+
+## [6.0.2] - 2026-08-28
+
+### Fixed
+- `PresenterPlugin` now honors `useZorphy: false` for update params: the generated
+  `update<Entity>` presenter method emits `UpdateParams<IdType, Partial<Entity>>`
+  (and a `Partial<Entity>` `data` parameter) instead of the `EntityPatch` variant.
+  `useZorphy: true` (the default) keeps the existing `EntityPatch` behavior. Fixes
+  the regression tracked as `zuraffa_flutter` issue #9 / core issue #431.
+
+## [6.0.1] - 2026-08-24
+
+### Fixed
+- Republish of 6.0.0 with the #481 packaging fix: `lib/src/extensions/future_extensions.dart` was missing from the published 6.0.0 tarball because a non-anchored `extensions/` ignore rule matched `lib/src/extensions/`. PR #482 anchored the rule to the repo root (`/extensions/`); this 6.0.1 release ships the fix so downstream consumers (`zikzak_session`, etc.) can use hosted `zuraffa: ^6.0.1` instead of a path dep.
+
+
+## [6.0.0] - 2026-08-21
+
+### Dependencies
+- Bumped `zorphy` to `^2.1.1` and `zorphy_annotation` to `^2.1.1` (hosted).
+- Removed git/path dependency overrides in favor of hosted dependencies; CLI (`zfa setup` / `zfa init`) now wires hosted versions (`zuraffa: ^6.0.0`).
+- `zuraffa_flutter` now depends on hosted `zuraffa: ^6.0.0` (dropped `publish_to: none`).
+
+### Features
+- **v6 architecture**: split into a pure-Dart core + `zuraffa_flutter` UI plugin; plugin system & usecase abstraction layer; micro-frontend baseline (`ZuraffaPlugin` / `ZuraffaEngine`).
+- **GraphQL**: full-stack schema-to-code generation, client runtime + subscriptions, union-to-sealed mapping, `.graphql` file generation, `graphql_core` foundation.
+- **State**: Fragmented Signal Slices, Dual-Layer State Boundary (DomainState vs ViewState), Cache Sync, ControlledWidget templates.
+- **DI**: `@Datasource` & `@Repository` decorators for auto-DI.
+- **Decorator-Driven Architecture**: foundation + `@Cacheable`, `@Route`, `@RequiresAuth`, `@Retry`, `@TrackEvent` decorators.
+- **X-Ray**: deterministic widget ID infrastructure, visual overlay with bounding boxes, MCP bridge for AI inspection, control deck with `@XRayMock` synthetic payload injector.
+- **MCP**: MCP Server 2.0 agentic control plane; expose any zuraffa app features as MCP tools.
+- **CLI**: `zfa setup` + `zfa init` dependency wiring, `zfa graphql introspect`, `zfa self-update`; `zfa entity create` enhancements (`--type-key`, `--subtype-wire-value`, `--allow-forward-refs`), route/app-shell generators, deep-link + bottom-navigation support.
+- **Migration**: v5 → v6 upgrade path tooling.
+- **SQLite**: `zfa sqlite adapter <Entity>` generates a SQLite-backed DataSource (`package:sqlite3`, WAL journaling, schema_version marker, id-keyed SQL writes, patch updates, watch streams) — server/Dart-VM projects no longer hand-write the boilerplate (issue #464).
+- **Sessions**: built-in generic session plugin (`Session`, six zero-config presets, scoped `SessionContainer`, portable JSON envelopes, pluggable persistence) usable from pure-Dart and Flutter apps alike; new `zikzak_session` package layers portable browser sessions (cookies, headers, tokens) on top (spec #015).
+
+### Fixes
+- Numerous `zfa` codegen/CLI correctness fixes (entity identity, field naming, route/view contract alignment).
+- Build verification hardening (fail loudly on missing parts / 0 outputs).
+- CWD-contamination test infrastructure hardening.
+- `zfa di create <Entity>` now emits per-method usecase DI (`GetXUseCase` / `UpdateXUseCase`) for entity-based flows instead of referencing the non-existent `<Entity>UseCase` (issue #410).
+- `zfa plugin add` now appends `..register(XPlugin())` to the existing `ZuraffaEngine()` cascade instead of emitting a dangling registration statement (issue #245).
+- `zfa migrate state` now emits `import 'package:zuraffa/zuraffa.dart';` in generated `*_view_state.dart` files that reference `AppFailure`, so the generated output compiles instead of reporting `undefined_class` (issue #466).
+- Pre-existing failing test suites fixed: `route_golden` (RouteParams uses valid parameter syntax), `cache_golden` (@Cacheable/@CacheInvalidate generator output), `di_container_override` (`registerSingleton` override handling), and `zuraffa_flutter` `xray_control_deck` widget tests (issue #256).
+
+## [5.7.1] - 2026-07-30
+
+### Change
+- MCP tools now execute CLI commands (fixes #150, #160); zuraffa_setup tool; config_init dependency report; Process.start timeout fix
+
+## [5.6.2] - 2026-07-21
+
+### Changed
+
+- **Zorphy upgrade**: updated zorphy to ^1.9.0, zorphy_annotation to ^1.9.0
+- **Checked deserialization**: all `fromJson` methods now use `$checkedCreate` with `checked: true`, providing field-level error messages that identify which field failed and the input data on deserialization failure — significantly easier debugging for malformed JSON
+- **Credentials**: `fromJson` now delegates to the generated `_$CredentialsFromJson` instead of manual casting; `toJson` no longer includes the spurious `hashCode` field
+
+### Fixed
+
+- **Publish script**: hardened submodule handling — `git pull --rebase` replaced with `git fetch origin master` + `reset --hard` for deterministic zuraffa-zed sync; submodule is now updated in step 2 (before the main repo commit) so the submodule pointer is correct in the release commit
+
+### Chores
+
+- Zed extension submodule updated for v5.6.2
+
+## [5.6.0] - 2026-07-16
+
+### Added
+
+- **Strategy plugin**: new `zfa strategy create` command generates `FetchStrategy` abstract base, concrete pipeline variants, and a `StrategySelector` for pluggable data-fetching — ideal for A/B testing scraper vs AI pipelines at runtime
+- **Strategy builder**: auto-resolves entity imports for `paramsType`/`returnsType` generics via `CommonPatterns.entityImports()`, using the same resolution logic as all other generators
+- **`FetchStrategy<Input, Output>`**: core abstraction with `fetchOne`, `fetch` (stream), and `canHandle` — analogous to `SyncStrategy` for the fetch side
+- **`StrategySelector`**: wires candidates in priority order, returns the first applicable strategy via `select()`, or all via `selectAll()`
+- **`GeneratorConfig`**: `enableStrategy` and `strategyNames` fields for strategy-aware code generation
+
+### Fixed
+
+- **Strategy builder**: unnecessary braces in string interpolation (`${variantPascal}` → `$variantPascal`)
+- **Strategy plugin**: eliminated `late final StrategyBuilder` by moving initialization to the initializer list
+- **Hook registry**: replaced `bool get isEnabled` / `set isEnabled` wrapper with a direct public field (`unnecessary_getters_setters` lint)
+
+### Tests
+
+- **23 new tests** covering the strategy plugin and builder: plugin metadata & capability lifecycle, builder content verification (abstract base, concrete variants, selector), entity import resolution, dry-run behavior, file path correctness, and dynamic type fallback
+
+## [5.5.0] - 2026-07-13
+
+### Changed
+
+- **API bridge codegen**: generated bridge files now use `getIt<Type>()` pattern instead of `GetIt.I<Type>()`, aligning with Zuraffa project conventions
+- **Example app**: added `registerTodoApiBridge()` to main.dart, demonstrating full bridge initialization lifecycle on app startup
+
+### Documentation
+
+- Updated VM Service API Bridge design docs with v5.4.2 codegen details
+
+## [5.4.2] - 2026-07-09
+
+### Fixed
+
+- **API bridge codegen**: `_paramsTypeHasFromJson()` now strips generic type parameters (e.g. `QueryParams<Product>` → `QueryParams`) before checking for entity directories
+- **API bridge codegen**: known Zuraffa core types (`QueryParams`, `QueryParamsPatch`) now correctly identified as having `fromJson`
+- **API bridge codegen**: stream handlers with primitive params (String, int, etc.) now generate proper extraction instead of broken `.fromJson(json)` calls
+- **API bridge codegen**: usecases whose params type lacks `fromJson` are now skipped with a warning instead of generating uncompilable code
+- **Test**: added `skip` test for unknown param types, all 8 tests passing
+
+## [5.4.1] - 2026-07-09
+
+### Fixed
+
+- **API bridge codegen**: usecase import filenames now use `_usecase.dart` convention (strip "UseCase" suffix before camelToSnake)
+- **API bridge codegen**: missing param type imports (e.g. `BarcodeSpark`) now auto-detected from entity directory
+- **API bridge codegen**: bogus entity-path imports for non-entity param types (e.g. `SearchMissingCoreChannelsParams`) no longer generated
+- **API bridge codegen**: removed unused `uuid` import from generated bridge files
+- **Test**: added import correctness test covering `_usecase.dart` convention and entity param imports
+
+## [5.4.0] - 2026-07-09
+
+### Added
+
+- **VM Service API Plugin (`--with=vmapi`)**: auto-registers every UseCase as a Dart VM Service extension
+  - `ZuraffaApiBridge` core: init, registration, result serialization, stream subscription management
+  - `ApiEndpoint` metadata model with `_list` discovery endpoint
+  - `zfa api <Entity>` CLI command generating usecase bridge code
+  - `call_api.sh` convenience script with auto-isolate discovery
+  - Complete example: Todo entity with 2 exposed usecases (create, getList)
+  - Release mode safety gate (`kReleaseMode` no-op), profile mode opt-in
+  - Tested and validated on iOS Simulator and macOS Desktop
+
+### Fixed
+
+- **Build**: removed broken `json_serializable` git override (`ref: analyzer-13`) — uses pub.dev `^6.13.1` instead
+- **Build**: `flutter pub get` now resolves cleanly with analyzer 13.0.0 override for hive_ce_generator + dart_style coexistence
+- **Example app**: `setupDependencies()` `catchError` now logs the full error and stack trace instead of silently swallowing
+- **Example app**: Todo UseCases now properly registered in DI (all 7: create, delete, get, getList, update, watch, watchList)
+- **Bridge handler**: `createTodo` auto-fills `id` and `createdAt` defaults for Zorphy `fromJson` compatibility
+
+### Docs
+
+- Architecture, sequence, and class diagrams for the VM Service API bridge
+- Platform testing guide with Python, curl, and shell script examples
+- 6 key insights captured in INSIGHTS.md (isolateId requirement, DI registration, Zorphy defaults, Hive initialization, analyzer compatibility)
+
+## [5.3.0] - 2026-06-30
+
+### Added
+
+- **UseCase Hook System**: implement `UseCaseHook` protocol with pre-execute, post-execute, and error handlers. Supports stream and future usecases.
+  - `EngagementHook` with smart timeout + fallback orchestration
+  - Declarative hook registration via `UseCase<T, P>` constructor
+- **Offline-first sync plugin**: local-first architecture with pending change queue and conflict resolution
+- **Sync retry strategy**: `syncFailed` + `autoSync` for smart retry on failure
+
+### Fixed
+
+- Zed extension WASM binary now uses correct `wasm32-wasip1` target in publish script
+- Various repository fixes
+
+## [5.2.1] - 2026-06-12
+
+## [5.2.1] - 2026-06-12
+
+### Added
+
+- **Declarative UseCase Registration** (`zfa register <UseCaseName>`): batch command to register a use case across Presenter, Controller, State, and DI layers without regenerating files.
+  - `zfa presenter register <UseCaseName>` — register in an existing Presenter
+  - `zfa controller register <UseCaseName>` — register in an existing Controller
+  - `zfa state register <FieldName>` — register a field in an existing State class
+  - `zfa register <UseCaseName> --all` — batch register across all layers in one command
+  - Individual plugin capabilities auto-discovered by the MCP server
+- **MCP `zuraffa_register` tool** — batch registration tool exposed via the MCP server, calls `RegisterCommand` in-process
+- **Zed extension arch fix** — corrected arm64 asset matching (no longer incorrectly falls back to x64 binaries)
+- **Zed extension API fallback** — `try_direct_download` constructs GitHub release download URL directly when the API is rate-limited or unavailable
+- **publish.sh now tags zuraffa-zed** — creates and pushes a `v<VERSION>` tag on the zuraffa-zed repo to trigger CI releases
+
+### Changed
+
+- **MCP server runs fully in-process**: all CLI commands (`make`, `entity create`, `build`, `config`, `graphql`, `register`, etc.) now execute via `CliRunner.runCapturing()` instead of spawning subprocesses. The `zuraffa_mcp_server` binary no longer requires a separate `zfa` CLI download or `dart run zuraffa:zuraffa`.
+- Removed `_resolveExecutable()`, `_cachedExecutable`, and subprocess-based `_runZuraffaProcess` — dead code from the old subprocess approach
+- Zed extension version updated from `4.1.2` to `5.1.1`, matching the zuraffa package version
+- MCP server source refactored for better readability and maintainability
+
+### Fixed
+
+- **Zed extension timeout on setup**: fixed asset matching logic and added a direct URL download fallback that works when the GitHub API is rate-limited
+- **MCP server `_runQuickDoctor`** restored (was accidentally removed during refactoring)
+
+## [5.1.1] - 2026-06-12
+
+### Change
+
+- Release 5.1.1
+
+## [5.0.2] - 2026-06-12
+
+### Change
+
+- Release 5.0.2
+
+## [5.1.0] - 2026-06-06
+
+### Added
+
+- **JSON mock data generation** (`zfa mock json`): generates standalone JSON files with mock entity data using `fromJson`-based Dart helpers for fast prototyping without code changes
+- Clean folder convention for mock JSON data: `data/mock_json/{domain}/{entity}.mock.json`
+- `JsonMockCapability` plugin capability with plan/execute interface
+- `MockJsonBuilder` with path resolution, domain auto-detection, and recursive nested entity generation
+- `MockJsonHelperBuilder` generating typed async accessors (`loadProducts()`, `loadSampleProduct()`, etc.)
+- `MockValueBuilder.generateMockValuesForJson()` heuristic value generation for JSON output
+- Polymorphic entity `_type` discriminator support in JSON output with switch-based deserialization
+- Enum value extraction via `EntityAnalyzer.getEnumValues()` for correct JSON serialization
+- Generation metadata tracking (`.mock.json.meta`) with hash comparison for non-overwrite safety
+- Field mismatch detection warning when entity fields change between generations
+- `--json` flag on `zfa mock` command and `zfa mock json <Entity>` subcommand
+- `generateMockJson` and `mockJsonDomain` fields to `GeneratorConfig`
+- `mockJsonByDefault` config key to `ZfaConfig`
+
+### Changed
+
+- `MockBuilder.generate()` delegates to `MockJsonBuilder` when `generateMockJson` is true
+- `MockPlugin` registers `JsonMockCapability` and exposes `mock-json` config schema option
+- `MockEntityGraphBuilder` supports recursive nested entity name collection for JSON generation
+- Version bumped to 5.1.0
+
+## [5.0.1] - 2026-06-01
+
+### Change
+
+- Release 5.0.1
+
+## [5.0.0] - 2026-06-01
+
+### 🎉 Zuraffa v5 - Canonical Pipeline Release
+
+Zuraffa v5 establishes a unified, AI-first generation contract that replaces the legacy one-shot generator with a three-step canonical workflow.
+
+### Breaking Changes
+
+#### Removed Legacy Generator
+
+- **Removed**: `zfa generate` command and all legacy one-shot generation patterns
+- **Removed**: Custom domain/output directory overrides (`--domain-root`, `--entity-output`, `--output`)
+- **Removed**: Legacy flag combinations and implicit generation modes
+- **Migration**: Use the v5 canonical workflow: `entity create → make → build`
+
+#### Fixed Architecture Contract
+
+- **Fixed domain root**: `lib/src/domain` (no longer configurable)
+- **Fixed entity location**: `lib/src/domain/entities/{entity_snake}/{entity_snake}.dart`
+- **Fixed output root**: `lib/src` for all generated architecture
+
+### New Canonical Workflow
+
+The v5 contract enforces a three-step pipeline for all generation:
+
+```bash
+# Step 1: Create entity
+zfa entity create -n Product --field id:String --field name:String --field price:double
+
+# Step 2: Generate architecture
+zfa make Product --preset=crud --methods=get,getList,create,update,delete --with=vpc --state --di --test
+
+# Step 3: Run code generation
+zfa build
+```
+
+### What `zfa make` Generates
+
+- Repository interfaces and implementations
+- DataSource interfaces and implementations
+- UseCases for business logic
+- Presenters/Controllers/State (with `--with=vpc --state`)
+- DI registration (with `--di`)
+- Tests (with `--test`)
+- Cache support (with `--cache`)
+- Mock datasources (with `--mock`)
+- Route generation (with `--route`)
+- GraphQL support (with `--gql`)
+
+### Configuration Changes
+
+#### New `.zfa.json` Structure
+
+Migrated from flat configuration to nested v5 shape:
+
+```json
+{
+  "plugins": {
+    "defaults": {
+      "di": true,
+      "test": true,
+      "method_append": true,
+      "route": false,
+      "mock": false,
+      "gql": false,
+      "cache": false
+    },
+    "disabled": []
+  },
+  "planning": {
+    "presets": {},
+    "aliases": {}
+  },
+  "ui": {
+    "adaptiveLayouts": true,
+    "platformShells": true,
+    "layoutTargets": ["mobile", "tablet", "desktop"],
+    "adaptivePreset": "adaptive-feature"
+  },
+  "entity": {
+    "entityFirst": true,
+    "jsonByDefault": true,
+    "compareByDefault": true,
+    "filterByDefault": true
+  },
+  "buildByDefault": false,
+  "formatByDefault": false
+}
+```
+
+### Project Memory: `.zfa/` Directory
+
+Introduced `.zfa/` as the canonical project memory surface for AI agents and developers:
+
+```
+.zfa/
+├── plans/          # Generation plans from `zfa make --plan`
+├── runs/           # Execution logs and results
+├── blueprints/     # Architectural blueprints and patterns
+├── decisions/      # Architectural decision records (ADRs)
+├── manifests/      # Feature manifests
+└── context.json    # Project context and state
+```
+
+See `doc/ZFA_MEMORY_GUIDE.md` for complete usage documentation.
+
+### MCP Server Updates
+
+- **Updated**: MCP now advertises `zuraffa_make` instead of `zuraffa_generate`
+- **Updated**: MCP tool execution invokes `zfa make` with the v5 contract
+- **Updated**: Tool schema includes `preset` parameter for generation patterns
+- **Updated**: Documentation reflects the canonical v5 pipeline
+
+### Documentation Updates
+
+#### New Documentation
+
+- `doc/V5_ACTION_PLAN.md` - Concrete v5 execution plan
+- `doc/ROADMAP.md` - v5-specific roadmap
+- `doc/ZFA_MEMORY_GUIDE.md` - Complete `.zfa/` usage guide
+- `doc/ZIK_ZAK_V5_MIGRATION_PLAN.md` - Downstream migration guide
+
+#### Updated Documentation
+
+- `README.md` - v5 workflow and examples
+- `website/docs/intro.md` - v5 getting started
+- `website/docs/features/mcp-server.md` - v5 MCP integration
+- `doc/MCP_SERVER.md` - v5 MCP documentation
+- `AGENTS.md` - v5 AI agent guidelines
+
+#### Removed Documentation
+
+- `doc/cli_command_list.md` - Obsolete command reference
+- `doc/combinations.md` - Legacy flag combinations
+
+### Example Project Updates
+
+- Updated `example/.zfa.json` to v5 shape
+- Updated all example code to use v5 workflow
+- Cleaned legacy command references from comments
+- Updated test fixtures to v5 patterns
+
+### Testing & Validation
+
+#### New Tests
+
+- `test/regression/v5_pipeline_contract_test.dart` - Enforces v5 contract across all surfaces
+- Enhanced `test/regression/docs_command_consistency_test.dart` - Validates documentation consistency
+
+#### Test Coverage
+
+- ✅ Default `.zfa` context uses `entity create → make → build`
+- ✅ Core docs teach the full canonical pipeline
+- ✅ MCP advertises `zuraffa_make` and invokes `make`
+- ✅ `example/.zfa.json` uses v5 config shape
+- ✅ No active/public surfaces contain legacy commands
+
+### Migration Guide
+
+#### For Existing Projects
+
+**Step 1: Update `.zfa.json`**
+
+```bash
+# Backup your current config
+cp .zfa.json .zfa.json.backup
+
+# Update to v5 shape (see doc/ZFA_MEMORY_GUIDE.md for examples)
+```
+
+**Step 2: Update project guidance**
+
+- Replace `zfa generate` with `zfa make` in docs
+- Remove custom `--domain-root` or `--output` flags
+- Update to fixed domain structure: `lib/src/domain/entities/{entity}/{entity}.dart`
+
+**Step 3: Seed `.zfa/` directory**
+
+```bash
+mkdir -p .zfa/{plans,runs,blueprints,decisions,manifests}
+# Create initial context.json (see doc/ZFA_MEMORY_GUIDE.md)
+```
+
+**Step 4: Regenerate features incrementally**
+
+```bash
+# Start with a small pilot feature
+zfa make YourEntity --preset=crud --methods=get,getList --with=vpc --state --di --test
+zfa build
+```
+
+#### For New Projects
+
+Start with the v5 workflow from day one:
+
+```bash
+# 1. Create entity
+zfa entity create -n User --field id:String --field email:String --field name:String
+
+# 2. Generate architecture
+zfa make User --preset=crud --methods=get,getList,create,update,delete --with=vpc --state --di --test
+
+# 3. Build
+zfa build
+```
+
+### Presets and Patterns
+
+#### Available Presets
+
+- `crud` - Complete CRUD stack (repository, datasource, usecases)
+- `feature` - Full feature with presentation layer
+- `adaptive-feature` - Feature with adaptive layouts for multiple platforms
+
+#### Common Patterns
+
+**Basic CRUD:**
+
+```bash
+zfa make Product --preset=crud --methods=get,getList,create,update,delete
+```
+
+**Full stack with presentation:**
+
+```bash
+zfa make Product --preset=crud --with=vpc --state --di --test --methods=get,getList,create,update,delete
+```
+
+**Custom use case:**
+
+```bash
+zfa make SearchProducts usecase --domain=search --params=SearchQuery --returns=List<Product>
+```
+
+**With caching:**
+
+```bash
+zfa make Product --preset=crud --cache --methods=get,getList
+```
+
+**With mocks:**
+
+```bash
+zfa make Product --preset=crud --mock --use-mock --methods=get,getList
+```
+
+### Adaptive Layouts
+
+v5 introduces adaptive layout support for multi-platform applications:
+
+```bash
+zfa make Product --preset=adaptive-feature --with=vpc --state --methods=get,getList
+```
+
+Generates layouts for:
+
+- Mobile
+- Tablet
+- Desktop
+- Platform-specific shells (e.g., macOS)
+
+### AI Agent Integration
+
+v5 is designed for AI-first workflows:
+
+- **MCP Server**: Native integration with Claude and other AI assistants
+- **Project Memory**: `.zfa/` provides context for multi-session agent work
+- **Canonical Contract**: Single workflow reduces agent confusion
+- **Documentation**: All docs teach the same v5 pattern
+
+### Downstream Validation
+
+The v5 pipeline has been validated with:
+
+- Complete example project regeneration
+- ZikZak app migration (Phase 1 complete)
+- v4 vs v5 comparison testing
+- Comprehensive regression test suite
+
+### Known Limitations
+
+#### Manual Integration for `.zfa/`
+
+Currently, `.zfa/` artifacts are manually managed. Future versions will:
+
+- Auto-write plans when using `--plan`
+- Auto-write run logs after execution
+- Auto-update `context.json` after generation
+
+#### GraphQL Support
+
+GraphQL plugin is currently disabled by default. Full GraphQL support is planned for v5.1.x.
+
+### Upgrade Path
+
+**From v4.x to v5.0.0:**
+
+1. Update `pubspec.yaml`: `zuraffa: ^5.0.0`
+2. Run `flutter pub get`
+3. Update `.zfa.json` to v5 shape
+4. Update project docs to remove legacy commands
+5. Seed `.zfa/` directory structure
+6. Regenerate features incrementally with `zfa make`
+
+**Estimated migration time:**
+
+- Small projects (1-5 features): 1-2 hours
+- Medium projects (5-15 features): 4-8 hours
+- Large projects (15+ features): Plan incremental migration over multiple sessions
+
+### Future Roadmap
+
+#### v5.1.x (SHOULD)
+
+- `zfa migrate` - Automated migration from v4 to v5
+- `zfa doctor` - Project health diagnostics
+- `zfa diff` - Preview regeneration changes
+- GraphQL decision and integration
+- Adaptive layout refinements
+- Unified root resolution
+
+#### v5.2.x (NICE TO HAVE)
+
+- Enhanced docs and recipes
+- Faster incremental regeneration
+- Better progress reporting
+- Routing helpers
+- Realtime scaffolds
+
+### Contributors
+
+Special thanks to all contributors who helped shape v5.
+
+### Resources
+
+- **Documentation**: https://zuraffa.com
+- **Repository**: https://github.com/arrrrny/zuraffa
+- **Issues**: https://github.com/arrrrny/zuraffa/issues
+- **Migration Guide**: `doc/ZIK_ZAK_V5_MIGRATION_PLAN.md`
+- **Memory Guide**: `doc/ZFA_MEMORY_GUIDE.md`
+- **Action Plan**: `doc/V5_ACTION_PLAN.md`
+
+---
+
+## [4.1.2] - 2026-05-03
+
+### Change
+
+- Release 4.1.2
+
+## [4.1.1] - 2026-05-02
+
+### Fixed
+
+- **OpenTelemetry Context Management**: Fixed "unexpected (mismatched) token given to detach" errors in concurrent scrape operations.
+  - `trace()` and `traceSync()` now wrap their entire body in `runZoned()` to fork isolated zones with independent context stacks.
+  - Parent context is explicitly captured and passed to `startSpan()` to maintain correct span lineage across asynchronous boundaries.
+
+### Change
+
+- Release 4.1.1
+
+## [4.1.0] - 2026-04-30
+
+### Added
+
+- **Analyzer 13 Support**: Full compatibility with `analyzer` package version 13.0.0.
+- **Robust AST Migration**: Implemented reflection-based helper methods in `InjectBuilder` and `MethodExtractor` to support both legacy and new `analyzer` AST structures (`RegularFormalParameter`, `NamedArgument`, `Label.name`, etc.).
+- **Improved DI Generation**: Enhanced constructor merging and registration logic to handle breaking changes in formal parameter representation.
+
+### Changed
+
+- Upgraded `dart_style` to `^3.1.9` for improved code formatting and compatibility with new Dart features.
+- Pin `analyzer` to `13.0.0` in dependency overrides to ensure stable code generation.
+- Upgraded `zorphy_annotation` to `^1.7.0` and `zorphy` to `^1.6.9`.
+
+## [4.0.10] - 2026-04-26
+
+### Change
+
+- Release 4.0.10
+
+## [4.0.9] - 2026-04-26
+
+### Change
+
+- Release 4.0.9
+
+## [4.0.8] - 2026-04-26

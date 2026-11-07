@@ -1,0 +1,860 @@
+/// `zfa tdd compose <behavior-id>` — the subject-composition generation
+/// step of the acceptance make pipeline (issue #642; spec
+/// 052-acceptance-make-composition).
+///
+/// Issue #642: `generation_planner.plan()` is pure and description-keyed,
+/// so an acceptance behavior that reports `unexpressible` in phase 1
+/// deterministically reports `unexpressible` again at phase 2 — the
+/// driver's scripted phase-2 flip had no real-pipeline counterpart. This
+/// command is the missing composition surface: it implements an ACCEPTANCE
+/// behavior's gen'd subject stub against the feature's already-green unit
+/// subjects (discovered by `CompositionTargets`), so the 047 make
+/// pipeline's composition fallback can actually flip a deferred acceptance
+/// make green at phase 2.
+///
+/// The command mirrors `zfa tdd wire` (bug #610's subject-implementation
+/// step for the entity pipeline) in every structural respect:
+///   1. Resolves the behavior's registry record (same resolution rules as
+///      `verify-red`/`make`/`wire`).
+///   2. Requires certified-red evidence in `tdd/cycle-log.md` (make's
+///      FR-001 precondition — composition implements a certified-red
+///      behavior).
+///   3. Requires the subject artifact on disk (gen wrote it). A subject
+///      that is RECORDED but MISSING from disk is the doctor-grade
+///      owned-and-missing drift: the `drift:` line and the doctor's
+///      `-->` fix line are printed (the shared `MissingArtifactDrift`
+///      classifier — the same one `zfa tdd doctor` uses, so the two
+///      commands can never disagree about the same file) and the outcome
+///      is the named `drift`, never an opaque `runner-error` (issue
+///      #1974).
+///   4. Discovers the feature's composable green unit subjects via
+///      `CompositionTargets` (unit-kind test-list rows ∩ green cycle-log
+///      evidence ∩ existing subject artifacts). Zero anchors →
+///      `no-green-units` misfire-stop; a green unit whose registry
+///      record is absent → `stale-evidence` refusal (issue #1550 — the
+///      green premise is stale, re-derive the artifacts); a missing
+///      anchor artifact → `runner-error` misfire-stop; a unit-kind
+///      target → fail-closed refusal (composition is the
+///      acceptance-subject surface only).
+///   5. Replaces the subject's `UnimplementedError` stub body with the
+///      minimal composed implementation: the green unit subject files are
+///      imported and referenced as the implementation anchor (spec 047
+///      FR-005's minimal generation applied to composition). The paired
+///      test file is never touched (044 ownership contract).
+///   6. Is idempotent: a subject with no `UnimplementedError` left is
+///      reported `already-composed` and exits 0, so a resumed pipeline
+///      re-running the step stays green.
+///
+/// The machine contract is the summary line
+/// `compose: behavior=<id> outcome=<label> feature=<feature>` as the final
+/// stdout line on every code path; exit 0 means exactly "composed (or
+/// already composed)".
+library;
+
+import 'dart:io';
+
+import 'package:args/command_runner.dart';
+import 'package:path/path.dart' as p;
+
+import '../services/artifact_registry.dart';
+import '../services/composition_targets.dart';
+import '../services/cycle_log_sections.dart';
+import '../services/feature_path_resolver.dart';
+import '../services/package_relative_path.dart';
+import '../services/registry_drift.dart';
+import '../services/tdd_generation_receipt.dart';
+import '../services/verdict_emitter.dart';
+import '../models/verdict_envelope.dart';
+import '../tdd_plugin.dart';
+import '../../../core/project/project_root.dart';
+
+/// Outcome labels for the machine-readable summary line.
+enum ComposeOutcome {
+  composed('composed'),
+  alreadyComposed('already-composed'),
+  notCertifiedRed('not-certified-red'),
+  noGreenUnits('no-green-units'),
+  // Issue #1550: the green-unit premise is contradicted by the registry
+  // — a unit the cycle-log advertises green has no registry record (its
+  // artifacts were dropped, canonically by a reset). An actionable
+  // refusal naming the stale premise, never a runner-error the operator
+  // cannot act on.
+  staleEvidence('stale-evidence'),
+  // Issue #1974: the composed subject is RECORDED in the registry but
+  // MISSING from disk — the same owned-and-missing drift `zfa tdd doctor`
+  // diagnoses. It is a named state with a named recovery, never an opaque
+  // runner-error: the drift line and the doctor's `-->` fix line are
+  // printed and carried in the machine verdict.
+  drift('drift'),
+  runnerError('runner-error');
+
+  const ComposeOutcome(this.label);
+  final String label;
+}
+
+class ComposeCommand extends Command<void> {
+  ComposeCommand(this.plugin) {
+    argParser.addFlag(
+      'json',
+      help:
+          'Emit a versioned verdict.v1 JSON envelope as the final stdout '
+          'line (VISION §5, issue #964).',
+      negatable: false,
+    );
+    argParser.addOption(
+      'feature',
+      help:
+          'Feature name (e.g. 052-acceptance-make-composition). Restricts '
+          'target resolution to specs/<feature>/tdd/artifacts.json. When '
+          'omitted, every feature registry is scanned.',
+    );
+    argParser.addOption(
+      'project',
+      aliases: const ['project-root'],
+      help:
+          'Project root containing specs/, test/, and lib/ (the fixture or '
+          'target project). When omitted, the current working directory is '
+          'used. Tests pass the temp fixture root here instead of mutating '
+          'Directory.current, which is process-global and unsafe under '
+          'concurrent test execution.',
+    );
+  }
+
+  final TddPlugin plugin;
+
+  /// Issue #969: the envelope carrier the wrapper reads on exit.
+  final VerdictContext _verdict = VerdictContext();
+
+  @override
+  String get name => 'compose';
+
+  @override
+  String get description =>
+      'Compose an acceptance behavior\'s subject against the feature\'s '
+      'green unit subjects — the composition step of the acceptance make '
+      'pipeline (issue #642, spec 052).';
+
+  @override
+  String get invocation =>
+      'zfa tdd compose [<behavior-id>] [--feature <name>] [--project <path>]';
+
+  /// The stub signature compose rewrites — exactly wire's (`int|void
+  /// <name>() => throw UnimplementedError(`), so compose and wire stay
+  /// interchangeable on the same subject contract.
+  static final RegExp _stubSignature = RegExp(
+    r'^(int|void)\s+([A-Za-z_][A-Za-z0-9_]*)\(\)\s*=>\s*'
+    r'throw UnimplementedError\(',
+    multiLine: true,
+  );
+
+  @override
+  Future<void> run() => runWithVerdictEnvelope(this, _verdict, _run);
+
+  Future<void> _run() async {
+    final rest = argResults?.rest ?? const <String>[];
+    final behaviorId = rest.isNotEmpty ? rest.first : null;
+    final featureFlag = argResults?['feature'] as String?;
+    if (featureFlag != null && featureFlag.isNotEmpty) {
+      try {
+        _validateFeatureSegment(featureFlag);
+      } on UsageException catch (e) {
+        print('zfa tdd compose: ${e.message}');
+        _printSummary(
+          behavior: behaviorId ?? '-',
+          outcome: ComposeOutcome.runnerError,
+          feature: 'unknown',
+        );
+        exitCode = 1;
+        return;
+      }
+    }
+    final projectFlag = argResults?['project'] as String?;
+    final cwd = projectFlag != null && projectFlag.isNotEmpty
+        ? p.absolute(projectFlag)
+        : ProjectRoot.find(anchorDir: 'specs');
+
+    // -------------------------------------------------------------
+    // 1. Resolve the behavior's registry record (FR-001).
+    // -------------------------------------------------------------
+    _ResolvedTarget target;
+    try {
+      target = await _resolveTarget(cwd, behaviorId, featureFlag);
+    } on ComposeResolutionError catch (e) {
+      print('zfa tdd compose: ${e.message}');
+      _printSummary(
+        behavior: behaviorId ?? '-',
+        outcome: e.outcome,
+        feature: e.feature ?? featureFlag ?? 'unknown',
+      );
+      exitCode = 1;
+      return;
+    }
+    final record = target.record;
+    print('zfa tdd compose: behavior ${record.behaviorId}');
+    print('   feature: ${target.featureName}');
+
+    // -------------------------------------------------------------
+    // 2. Precondition: certified-red evidence (FR-002).
+    // -------------------------------------------------------------
+    final certifiedRed = await _hasCertifiedRed(
+      target.featureDir,
+      record.behaviorId,
+    );
+    if (!certifiedRed) {
+      print(
+        'zfa tdd compose: behavior "${record.behaviorId}" has no '
+        'certified-red evidence in cycle-log.md. Run `zfa tdd verify-red '
+        '${record.behaviorId}` first.',
+      );
+      _printSummary(
+        behavior: record.behaviorId,
+        outcome: ComposeOutcome.notCertifiedRed,
+        feature: target.featureName,
+      );
+      exitCode = 1;
+      return;
+    }
+
+    // -------------------------------------------------------------
+    // 3. The subject artifact must exist (gen wrote it).
+    //
+    // Issue #1974: a recorded-but-missing subject is the doctor-grade
+    // owned-and-missing drift — the shared classifier names it and
+    // prescribes the recovery, exactly as `zfa tdd doctor` does.
+    //
+    // Review: the registry is classified on the SAME stored path forms
+    // the decision reads. The re-anchored view silently heals a
+    // relocated registry (issue #1397), so deciding on it let compose
+    // report success where the doctor reports a drift for the very same
+    // file — and the fallback then prescribed a destructive reset where
+    // the doctor prescribes a path rewrite.
+    // -------------------------------------------------------------
+    final normalizedCwd = p.normalize(p.absolute(cwd));
+    final rawRecords = await ArtifactRegistry(
+      featureDir: target.featureDir,
+    ).loadAll(reanchor: false);
+    final recordedSubject = record.subjectPath;
+    final subjectPath = p.normalize(
+      p.isAbsolute(recordedSubject)
+          ? recordedSubject
+          : p.join(normalizedCwd, recordedSubject),
+    );
+    final unresolvedSubjectFile = File(subjectPath);
+    late final String resolvedCwd;
+    late final String resolvedSubjectPath;
+    try {
+      resolvedCwd = await Directory(normalizedCwd).resolveSymbolicLinks();
+      if (!await unresolvedSubjectFile.exists()) {
+        // The shared, ORDERED diagnosis — the doctor's own recovery order
+        // (issue #1974 review). A compose that prescribed the reset where
+        // the doctor prescribes the adoption would send the operator down
+        // the destructive road; a compose that prescribed the reset where
+        // the doctor prescribes a path rewrite would drop certified
+        // behaviors over a path FORM.
+        final diagnosis = await RegistryDrift.diagnose(
+          projectRoot: normalizedCwd,
+          featureName: target.featureName,
+          featureRef: _featureRef(normalizedCwd, target.featureName),
+          records: rawRecords,
+        );
+        print(
+          'zfa tdd compose: the registry record for behavior '
+          '"${record.behaviorId}" points to a missing subject file at '
+          '"$recordedSubject".',
+        );
+        for (final drift in diagnosis.drifts) {
+          print('  drift: $drift');
+        }
+        print(
+          '   --> fix: ${diagnosis.prescription.fix} — '
+          '${diagnosis.prescription.why}',
+        );
+        _printSummary(
+          behavior: record.behaviorId,
+          outcome: ComposeOutcome.drift,
+          feature: target.featureName,
+          drifts: diagnosis.drifts,
+          fix: diagnosis.prescription.fix,
+          prescription: diagnosis.prescription.prescription,
+        );
+        exitCode = 1;
+        return;
+      }
+      resolvedSubjectPath = await unresolvedSubjectFile.resolveSymbolicLinks();
+    } on FileSystemException catch (e) {
+      print(
+        'zfa tdd compose: could not resolve the subject path '
+        '"$recordedSubject": ${e.message}',
+      );
+      _printSummary(
+        behavior: record.behaviorId,
+        outcome: ComposeOutcome.runnerError,
+        feature: target.featureName,
+      );
+      exitCode = 1;
+      return;
+    }
+    if (!p.equals(resolvedCwd, resolvedSubjectPath) &&
+        !p.isWithin(resolvedCwd, resolvedSubjectPath)) {
+      print(
+        'zfa tdd compose: the registry record for behavior '
+        '"${record.behaviorId}" points outside the project root at '
+        '"$recordedSubject". Run `zfa tdd gen ${record.behaviorId}` to '
+        'restore its artifacts.',
+      );
+      _printSummary(
+        behavior: record.behaviorId,
+        outcome: ComposeOutcome.runnerError,
+        feature: target.featureName,
+      );
+      exitCode = 1;
+      return;
+    }
+    final subjectFile = File(resolvedSubjectPath);
+
+    // -------------------------------------------------------------
+    // 4. Discover the composable green unit subjects (FR-003). The kind
+    //    gate lives here too: a unit-kind target fails closed.
+    // -------------------------------------------------------------
+    final discovery = await const CompositionTargets().discover(
+      projectRoot: resolvedCwd,
+      featureDir: target.featureDir,
+      behaviorId: record.behaviorId,
+      // Issue #1162: bug features may compose against stub-only unit
+      // subjects (honestly labeled `[stub]`) — the sanctioned path from
+      // a prose scenario's certified red to green. Non-bug features keep
+      // the strict no-green-units gate (unchanged).
+      allowStubAnchors: CompositionTargets.isBugFeatureDir(target.featureDir),
+    );
+    if (discovery is CompositionTargetFailure) {
+      print('zfa tdd compose: ${discovery.message}');
+      // Issue #1550: the stale green premise is its own outcome — a unit
+      // advertised green with no registry record is a stale-evidence
+      // refusal (re-derive the artifacts), not a runner-error.
+      final outcome = switch (discovery.code) {
+        'no-green-units' => ComposeOutcome.noGreenUnits,
+        'stale-evidence' => ComposeOutcome.staleEvidence,
+        _ => ComposeOutcome.runnerError,
+      };
+      _printSummary(
+        behavior: record.behaviorId,
+        outcome: outcome,
+        feature: target.featureName,
+      );
+      exitCode = 1;
+      return;
+    }
+    final anchors = (discovery as CompositionTargetResolved).anchors;
+    // Issue #923: the anchor set may mix green subjects with entity-wired
+    // stubs — the audit line names both honestly. Issue #1162: it may
+    // also include stub-only subjects (bug features), labeled [stub].
+    final wiredCount = anchors.where((a) => a.entityWired).length;
+    final stubCount = anchors.where((a) => a.stubOnly).length;
+    final greenCount = anchors.length - wiredCount - stubCount;
+    final parts = <String>[
+      if (greenCount > 0) '$greenCount green',
+      if (wiredCount > 0) '$wiredCount entity-wired',
+      if (stubCount > 0) '$stubCount stub-only',
+    ];
+    final anchorSummary = '${parts.join(', ')} unit subject(s)';
+    print(
+      '   anchors: ${anchors.map((a) {
+        final label = a.stubOnly
+            ? ' [stub]'
+            : a.entityWired
+            ? ' [entity-wired]'
+            : '';
+        return '${a.behaviorId}$label';
+      }).join(', ')} '
+      '($anchorSummary)',
+    );
+
+    // -------------------------------------------------------------
+    // 5. Parse the subject stub (FR-005: idempotence + refusal).
+    // -------------------------------------------------------------
+    late final String raw;
+    try {
+      raw = await subjectFile.readAsString();
+    } on FileSystemException catch (e) {
+      print(
+        'zfa tdd compose: could not read the subject file at '
+        '"$recordedSubject": ${e.message}',
+      );
+      _printSummary(
+        behavior: record.behaviorId,
+        outcome: ComposeOutcome.runnerError,
+        feature: target.featureName,
+      );
+      exitCode = 1;
+      return;
+    }
+    if (!raw.contains('UnimplementedError')) {
+      // Idempotent re-run (resumed pipeline): nothing to do.
+      print(
+        'zfa tdd compose: subject at "$recordedSubject" is already '
+        'implemented — nothing to compose.',
+      );
+      _printSummary(
+        behavior: record.behaviorId,
+        outcome: ComposeOutcome.alreadyComposed,
+        feature: target.featureName,
+      );
+      exitCode = 0;
+      return;
+    }
+    final stub = _stubSignature.firstMatch(raw);
+    if (stub == null) {
+      print(
+        'zfa tdd compose: subject at "$recordedSubject" carries an '
+        'UnimplementedError in an unrecognized shape — refusing to rewrite '
+        'a file this command did not generate.',
+      );
+      _printSummary(
+        behavior: record.behaviorId,
+        outcome: ComposeOutcome.runnerError,
+        feature: target.featureName,
+      );
+      exitCode = 1;
+      return;
+    }
+    final returnType = stub.group(1)!;
+    final functionName = stub.group(2)!;
+
+    // -------------------------------------------------------------
+    // 6. Emit the composed implementation (FR-004).
+    // -------------------------------------------------------------
+    final composed = await _renderComposed(
+      record: record,
+      returnType: returnType,
+      functionName: functionName,
+      anchors: anchors,
+      projectRoot: resolvedCwd,
+      subjectDir: p.dirname(resolvedSubjectPath),
+    );
+    try {
+      await subjectFile.writeAsString(composed);
+    } on FileSystemException catch (e) {
+      print(
+        'zfa tdd compose: could not write the subject file at '
+        '"$recordedSubject": ${e.message}',
+      );
+      _printSummary(
+        behavior: record.behaviorId,
+        outcome: ComposeOutcome.runnerError,
+        feature: target.featureName,
+      );
+      exitCode = 1;
+      return;
+    }
+    // Issue #969 T003: the composed subject becomes self-certifying.
+    await TddGenerationReceipts.writeBestEffort(
+      projectRoot: resolvedCwd,
+      command: 'tdd compose',
+      target: record.behaviorId,
+      feature: target.featureName,
+      files: {resolvedSubjectPath: 'update'},
+    );
+    print('   composed: $recordedSubject');
+    _printSummary(
+      behavior: record.behaviorId,
+      outcome: ComposeOutcome.composed,
+      feature: target.featureName,
+    );
+    exitCode = 0;
+  }
+
+  // -------------------------------------------------------------------
+  // Resolution + rendering helpers.
+  // -------------------------------------------------------------------
+
+  /// The behavior description the record carries — the record's own
+  /// parsing contract ([ArtifactRecord.descriptionSegment]), shared with
+  /// make/wire/func (bug #871: legacy `<id> — ` echoes stripped).
+  static String _descriptionFor(ArtifactRecord record) =>
+      record.descriptionSegment;
+
+  /// The RESOLVED feature reference (issue #1573): the `--feature` flag
+  /// form `migrate-paths` and `gen --adopt` parse. Re-resolving a bare
+  /// name through `resolveWithPin` keeps `specs/<name>` whenever that
+  /// directory exists, so a plain name would point a DIFFERENT registry
+  /// than the one just diagnosed.
+  String _featureRef(String projectRoot, String featureName) =>
+      TddFeaturePaths.resolveWithPin(
+        projectRoot: projectRoot,
+        featureRef: featureName,
+      ).ref;
+
+  /// The registry record for [behaviorId] in its RAW stored form — never
+  /// the re-anchored view (issue #1397: the path FORM is itself drift,
+  /// and the re-anchored view silently heals a relocated registry).
+  Future<ArtifactRecord?> _rawRecordOf(
+    ArtifactRegistry registry,
+    String behaviorId,
+  ) async {
+    for (final record in await registry.loadAll(reanchor: false)) {
+      if (record.behaviorId == behaviorId) return record;
+    }
+    return null;
+  }
+
+  Future<String> _renderComposed({
+    required ArtifactRecord record,
+    required String returnType,
+    required String functionName,
+    required List<ComposableUnitSubject> anchors,
+    required String projectRoot,
+    required String subjectDir,
+  }) async {
+    final imports = StringBuffer();
+    final symbols = StringBuffer();
+    for (var i = 0; i < anchors.length; i++) {
+      final anchor = anchors[i];
+      imports.writeln(
+        "import '${_packageImportFor(projectRoot, anchor, subjectDir)}' "
+        'as anchor$i;',
+      );
+      if (i > 0) symbols.write(', ');
+      symbols.write('anchor$i.${anchor.symbol}');
+    }
+    // Issue #923: the anchor list may include entity-wired subjects whose
+    // behaviors are still stubs — name each anchor's status so the audit
+    // trail says exactly what the composition rests on. Issue #1162:
+    // stub-only anchors (bug features) carry the same honesty.
+    // Issue #1983: the header names each anchor by its PORTABLE path — the
+    // header is a committed source file, so the machine-absolute path the
+    // discovery resolved would leak the developer's home directory into the
+    // repository and mean nothing on another machine. The path is the
+    // anchor's package-qualified, project-root-relative form
+    // (`packages/app:lib/tdd/<feature>/u1_subject.dart`), so a reader can
+    // resolve it from the project root and a cross-package anchor is
+    // unambiguous. The behavior ids were already portable; only the paths
+    // change.
+    final anchorEntries = <String>[];
+    for (final a in anchors) {
+      final anchorPath = await packageRelativePath(
+        a.subjectPath,
+        projectRoot: projectRoot,
+      );
+      anchorEntries.add(
+        '${a.behaviorId} '
+        '($anchorPath)'
+        '${a.stubOnly
+            ? ' [stub]'
+            : a.entityWired
+            ? ' [entity-wired]'
+            : ''}',
+      );
+    }
+    final anchorList = anchorEntries.join(', ');
+    final body = returnType == 'void'
+        ? '''
+  // Composition anchor: references the feature's green / entity-wired unit
+  // subjects this behavior builds on.
+  // ignore: unused_local_variable
+  final composedUnitAnchors = <Function>[$symbols];
+'''
+        : '''
+  // Composition anchor: references the feature's green / entity-wired unit
+  // subjects this behavior builds on.
+  // ignore: unused_local_variable
+  final composedUnitAnchors = <Function>[$symbols];
+  return 0;
+''';
+    return '''
+// GENERATED IMPLEMENTATION — `zfa tdd compose ${record.behaviorId}` (issue
+// #642; spec 052-acceptance-make-composition: the acceptance subject is
+// composed against the feature's green / entity-wired unit subjects by a
+// generation-pipeline step, never by a wrapper or by hand).
+//
+// behavior_id: ${record.behaviorId}
+// source_criterion: ${record.sourceCriterion}
+// composed against: $anchorList
+// description: ${_descriptionFor(record)}
+//
+// This replaces the `zfa tdd gen` stub with the minimal composed
+// implementation (spec 047 FR-005): the feature's unit subjects are the
+// implementation anchors. An anchor marked [entity-wired] carries only
+// the `zfa tdd wire` wiring so far (issue #923) — the composed scenario's
+// real green transition lands when those unit subjects are filled with
+// business logic in later cycles. Extend the body with real behavior in
+// later cycles — the paired test file is immutable (044 ownership).
+//
+// The subject name is derived from the behavior id (`subject_${record.behaviorId.toLowerCase()}`) and is
+// deliberately snake_cased — the generator KNOWS the name it emits, so
+// the lint its shape provably trips is suppressed here rather than
+// renaming the contract surface (issue #1035).
+// ignore_for_file: non_constant_identifier_names
+library;
+
+$imports
+/// Subject for behavior ${record.behaviorId}, composed against the
+/// feature's unit subject anchors by the generation pipeline.
+$returnType $functionName() {$body}
+''';
+  }
+
+  /// The `package:<name>/...` import for an anchor subject file under the
+  /// project root's lib/, resolved from the target project's pubspec
+  /// `name:`. A subject outside lib/ falls back to a file-relative path
+  /// from the composing subject's directory (gen's default layout keeps
+  /// subjects under lib/tdd/, so the package import is the norm).
+  String _packageImportFor(
+    String projectRoot,
+    ComposableUnitSubject anchor,
+    String subjectDir,
+  ) {
+    final libRoot = p.join(projectRoot, 'lib');
+    // Resolve symlinks to handle macOS /var/folders -> /private/var/folders
+    // mismatch between resolved cwd and unresolved artifact paths.
+    var anchorPath = anchor.subjectPath;
+    try {
+      anchorPath = Link(anchorPath).resolveSymbolicLinksSync();
+    } catch (_) {
+      // Not a link or doesn't exist — use the original path.
+    }
+    if (p.isWithin(libRoot, anchorPath)) {
+      final pubspec = File(p.join(projectRoot, 'pubspec.yaml'));
+      var pkg = 'app';
+      if (pubspec.existsSync()) {
+        final m = RegExp(
+          r'^name:\s*(\S+)',
+          multiLine: true,
+        ).firstMatch(pubspec.readAsStringSync());
+        if (m != null) pkg = m.group(1)!;
+      }
+      final rel = p.relative(anchorPath, from: libRoot);
+      return 'package:$pkg/${rel.replaceAll(r'\', '/')}';
+    }
+    // Fallback: a relative import from the composing subject's directory.
+    return p
+        .relative(anchor.subjectPath, from: subjectDir)
+        .replaceAll(r'\', '/');
+  }
+
+  Future<bool> _hasCertifiedRed(String featureDir, String behaviorId) async {
+    final file = File(p.join(featureDir, 'tdd', 'cycle-log.md'));
+    if (!await file.exists()) return false;
+    final raw = await file.readAsString();
+    // Issue #1353: scan EVERY section — a stale non-red section from an
+    // earlier failed attempt must not shadow a later certified-red section
+    // for the same behavior (mirrors MakeCommand._hasCertifiedRed).
+    for (final section in splitCycleLogSections(raw)) {
+      final behavior = RegExp(
+        r'^- behavior: (\S+)',
+        multiLine: true,
+      ).firstMatch(section);
+      if (behavior == null || behavior.group(1) != behaviorId) continue;
+      if (RegExp(r'^- kind: red$', multiLine: true).hasMatch(section)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  Future<_ResolvedTarget> _resolveTarget(
+    String cwd,
+    String? behaviorId,
+    String? featureFlag,
+  ) async {
+    final registries = await _scanRegistries(cwd, featureFlag);
+
+    if (behaviorId != null) {
+      final matches = <_ResolvedTarget>[];
+      for (final entry in registries) {
+        // The RAW stored form (issue #1397): the re-anchored view heals a
+        // relocated registry, and deciding on the healed form let compose
+        // report success where `zfa tdd doctor` reports a drift.
+        final record = await _rawRecordOf(entry.registry, behaviorId);
+        if (record != null) {
+          matches.add(
+            _ResolvedTarget(record, entry.featureDir, entry.featureName),
+          );
+        }
+      }
+      if (matches.isEmpty) {
+        throw ComposeResolutionError(
+          'unknown behavior id "$behaviorId". No matching record in any '
+          'specs/<feature>/tdd/artifacts.json'
+          '${featureFlag != null && featureFlag.isNotEmpty ? ' for feature $featureFlag' : ''}. '
+          'Run `zfa tdd gen $behaviorId` to materialize it.',
+          outcome: ComposeOutcome.runnerError,
+          feature: featureFlag,
+        );
+      }
+      if (matches.length > 1) {
+        final list = matches
+            .map((m) => '${m.record.behaviorId} (${m.featureName})')
+            .join(', ');
+        throw ComposeResolutionError(
+          'ambiguous behavior id "$behaviorId" registered in multiple '
+          'features: $list. Use --feature to disambiguate.',
+          outcome: ComposeOutcome.runnerError,
+        );
+      }
+      return matches.single;
+    }
+
+    // No id: infer ONLY when exactly one behavior has gen artifacts and
+    // certified-red evidence — the precondition for `compose` (mirrors
+    // make's single-candidate inference).
+    final candidates = <_ResolvedTarget>[];
+    for (final entry in registries) {
+      final certified = await _certifiedRedBehaviors(entry.featureDir);
+      for (final record in await entry.registry.loadAll(reanchor: false)) {
+        if (certified.contains(record.behaviorId)) {
+          candidates.add(
+            _ResolvedTarget(record, entry.featureDir, entry.featureName),
+          );
+        }
+      }
+    }
+    if (candidates.isEmpty) {
+      throw ComposeResolutionError(
+        'no behavior with both gen artifacts and certified-red evidence — '
+        'nothing to compose. Run `zfa tdd verify-red <behavior-id>` first.',
+        outcome: ComposeOutcome.notCertifiedRed,
+      );
+    }
+    if (candidates.length > 1) {
+      final list = candidates
+          .map((c) => '${c.record.behaviorId} (${c.featureName})')
+          .join(', ');
+      throw ComposeResolutionError(
+        'ambiguous invocation: multiple behaviors have certified-red '
+        'evidence: $list. Pass an explicit behavior id.',
+        outcome: ComposeOutcome.runnerError,
+      );
+    }
+    return candidates.single;
+  }
+
+  Future<List<_RegistryEntry>> _scanRegistries(
+    String cwd,
+    String? featureFlag,
+  ) async {
+    if (featureFlag != null && featureFlag.isNotEmpty) {
+      final featureDir = p.join(cwd, 'specs', featureFlag);
+      return [
+        _RegistryEntry(
+          featureFlag,
+          featureDir,
+          ArtifactRegistry(featureDir: featureDir),
+        ),
+      ];
+    }
+    final specsDir = Directory(p.join(cwd, 'specs'));
+    if (!await specsDir.exists()) return const [];
+    final dirs = specsDir.listSync().whereType<Directory>().toList()
+      ..sort((a, b) => p.basename(a.path).compareTo(p.basename(b.path)));
+    final entries = <_RegistryEntry>[];
+    for (final dir in dirs) {
+      final registryFile = File(p.join(dir.path, 'tdd', 'artifacts.json'));
+      if (await registryFile.exists()) {
+        entries.add(
+          _RegistryEntry(
+            p.basename(dir.path),
+            dir.path,
+            ArtifactRegistry(featureDir: dir.path),
+          ),
+        );
+      }
+    }
+    return entries;
+  }
+
+  /// Behavior ids that have a red entry in the feature's cycle-log.
+  Future<Set<String>> _certifiedRedBehaviors(String featureDir) async {
+    final file = File(p.join(featureDir, 'tdd', 'cycle-log.md'));
+    if (!await file.exists()) return const {};
+    final raw = await file.readAsString();
+    final certified = <String>{};
+    for (final section in splitCycleLogSections(raw)) {
+      final behavior = RegExp(
+        r'^- behavior: (\S+)',
+        multiLine: true,
+      ).firstMatch(section);
+      if (behavior == null) continue;
+      if (RegExp(r'^- kind: red$', multiLine: true).hasMatch(section)) {
+        certified.add(behavior.group(1)!);
+      }
+    }
+    return certified;
+  }
+
+  void _printSummary({
+    required String behavior,
+    required ComposeOutcome outcome,
+    required String feature,
+    List<String> drifts = const [],
+    String? fix,
+    String? prescription,
+  }) {
+    print(
+      'compose: behavior=$behavior outcome=${outcome.label} feature=$feature',
+    );
+    // Issue #969: the outcome label IS the exit class.
+    _verdict
+      ..exitClass = outcome.label
+      ..outcome = switch (outcome) {
+        ComposeOutcome.composed => VerdictOutcome.pass,
+        ComposeOutcome.alreadyComposed => VerdictOutcome.stopped,
+        _ => VerdictOutcome.fail,
+      }
+      ..details['behavior'] = behavior
+      ..feature = feature == 'unknown' ? null : feature;
+    // Issue #1974: the machine verdict carries the drift and its recovery
+    // — a verdict that names neither leaves the operator with the command
+    // that failed and nothing else.
+    if (drifts.isNotEmpty) _verdict.drifts.addAll(drifts);
+    if (fix != null && fix.isNotEmpty) _verdict.fix = fix;
+    // The machine verdict names the recovery CLASS too (adopt, migrate,
+    // repair, reset) — the doctor's own machine-readable field, so the two
+    // commands classify the same state the same way.
+    if (prescription != null && prescription.isNotEmpty) {
+      _verdict.details['prescription'] = prescription;
+    }
+  }
+}
+
+/// Resolution-stage failure: message, outcome, and feature context if known.
+class ComposeResolutionError implements Exception {
+  ComposeResolutionError(this.message, {required this.outcome, this.feature});
+
+  final String message;
+  final ComposeOutcome outcome;
+  final String? feature;
+
+  @override
+  String toString() => message;
+}
+
+class _RegistryEntry {
+  const _RegistryEntry(this.featureName, this.featureDir, this.registry);
+
+  final String featureName;
+  final String featureDir;
+  final ArtifactRegistry registry;
+}
+
+class _ResolvedTarget {
+  const _ResolvedTarget(this.record, this.featureDir, this.featureName);
+
+  final ArtifactRecord record;
+  final String featureDir;
+  final String featureName;
+}
+
+/// `--feature` lands in a filesystem path: keep it a single plain
+/// directory segment (mirrors verify_red_command.dart / make_command.dart).
+void _validateFeatureSegment(String feature) {
+  if (feature.contains('/') ||
+      feature.contains(r'\') ||
+      feature == '.' ||
+      feature == '..') {
+    throw UsageException(
+      'invalid --feature "$feature": expected a single spec directory name '
+          'such as 052-acceptance-make-composition, not a path.',
+      'zfa tdd compose [<behavior-id>] [--feature <name>]',
+    );
+  }
+}
