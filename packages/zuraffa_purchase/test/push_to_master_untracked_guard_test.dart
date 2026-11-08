@@ -113,6 +113,80 @@ void main() {
       _expectAbsentFromMaster(repo, '.pub-cache');
     });
 
+    test('leaves a directory alone when every file in it is ignored', () {
+      // `.pub-cache/*` ignores the CONTENTS while git still reports the
+      // directory itself as untracked — the form gitignore.io emits for many
+      // tools. `git add -A` stages nothing from it, so a publish must not be
+      // blocked on it.
+      File(
+        '${repo.path}/.gitignore',
+      ).writeAsStringSync('.dart_tool/\n.pub-cache/*\n');
+      _git(repo, ['commit', '-q', '-am', 'ignore the private pub cache']);
+      _dirtyTrackedFile(repo);
+      _untrackedFile(repo, '.pub-cache/hosted/pub.dev/x-1.0.0/pubspec.yaml');
+
+      final result = _runPushToMaster(repo);
+
+      expect(result.exitCode, 0, reason: result.stdout.toString());
+      _expectAbsentFromMaster(repo, '.pub-cache');
+    });
+
+    test('leaves an empty untracked directory alone', () {
+      // A stale empty directory from a crashed build holds nothing to sweep.
+      _dirtyTrackedFile(repo);
+      Directory('${repo.path}/scratch').createSync();
+
+      final result = _runPushToMaster(repo);
+
+      expect(result.exitCode, 0, reason: result.stdout.toString());
+    });
+
+    test('accepts the trailing-slash path its own refusal prints', () {
+      // The obvious operator move is to copy the path out of the error
+      // message, which prints `  scratch/` — that must be honoured verbatim.
+      _dirtyTrackedFile(repo);
+      _untrackedFile(repo, 'scratch/keep.txt');
+
+      final result = _runPushToMaster(
+        repo,
+        environment: {'PUBLISH_UNTRACKED_ALLOW': 'scratch/'},
+      );
+
+      expect(result.exitCode, 0, reason: result.stdout.toString());
+      _expectOnMaster(repo, 'scratch/keep.txt');
+    });
+
+    test('does not glob-expand an allow entry against the directory', () {
+      // `for a in $allow` pathname-expands as well as word-splitting, so a
+      // `scr*` entry would silently allow `scratch/` without naming it.
+      _dirtyTrackedFile(repo);
+      _untrackedFile(repo, 'scratch/keep.txt');
+
+      final result = _runPushToMaster(
+        repo,
+        environment: {'PUBLISH_UNTRACKED_ALLOW': 'scr*'},
+      );
+
+      expect(result.exitCode, isNot(0));
+      expect(result.stdout, contains('scratch'));
+      _expectAbsentFromMaster(repo, 'scratch');
+    });
+
+    test('reports a commitless publish branch, not the untracked directory', () {
+      // Nothing to merge is the real problem; pointing the operator at
+      // .gitignore would send them to fix the wrong thing.
+      _git(repo, ['checkout', '-q', '-b', 'publish-0.0.0', 'master']);
+      _git(repo, ['branch', '-q', '-D', 'publish-1.2.3']);
+      _dirtyTrackedFile(repo);
+      _untrackedFile(repo, 'scratch/keep.txt');
+
+      final result = _runPushToMaster(repo);
+
+      expect(result.exitCode, isNot(0));
+      expect(result.stdout, contains('no commits beyond master'));
+      expect(result.stdout, isNot(contains('Untracked directories')));
+    });
+
     test('still auto-commits untracked files', () {
       _dirtyTrackedFile(repo);
       _untrackedFile(repo, 'notes.txt');
@@ -121,6 +195,20 @@ void main() {
 
       expect(result.exitCode, 0, reason: result.stdout.toString());
       _expectOnMaster(repo, 'notes.txt');
+    });
+
+    test('ignores an ambient PUBLISH_UNTRACKED_ALLOW from the runner', () {
+      // The suite must not inherit the operator's shell: a guard test that
+      // passes alone and fails where the knob is exported is the worst kind
+      // of flake. `environment:` replaces the parent's, so the variable the
+      // test does not pass cannot reach the script.
+      _dirtyTrackedFile(repo);
+      _untrackedFile(repo, 'scratch/keep.txt');
+
+      final result = _runPushToMaster(repo);
+
+      expect(result.exitCode, isNot(0));
+      _expectAbsentFromMaster(repo, 'scratch');
     });
   });
 }
@@ -139,6 +227,14 @@ void _untrackedFile(Directory repo, String relativePath) {
 }
 
 /// Runs the script under test against [repo].
+///
+/// The child gets ONLY the variables named here plus the few the script needs
+/// to find its tools. `Process.runSync` adds `environment` to the parent's by
+/// default, and the parent is the test runner's shell — where an operator who
+/// followed PUBLISH.md has `PUBLISH_UNTRACKED_ALLOW` exported. That variable
+/// would leak in and silently allow the untracked directory a test expects to
+/// be refused, so the suite would pass alone and fail in exactly the shell the
+/// knob documents.
 ProcessResult _runPushToMaster(
   Directory repo, {
   Map<String, String> environment = const {},
@@ -148,7 +244,12 @@ ProcessResult _runPushToMaster(
     'bash',
     [script.path, '-f'],
     workingDirectory: repo.path,
-    environment: environment,
+    environment: {
+      'PATH': Platform.environment['PATH']!,
+      'HOME': Platform.environment['HOME']!,
+      ...environment,
+    },
+    includeParentEnvironment: false,
   );
 }
 

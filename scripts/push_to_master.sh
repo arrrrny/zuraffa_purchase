@@ -21,11 +21,17 @@ echo -e "${BLUE}Publish branch: $BRANCH (version $VERSION)${NC}"
 # or a scratch checkout ends up in a release commit: `git add -A` sweeps them
 # in silently, and the resulting commit is what gets tagged. Refuse them
 # unless the operator names the directory in PUBLISH_UNTRACKED_ALLOW
-# (comma or space separated; a bare directory name or a repo-relative path).
+# (comma or space separated; a bare directory name or a repo-relative path,
+# with or without the trailing slash the refusal prints).
 untracked_dirs_refused() {
-    local root allow dir name allowed refused
+    local root allow dir name allowed refused a
+    local -a allow_arr
     root=$(git rev-parse --show-toplevel 2>/dev/null || pwd -P)
     allow=$(printf '%s' "${PUBLISH_UNTRACKED_ALLOW:-}" | tr ',' ' ')
+    # Word-split without pathname expansion: `for a in $allow` also globs an
+    # entry containing * ? or [ against the cwd, so `scr*` would silently
+    # allow a directory it never named.
+    IFS=' ' read -r -a allow_arr <<< "$allow"
     refused=""
     while IFS= read -r dir; do
         # --directory collapses an untracked directory into one `dir/` entry
@@ -38,13 +44,20 @@ untracked_dirs_refused() {
         dir=${dir%/}
         name=${dir##*/}
         allowed=false
-        for a in $allow; do
+        for a in "${allow_arr[@]}"; do
+            # The refusal below prints the entry with its trailing slash, so
+            # copying that path back into PUBLISH_UNTRACKED_ALLOW has to work.
+            a=${a%/}
             if [ "$a" = "$dir" ] || [ "$a" = "$name" ]; then
                 allowed=true
                 break
             fi
         done
         [ "$allowed" = true ] && continue
+        # An empty directory, or one whose every file is gitignored, is never
+        # staged by `git add -A`; refusing it would block a publish for
+        # nothing. Only a directory with committable content is swept.
+        [ -n "$(git -C "$root" ls-files --others --exclude-standard -- "$dir")" ] || continue
         refused="${refused}  $dir/"$'\n'
     done < <(git -C "$root" ls-files --others --exclude-standard --directory)
     [ -z "$refused" ] && return 0
@@ -53,6 +66,15 @@ untracked_dirs_refused() {
     echo -e "${RED}Refusing to auto-commit them. Add them to .gitignore, or name the"
     echo -e "ones you really want committed in PUBLISH_UNTRACKED_ALLOW.${NC}"
     return 1
+}
+
+# A publish branch that carries nothing beyond master is the real problem
+# whatever the work tree looks like, so say that first: the untracked-directory
+# guard below would otherwise send the operator to .gitignore for a branch that
+# has nothing to publish.
+git rev-list master.."$BRANCH" | grep -q . || {
+    echo -e "${RED}$BRANCH has no commits beyond master - nothing to merge.${NC}"
+    exit 1
 }
 
 if ! git diff-index --quiet HEAD -- 2>/dev/null; then
@@ -71,11 +93,6 @@ if [ "$FORCE" = false ]; then
     read -r -p "Merge $BRANCH into master, tag $VERSION and push? [y/N] " a || a=""
     [[ "$a" != [yY]* ]] && exit 0
 fi
-
-git rev-list master.."$BRANCH" | grep -q . || {
-    echo -e "${RED}$BRANCH has no commits beyond master - nothing to merge.${NC}"
-    exit 1
-}
 
 git checkout master
 if git remote | grep -q "^origin"; then
