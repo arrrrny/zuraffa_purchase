@@ -1,3 +1,7 @@
+## 7.4.1 - 2026-11-11
+
+Fleet release 7.4.1: core adds zfa tunnel (Cloudflare-hosted MCP servers), MCP streamable-HTTP transport with usecase tools, blocking lifecycle hooks (#2032), typed tool param coercion (#2061); whole fleet mono-aligned to 7.4.1.
+
 ## 7.3.9 - 2026-11-08
 
 * fix(purchase): arm the purchase wait before startPurchase — StoreKit 2 delivers the transaction while the purchase call is in flight, and the broadcast event queue dropped it, hanging every purchase at its timeout (the Pro→Max upgrade hang)
