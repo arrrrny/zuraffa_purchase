@@ -44,7 +44,3 @@ topics:
 dependency_overrides:
   xml: 7.1.0
 
-  zuraffa_subscriptions:
-    path: ../../../zuraffa_subscriptions/packages/zuraffa_subscriptions
-  zuraffa:
-    path: ../../../zuraffa
