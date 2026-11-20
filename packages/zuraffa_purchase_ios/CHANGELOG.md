@@ -1,3 +1,7 @@
+## 7.6.1 - 2026-11-20
+
+- Fleet alignment to 7.6.1 and pub.dev 160/160 pana compliance.
+
 ## 7.3.9 - 2026-11-08
 
 * fix(purchase): arm the purchase wait before startPurchase — StoreKit 2 delivers the transaction while the purchase call is in flight, and the broadcast event queue dropped it, hanging every purchase at its timeout (the Pro→Max upgrade hang)

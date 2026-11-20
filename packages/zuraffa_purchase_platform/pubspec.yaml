@@ -16,8 +16,8 @@ dependencies:
   zuraffa_purchase: ^7.6.1
   # The store plugin this family wraps: StoreKit on macOS/iOS (via
   # in_app_purchase_storekit), Play Billing on Android. The native
-  # implementation is pinned by the adapter that owns it — the Apple
-  # adapters pin in_app_purchase_storekit — so the shared core does not
+  # implementation is pinned by the adapter that owns it - the Apple
+  # adapters pin in_app_purchase_storekit - so the shared core does not
   # pull a native plugin an Android consumer can never use.
   in_app_purchase: ^3.3.1
 
@@ -25,7 +25,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   lints: ^4.0.0
-  # The plugin's platform interface — the seam the store plugin itself is
+  # The plugin's platform interface - the seam the store plugin itself is
   # driven through, and the only way to fake it in a test.
   in_app_purchase_platform_interface: ^1.4.1
 
@@ -40,5 +40,5 @@ topics:
   - zuraffa
 
 # NOTE: dependency overrides live only in the dependency_overrides section
-# above — a fleet_pubspec_tool run once appended duplicates here inside the
+# above - a fleet_pubspec_tool run once appended duplicates here inside the
 # topics list and broke every pub command (arrrrny/zuraffa_purchase#8).

@@ -1,7 +1,7 @@
 # Federated plugin monorepo created by `zfa package create-plugin` (issue #1604).
 name: zuraffa_purchase_macos
 description: >-
-  macOS adapter for zuraffa_purchase — the StoreKit store behind a typed port, reached
+  macOS adapter for zuraffa_purchase - the StoreKit store behind a typed port, reached
   through package:in_app_purchase.
 version: 7.6.1
 homepage: https://zuraffa.com
@@ -19,7 +19,7 @@ dependencies:
   # The store plugin this adapter speaks through.
   in_app_purchase: ^3.3.1
   # The native StoreKit implementation. Pinned past 0.4.13 so the app's
-  # build is free of the StoreKit 1 deprecation warnings — `in_app_purchase`
+  # build is free of the StoreKit 1 deprecation warnings - `in_app_purchase`
   # allows any 0.4.x, so the constraint is what actually holds the version.
   in_app_purchase_storekit: ^0.4.15
 
@@ -40,5 +40,5 @@ topics:
   - zuraffa
 
 # NOTE: dependency overrides live only in the dependency_overrides section
-# above — a fleet_pubspec_tool run once appended duplicates here inside the
+# above - a fleet_pubspec_tool run once appended duplicates here inside the
 # topics list and broke every pub command (arrrrny/zuraffa_purchase#8).
